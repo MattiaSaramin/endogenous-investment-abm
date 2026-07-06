@@ -49,7 +49,7 @@ The introduction of endogenous capital accumulation fundamentally alters the mac
 
 As capital stock (K) accumulates, the firm-level capacity constraints expand, allowing aggregate output to scale endogenously while stabilizing structural income inequality.
 
-![Macroeconomic Simulation Results](C:\Users\recursivechaos\Documents\ABM\macro_results.png)
+![Macroeconomic Simulation Results](macro_results.png)
 
 \## Repository Structure
 
