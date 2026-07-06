@@ -1,77 +1,230 @@
-\# Endogenous Investment and Supply-Side Dynamics: An Extension of the Multi-Agent Keynesian Cross
+# Endogenous Investment and Capital Accumulation in a Heterogeneous Keynesian Agent-Based Model
 
+## Overview
 
+This repository contains an Agent-Based Model (ABM) developed in Python using the Mesa framework.
 
-\## Overview
+The model extends the heterogeneous Keynesian Cross introduced by Teglio (2024), *Rationality, inequality, and the output gap: evidence from a disaggregated Keynesian cross diagram*, by incorporating endogenous capital accumulation and investment dynamics.
 
-This repository contains a Python-based Agent-Based Model (ABM) developed using the `Mesa` framework. It builds directly upon the theoretical architecture established in Teglio (2024), \*Rationality, inequality, and the output gap: evidence from a disaggregated Keynesian cross diagram\*. 
+Where the original model focuses primarily on demand determination under heterogeneous income distribution, this extension investigates how the endogenous conversion of private savings into productive capital influences macroeconomic performance over time.
 
+The objective is **not** to provide a quantitatively calibrated representation of a real economy, but to explore the qualitative macroeconomic consequences of introducing an investment channel into an otherwise demand-driven heterogeneous economy.
 
+---
 
-While the original baseline model is strictly demand-driven, demonstrating how structural inequality and unspent capitalist wealth permanently drag down aggregate output, this extension introduces endogenous capital accumulation. By transforming idle wealth into productive capital investments, the model explores the dynamic feedback loops between income distribution, firm-level capacity constraints, and macroeconomic recovery.
+# Research Question
 
+The model investigates the following question:
 
+> **To what extent can endogenous investment financed by accumulated private savings mitigate demand-constrained stagnation in a heterogeneous Keynesian economy?**
 
-\## Theoretical Framework
+More specifically, it explores the interaction between:
 
-The extension introduces three primary mechanisms to the bipartite network of heterogeneous households and firms:
+- household consumption behaviour;
+- wealth accumulation;
+- endogenous investment;
+- firm-level capital accumulation;
+- productive capacity;
+- macroeconomic output;
+- income and wealth inequality.
 
+---
 
+# Theoretical Motivation
 
-\### 1. Capitalist Investment
+In the baseline framework, households consume according to a Keynesian consumption function, while firms produce only to satisfy effective demand.
 
-In the baseline model, capitalists accumulate wealth indefinitely when income exceeds their target consumption. Here, an exogenous investment propensity $\\theta \\in (0, 1)$ is introduced. The total investment $i\_f(t)$ injected into firm $f$ at time $t$ by its shareholders $H\_{cap, f}$ is defined as:
+When part of aggregate income is persistently saved rather than spent, aggregate demand becomes insufficient to absorb productive capacity, generating a persistent output gap.
 
-$$i\_f(t) = \\sum\_{h \\in H\_{cap, f}} \\theta \\cdot \\max(0, y\_h(t) - c\_h(t))$$
+This extension introduces an endogenous investment mechanism through which a fraction of accumulated savings is transformed into productive capital.
 
+The model therefore investigates whether productive investment can partially recycle excess savings back into aggregate demand while simultaneously expanding future production capacity.
 
+---
 
-\### 2. Capital Accumulation
+# Model Structure
 
-Firms transform this financial investment into physical capital. Given a depreciation rate $\\delta \\in (0, 1)$, the capital stock $k\_f(t)$ evolves as:
+The economy consists of three agent types connected through a bipartite network.
 
-$$k\_f(t+1) = (1 - \\delta)k\_f(t) + i\_f(t)$$
+## Households
 
+Households:
 
+- supply labour to firms;
+- receive wage income;
+- accumulate financial wealth;
+- consume according to a wealth-dependent Keynesian consumption function
 
-\### 3. The Modified Production Constraint
+\[
+C_i = c_0 + c_1Y_i + \lambda W_i
+\]
 
-The original capacity constraint capped output strictly by the number of workers and a static baseline productivity $\\beta$. This model introduces an elasticity parameter $\\alpha$ and a scaling multiplier $\\gamma$ to reflect diminishing returns to capital. The extended production function is:
+where
 
-$$y\_f(t+1) = \\min\\left\[ z\_f(t), \\beta \\cdot (1 + \\gamma k\_f(t)^\\alpha) \\cdot (1+extra) \\cdot |H\_{Jf}| \\right]$$
+- \(Y_i\) is disposable income,
+- \(W_i\) is accumulated wealth,
+- \(\lambda\) measures the wealth effect.
 
+---
 
+## Capitalists
 
-To close the macroeconomic loop, aggregate corporate investment $I\_{total}(t)$ is distributed evenly as an additional demand shock across all firms, expanding the total faced demand $Z\_f(t)$.
+Capitalists are households that additionally own firms.
 
-## Key Findings
-The introduction of endogenous capital accumulation fundamentally alters the macroeconomic trajectory. By unlocking the hoarded wealth of both capitalists and workers (via the Pigouvian Wealth Effect), the economy breaks out of the initial depreciation trap. 
+They:
 
-As capital stock (K) accumulates, the firm-level capacity constraints expand, allowing aggregate output to scale endogenously while stabilizing structural income inequality.
+- receive dividend income;
+- accumulate savings;
+- finance investment in the firms they own.
 
-![Macroeconomic Simulation Results](macro_results.png)
+Investment depends on both available savings and firm utilisation:
 
-\## Repository Structure
+\[
+I = \theta S \cdot \phi(u)
+\]
 
-\* `src/agents.py`: Contains the object-oriented logic for the `Household`, `Capitalist`, and `Firm` agents.
+where
 
-\* `src/model.py`: The macro-level `Mesa` environment handling the bipartite network topology, `StagedActivation` scheduling, and data collection.
+- \(S\) denotes savings,
+- \(u\) is productive capacity utilisation,
+- \(\theta\) is the investment propensity.
 
-\* `notebooks/01\_Endogenous\_Investment.ipynb`: The primary analysis notebook containing time-series visualizations of the output gap and the Gini index.
+Investment is installed with a one-period delay before becoming productive capital.
 
+---
 
+## Firms
 
-\## Installation \& Usage
+Each firm:
 
-1\. Clone the repository:
+- hires workers;
+- receives demand from connected households;
+- produces subject to productive capacity;
+- distributes revenue between wages and profits;
+- accumulates productive capital over time.
 
-&#x20;  `git clone https://github.com/yourusername/abm-endogenous-investment.git`
+Production capacity follows a Cobb-Douglas specification:
 
-2\. Install the required dependencies:
+\[
+Y^{capacity}
+=
+A K^{\alpha}L^{1-\alpha}
+\]
 
-&#x20;  `pip install mesa pandas matplotlib seaborn jupyter`
+Output is constrained by effective demand:
 
-3\. Launch the analysis notebook:
+\[
+Y=\min(D,Y^{capacity})
+\]
 
-&#x20;  `jupyter notebook notebooks/01\_Endogenous\_Investment.ipynb`
+---
 
+# Model Dynamics
+
+Each simulation period follows five sequential stages:
+
+1. Household demand formation
+2. Firm production
+3. Firm accounting
+4. Household accounting
+5. Endogenous investment
+
+Investment becomes productive capital in the following period, introducing a realistic installation lag.
+
+---
+
+# Experiments
+
+The repository currently investigates two scenarios.
+
+## Baseline Economy
+
+No endogenous investment:
+
+\[
+\theta=0
+\]
+
+This reproduces a purely demand-driven Keynesian economy.
+
+---
+
+## Endogenous Investment
+
+A positive fraction of household savings is converted into productive capital:
+
+\[
+\theta>0
+\]
+
+Comparison between both scenarios allows the macroeconomic effects of endogenous investment to be isolated.
+
+Each experiment is repeated across multiple random seeds in order to reduce stochastic variability.
+
+---
+
+# Collected Macroeconomic Indicators
+
+The model records:
+
+- Aggregate Output
+- Aggregate Capital Stock
+- Income Gini Coefficient
+- Wealth Gini Coefficient
+- Average Capacity Utilisation
+
+These indicators allow the interaction between production, investment and distribution to be analysed over time.
+
+---
+
+# Current Limitations
+
+The model intentionally abstracts from several important mechanisms in order to isolate the investment channel.
+
+In particular, it does **not** currently include:
+
+- endogenous prices;
+- financial intermediaries;
+- credit creation;
+- monetary policy;
+- fiscal policy;
+- labour market search;
+- firm entry and exit;
+- adaptive expectations.
+
+Future work may incorporate these mechanisms while preserving the existing stock-flow structure.
+
+---
+
+# Repository Structure
+
+```
+src/
+    agents.py
+    model.py
+
+notebooks/
+    Endogenous_Investment.ipynb
+
+README.md
+```
+
+---
+
+# References
+
+Teglio, A. (2024).
+
+*Rationality, inequality, and the output gap: evidence from a disaggregated Keynesian cross diagram.*
+
+Mesa Documentation
+
+https://mesa.readthedocs.io/
+
+---
+
+# Disclaimer
+
+This project is intended as an exploratory computational economics model.
+
+Its purpose is to investigate the qualitative macroeconomic implications of alternative behavioural assumptions rather than to provide calibrated forecasts or policy prescriptions.
