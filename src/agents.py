@@ -18,6 +18,7 @@ class Firm(mesa.Agent):
 
         self.workers = []
         self.customers = []
+        self.owner = None   
 
         # Production variables
         self.inventory = 0.0
@@ -26,7 +27,7 @@ class Firm(mesa.Agent):
         self.faced_demand = 0.0
 
         # Capital variables
-        self.capital = 1.0
+        self.capital = 5.0
         self.pending_capital = 0.0
 
         # Distribution variables
@@ -228,8 +229,11 @@ class Household(mesa.Agent):
         )
 
         self.income = (
-            self.next_income
+            self.next_income +
+            self.next_dividend
         )
+
+        self.next_dividend = 0.0
 
 
 
@@ -260,12 +264,6 @@ class Capitalist(Household):
 
 
     def step_investment(self):
-
-        # Receive profits
-        self.income += (
-            self.owned_firm.dividend_pool
-        )
-
 
         savings = max(
             0,

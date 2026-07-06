@@ -109,7 +109,7 @@ class MacroModel(mesa.Model):
         markup=0.2,
         beta=1.0,
         alpha=0.3,
-        delta=0.05,
+        delta=0.02,
 
         # Consumption
         c0=0.01,
@@ -117,7 +117,7 @@ class MacroModel(mesa.Model):
         wealth_effect=0.1,
 
         # Investment
-        theta=0.2,
+        theta=0.5,
         investment_sensitivity=1.0,
         target_utilization=0.8,
 
@@ -212,6 +212,8 @@ class MacroModel(mesa.Model):
                     firm_employer=employer,
                     firm_owned=owned_firm
                 )
+
+                owned_firm.owner = household
 
             else:
 
