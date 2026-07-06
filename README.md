@@ -44,7 +44,12 @@ $$y\_f(t+1) = \\min\\left\[ z\_f(t), \\beta \\cdot (1 + \\gamma k\_f(t)^\\alpha)
 
 To close the macroeconomic loop, aggregate corporate investment $I\_{total}(t)$ is distributed evenly as an additional demand shock across all firms, expanding the total faced demand $Z\_f(t)$.
 
+## Key Findings
+The introduction of endogenous capital accumulation fundamentally alters the macroeconomic trajectory. By unlocking the hoarded wealth of both capitalists and workers (via the Pigouvian Wealth Effect), the economy breaks out of the initial depreciation trap. 
 
+As capital stock (K) accumulates, the firm-level capacity constraints expand, allowing aggregate output to scale endogenously while stabilizing structural income inequality.
+
+![Macroeconomic Simulation Results](assets/macro_results.png)
 
 \## Repository Structure
 
