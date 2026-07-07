@@ -24,8 +24,8 @@ macroeconomics of alternative behavioural assumptions, not a calibrated forecast
 **Short answer from the model: yes, substantially.** Moving from no investment
 to a moderate investment propensity roughly **triples steady-state output**,
 **halves the output gap**, sustains a positive capital stock, and **reduces both
-income and wealth inequality**. The effect is conditional — it requires an idle
-savings stock to deploy and that investment spending re-enter the income stream —
+income and wealth inequality**. The effect is conditional, it requires an idle
+savings stock to deploy and that investment spending re-enter the income stream,
 and it runs into diminishing returns as the economy approaches its (expanding)
 capacity.
 
@@ -37,8 +37,8 @@ capacity.
 
 **1. A persistent demand leakage (the thing to be mitigated).**
 Capitalists have a lower marginal propensity to consume than workers, so they
-persistently save out of dividend income (Kaldor–Kalecki class saving).  With no
-outlet, those savings accumulate as an **idle money hoard** — a leakage from the
+persistently save out of dividend income (Kaldor-Kalecki class saving).  With no
+outlet, those savings accumulate as an **idle money hoard**, a leakage from the
 circular flow of income.  A small *wealth effect* (consumption out of wealth)
 stops the baseline from collapsing to zero and instead pins it at a low
 **stagnation** equilibrium in which output sits well below productive capacity.
@@ -49,7 +49,7 @@ savings** in that hoard into capital goods for the firm they own.  This does two
 things at once:
 
 - **Demand channel (Keynesian).** The investment spending re-enters aggregate
-  demand and is paid out as wages and dividends — it recycles the leakage.
+  demand and is paid out as wages and dividends; it recycles the leakage.
 - **Supply channel.** The purchased goods become productive capital (with a
   one-period gestation lag), raising future capacity.
 
@@ -218,7 +218,7 @@ labour market with unemployment, adaptive expectations, or technological change.
 Heterogeneous firm productivity; endogenous markups; adaptive investment
 expectations; an explicit labour market; firm entry and bankruptcy; empirical
 calibration; wider sensitivity analysis; and robustness across alternative
-network topologies — all preserving the existing stock-flow structure.
+network topologies, all preserving the existing stock-flow structure.
 
 ---
 
