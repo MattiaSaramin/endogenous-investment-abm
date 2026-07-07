@@ -1,103 +1,142 @@
+"""
+Macro model for the Endogenous-Investment Keynesian ABM.
+
+The economy is a single-good, fixed-price, stock-flow-consistent circular flow
+of income.  Each period unfolds in a fixed sequence so that spending, production,
+income distribution and investment settle in a consistent order:
+
+    1. households form consumption demand
+    2. capitalists plan investment demand
+    3. firms register the demand they face
+    4. firms produce (subject to capacity) and the goods market rations
+    5. firms distribute revenue (wages + dividends) and update capital
+    6. households settle (credit income, pay for delivered goods)
+    7. capitalists settle investment (pay for delivered capital goods)
+
+Because firms distribute 100% of revenue and households only pay for goods that
+are actually delivered, the quantity ``sum(wealth + income)`` is conserved every
+period (verified in ``tests/test_model.py``).
+"""
+
 import mesa
-import random
+import numpy as np
 
 from agents import Firm, Household, Capitalist
 
 
 # ============================================================
-# Inequality Metrics
+# Metrics
 # ============================================================
 
+def _households(model):
+    return [a for a in model.agents if isinstance(a, Household)]
+
+
+def _firms(model):
+    return [a for a in model.agents if isinstance(a, Firm)]
+
+
 def compute_gini(values):
+    """Gini coefficient of a list of non-negative values (0 = equality)."""
+    x = np.sort(np.asarray(values, dtype=float))
+    n = x.size
+    total = x.sum()
 
-    x = sorted(values)
-    N = len(x)
+    if n == 0 or total <= 0:
+        return 0.0
 
-    if N == 0 or sum(x) == 0:
-        return 0
-
-    cumulative = sum(
-        xi * (N - i)
-        for i, xi in enumerate(x)
-    )
-
-    B = cumulative / (N * sum(x))
-
-    return 1 + (1 / N) - 2 * B
-
+    # index i runs 1..n; classic order-statistics formula
+    index = np.arange(1, n + 1)
+    return (2.0 * np.sum(index * x) / (n * total)) - (n + 1.0) / n
 
 
 def compute_income_gini(model):
-
-    incomes = [
-        a.income
-        for a in model.agents
-        if isinstance(a, Household)
-    ]
-
-    return compute_gini(incomes)
-
+    return compute_gini([h.income for h in _households(model)])
 
 
 def compute_wealth_gini(model):
-
-    wealth = [
-        a.wealth
-        for a in model.agents
-        if isinstance(a, Household)
+    """Inequality of *net worth* (money balance + owned capital)."""
+    net_worth = [
+        h.net_worth() if isinstance(h, Capitalist) else h.wealth
+        for h in _households(model)
     ]
-
-    return compute_gini(wealth)
-
-
-
-# ============================================================
-# Aggregate Variables
-# ============================================================
-
-def compute_aggregate_capital(model):
-
-    return sum(
-        f.capital
-        for f in model.agents
-        if isinstance(f, Firm)
-    )
-
+    return compute_gini(net_worth)
 
 
 def compute_output(model):
+    return sum(f.production for f in _firms(model))
 
-    return sum(
-        f.production
-        for f in model.agents
-        if isinstance(f, Firm)
-    )
 
+def compute_potential_output(model):
+    return sum(f.capacity for f in _firms(model))
+
+
+def compute_output_gap(model):
+    """Relative gap between potential and actual output (0 = no slack)."""
+    potential = compute_potential_output(model)
+    if potential <= 0:
+        return 0.0
+    return (potential - compute_output(model)) / potential
+
+
+def compute_aggregate_capital(model):
+    return sum(f.capital for f in _firms(model))
 
 
 def compute_average_utilization(model):
+    firms = _firms(model)
+    if not firms:
+        return 0.0
+    return sum(f.utilization for f in firms) / len(firms)
 
-    firms = [
-        f
-        for f in model.agents
-        if isinstance(f, Firm)
-    ]
 
-    if len(firms) == 0:
-        return 0
+def compute_consumption(model):
+    return sum(h.actual_consumption for h in _households(model))
 
-    return sum(
-        f.utilization
-        for f in firms
-    ) / len(firms)
 
+def compute_investment(model):
+    return model.total_investment_realised
+
+
+def compute_total_wealth(model):
+    return sum(h.wealth for h in _households(model))
 
 
 # ============================================================
-# Main ABM
+# Model
 # ============================================================
 
 class MacroModel(mesa.Model):
+    """Heterogeneous Keynesian economy with endogenous investment.
+
+    Parameters
+    ----------
+    num_firms, num_households : int
+        Population sizes.
+    pct_capitalists : float
+        Share of households that also own a firm.
+    markup : float
+        Price markup; fixes the profit share ``markup / (1 + markup)``.
+    alpha, gamma : float
+        Capital-deepening exponent and weight in the capacity function
+        ``A * L * (1 + gamma * (K/L) ** alpha)``.
+    delta : float
+        Capital depreciation rate per period.
+    c0, c1, capitalist_mpc, wealth_effect : float
+        Consumption: autonomous term, worker MPC, capitalist MPC and the
+        propensity to consume out of wealth.  ``capitalist_mpc < c1`` creates the
+        persistent saving leakage the project studies.
+    theta : float
+        Investment propensity out of capitalist saving (``theta = 0`` is the
+        no-investment baseline).
+    investment_sensitivity, target_utilization : float
+        Accelerator: strength of, and reference point for, the response of
+        investment to capacity utilisation.
+    productivity : float
+        Total-factor productivity ``A``.
+    seed : int or None
+        Seed for the model's random stream (workers, network, ordering).
+    """
 
     def __init__(
         self,
@@ -105,262 +144,141 @@ class MacroModel(mesa.Model):
         num_households=100,
         pct_capitalists=0.10,
 
-        # Firm parameters
+        # Firm / technology
         markup=0.2,
-        beta=1.0,
-        alpha=0.3,
-        delta=0.02,
+        alpha=0.5,
+        gamma=0.5,
+        delta=0.05,
+        productivity=1.0,
 
         # Consumption
-        c0=0.01,
-        c1=0.6,
-        wealth_effect=0.1,
+        c0=0.1,
+        c1=0.9,
+        capitalist_mpc=0.4,
+        wealth_effect=0.02,
 
         # Investment
-        theta=0.5,
+        theta=0.0,
         investment_sensitivity=1.0,
         target_utilization=0.8,
+        precautionary_buffer=2.0,
 
-        # Productivity
-        extra=0.1,
-
-        # Reproducibility
-        seed=None
+        seed=None,
     ):
+        super().__init__(seed=seed)
 
-        super().__init__()
-
-
-        if seed is not None:
-            random.seed(seed)
-
-
-
-        # ----------------------------------------------------
-        # Parameters
-        # ----------------------------------------------------
-
+        # --- store parameters -------------------------------------------
         self.num_firms = num_firms
         self.num_households = num_households
 
         self.markup = markup
-
-        # Production
-        self.beta = beta
         self.alpha = alpha
+        self.gamma = gamma
         self.delta = delta
-        self.extra = extra
+        self.productivity = productivity
 
-        # Consumption
         self.c0 = c0
         self.c1 = c1
+        self.capitalist_mpc = capitalist_mpc
         self.wealth_effect = wealth_effect
 
-        # Investment
         self.theta = theta
-        self.investment_sensitivity = (
-            investment_sensitivity
-        )
-        self.target_utilization = (
-            target_utilization
-        )
+        self.investment_sensitivity = investment_sensitivity
+        self.target_utilization = target_utilization
+        self.precautionary_buffer = precautionary_buffer
 
-        # Aggregate investment
-        self.total_investment = 0.0
+        # --- economy-wide flow variables --------------------------------
+        self.total_investment_demand = 0.0     # planned investment orders
+        self.total_investment_realised = 0.0   # investment actually installed
+        self.investment_rationing = 1.0        # goods-market fill rate for I
 
+        # --- build agents -----------------------------------------------
+        firms = [Firm(self, productivity=productivity) for _ in range(num_firms)]
 
+        num_capitalists = int(num_households * pct_capitalists)
 
-        # ----------------------------------------------------
-        # Create Firms
-        # ----------------------------------------------------
-
-        firms = []
-
-        for _ in range(self.num_firms):
-
-            firm = Firm(self)
-
-            firms.append(firm)
-
-
-
-        # ----------------------------------------------------
-        # Create Households
-        # ----------------------------------------------------
-
-        num_capitalists = int(
-            self.num_households *
-            pct_capitalists
-        )
-
-
-        for i in range(self.num_households):
-
-            employer = (
-                firms[i % self.num_firms]
-            )
-
+        for i in range(num_households):
+            employer = firms[i % num_firms]
 
             if i < num_capitalists:
-
-                owned_firm = (
-                    firms[i % self.num_firms]
-                )
-
-                household = Capitalist(
-                    self,
-                    firm_employer=employer,
-                    firm_owned=owned_firm
-                )
-
-                owned_firm.owner = household
-
+                owned = firms[i % num_firms]
+                household = Capitalist(self, firm_employer=employer, firm_owned=owned)
+                owned.owner = household
             else:
+                household = Household(self, firm_employer=employer)
 
-                household = Household(
-                    self,
-                    firm_employer=employer
-                )
+            employer.workers.append(household)
 
+            # Consumption network: connect to a random subset of firms.
+            num_links = max(1, num_firms // 2)
+            linked = self.random.sample(firms, num_links)
+            household.consumption_firms = linked
+            household.num_consumption_links = len(linked)
+            for firm in linked:
+                firm.customers.append(household)
 
-
-            # Labour market connection
-
-            employer.workers.append(
-                household
-            )
-
-
-            # Consumption network
-
-            num_links = max(
-                1,
-                self.num_firms // 2
-            )
-
-            connected_firms = random.sample(
-                firms,
-                num_links
-            )
-
-            for firm in connected_firms:
-
-                firm.customers.append(
-                    household
-                )
-
-
-
-        # ----------------------------------------------------
-        # Data Collection
-        # ----------------------------------------------------
-
+        # --- data collection --------------------------------------------
         self.datacollector = mesa.DataCollector(
-
             model_reporters={
-
-                "Output":
-                    compute_output,
-
-                "Total_Capital":
-                    compute_aggregate_capital,
-
-                "Income_Gini":
-                    compute_income_gini,
-
-                "Wealth_Gini":
-                    compute_wealth_gini,
-
-                "Average_Utilization":
-                    compute_average_utilization
-
+                "Output": compute_output,
+                "Potential_Output": compute_potential_output,
+                "Output_Gap": compute_output_gap,
+                "Total_Capital": compute_aggregate_capital,
+                "Consumption": compute_consumption,
+                "Investment": compute_investment,
+                "Total_Wealth": compute_total_wealth,
+                "Income_Gini": compute_income_gini,
+                "Wealth_Gini": compute_wealth_gini,
+                "Average_Utilization": compute_average_utilization,
             }
         )
 
+        # Record the initial state (t = 0) before any stepping.
+        self.datacollector.collect(self)
 
-
-    # ========================================================
-    # Simulation Loop
-    # ========================================================
-
+    # ------------------------------------------------------------------
     def step(self):
+        households = _households(model=self)
+        firms = _firms(model=self)
+        capitalists = [h for h in households if isinstance(h, Capitalist)]
 
+        # 1. consumption demand
+        for h in households:
+            h.step_demand()
 
-        # --------------------------------------------
-        # 1. Household demand formation
-        # --------------------------------------------
+        # 2. investment plans -> economy-wide investment demand
+        for c in capitalists:
+            c.plan_investment()
+        self.total_investment_demand = sum(c.desired_investment for c in capitalists)
 
-        for agent in self.agents:
+        # 3. firms register the demand they face
+        for f in firms:
+            f.register_demand()
 
-            if isinstance(agent, Household):
+        # 4. production + goods-market rationing
+        for f in firms:
+            f.step_production()
 
-                agent.step_demand()
-
-
-
-        # --------------------------------------------
-        # 2. Production
-        # --------------------------------------------
-
-        for agent in self.agents:
-
-            if isinstance(agent, Firm):
-
-                agent.step_production()
-
-
-
-        # --------------------------------------------
-        # 3. Firm accounting
-        # --------------------------------------------
-
-        for agent in self.agents:
-
-            if isinstance(agent, Firm):
-
-                agent.step_accounting()
-
-
-
-        # --------------------------------------------
-        # 4. Household accounting
-        # --------------------------------------------
-
-        for agent in self.agents:
-
-            if isinstance(agent, Household):
-
-                agent.step_accounting()
-
-
-
-        # --------------------------------------------
-        # 5. Capitalist investment
-        # --------------------------------------------
-
-        for agent in self.agents:
-
-            if isinstance(agent, Capitalist):
-
-                agent.step_investment()
-
-
-
-        # Aggregate investment
-        capitalists = [
-            a
-            for a in self.agents
-            if isinstance(a, Capitalist)
-        ]
-
-
-        self.total_investment = sum(
-            c.investment_injected
-            for c in capitalists
+        # Economy-wide investment fill rate = average firm rationing, since
+        # investment orders are shared equally across firms.
+        self.investment_rationing = (
+            sum(f.rationing for f in firms) / len(firms) if firms else 1.0
         )
 
+        # 5. firm accounting: distribute revenue, depreciate, install capital
+        for f in firms:
+            f.step_accounting()
 
+        # 6. household settlement
+        for h in households:
+            h.step_settlement()
 
-        # Store results
+        # 7. capitalist investment settlement
+        for c in capitalists:
+            c.step_investment()
+        self.total_investment_realised = sum(
+            c.investment_injected for c in capitalists
+        )
 
+        # record
         self.datacollector.collect(self)

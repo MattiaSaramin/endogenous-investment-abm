@@ -2,290 +2,239 @@
 
 ## Overview
 
-This repository contains an Agent-Based Model (ABM) implemented in Python using the **Mesa** framework.
+This repository contains an Agent-Based Model (ABM) built in Python with the
+**Mesa** framework.  It extends the heterogeneous Keynesian Cross of **Teglio
+(2024)** with an endogenous investment mechanism that turns accumulated private
+savings into productive capital.
 
-The model extends the heterogeneous Keynesian Cross proposed by **Teglio (2024)** by introducing an endogenous investment mechanism that transforms accumulated household savings into productive capital.
-
-Where the original framework is primarily demand-driven, this extension investigates the interaction between effective demand, wealth accumulation, investment behaviour, and productive capacity over time.
-
-Rather than attempting to reproduce a real economy quantitatively, the model is intended as an exploratory computational laboratory for studying the qualitative macroeconomic consequences of alternative behavioural assumptions.
-
----
-
-## Research Question
-
-The project investigates the following question:
-
-> **Can endogenous investment financed through accumulated private savings mitigate demand-constrained stagnation in a heterogeneous Keynesian economy?**
-
-More specifically, the model explores how investment affects:
-
-- aggregate output;
-- productive capacity;
-- capital accumulation;
-- income inequality;
-- wealth inequality;
-- capacity utilisation.
+The economy is a single-good, fixed-price, **stock-flow-consistent** circular
+flow of income: every unit of money that leaves a household as spending is
+received by a firm as revenue and paid straight back out as wages or dividends,
+so the aggregate money stock is conserved (checked in the test suite).  The
+model is an exploratory computational laboratory for the *qualitative*
+macroeconomics of alternative behavioural assumptions, not a calibrated forecast.
 
 ---
 
-## Economic Motivation
+## Research question
 
-Standard Keynesian models explain fluctuations in output primarily through changes in aggregate demand.
+> **Can endogenous investment financed through accumulated private savings
+> mitigate demand-constrained stagnation in a heterogeneous Keynesian economy?**
 
-However, persistent private saving simultaneously represents:
+**Short answer from the model: yes, substantially.** Moving from no investment
+to a moderate investment propensity roughly **triples steady-state output**,
+**halves the output gap**, sustains a positive capital stock, and **reduces both
+income and wealth inequality**. The effect is conditional — it requires an idle
+savings stock to deploy and that investment spending re-enter the income stream —
+and it runs into diminishing returns as the economy approaches its (expanding)
+capacity.
 
-- a leakage from aggregate demand;
-- a potential source of productive investment.
-
-The model studies this dual role by allowing capital-owning households to reinvest part of their accumulated savings into the firms they own.
-
-Investment therefore performs two macroeconomic functions:
-
-- increasing future productive capacity;
-- partially recycling accumulated wealth back into the circular flow of income.
-
-The objective is to analyse how these interacting mechanisms shape long-run macroeconomic dynamics.
+![Baseline vs. endogenous-investment dynamics](macro_results.png)
 
 ---
 
-# Model Overview
+## The mechanism in three parts
 
-The economy consists of three heterogeneous agent types connected through a bipartite network.
+**1. A persistent demand leakage (the thing to be mitigated).**
+Capitalists have a lower marginal propensity to consume than workers, so they
+persistently save out of dividend income (Kaldor–Kalecki class saving).  With no
+outlet, those savings accumulate as an **idle money hoard** — a leakage from the
+circular flow of income.  A small *wealth effect* (consumption out of wealth)
+stops the baseline from collapsing to zero and instead pins it at a low
+**stagnation** equilibrium in which output sits well below productive capacity.
 
-- Households
-- Capitalists
-- Firms
+**2. Endogenous investment (the proposed remedy).**
+Each period a capitalist converts a fraction `theta` of the **accumulated
+savings** in that hoard into capital goods for the firm they own.  This does two
+things at once:
 
-Simulation proceeds in discrete time.
+- **Demand channel (Keynesian).** The investment spending re-enters aggregate
+  demand and is paid out as wages and dividends — it recycles the leakage.
+- **Supply channel.** The purchased goods become productive capital (with a
+  one-period gestation lag), raising future capacity.
 
-During every period agents interact through labour, consumption, production, income distribution and investment decisions.
+An accelerator term tilts investment towards firms running above their target
+utilisation and away from slack ones.
+
+**3. Stock-flow-consistent settlement.**
+Firms distribute 100 % of revenue and households only pay for goods actually
+delivered (demand is rationed when a firm hits capacity).  This is what lets the
+Keynesian "investment fills the saving gap" result *emerge* instead of leaking
+away through inconsistent accounting.
 
 ---
 
-# Household Behaviour
+## Model equations
 
-Households:
-
-- supply labour to firms;
-- receive wage income;
-- accumulate wealth;
-- consume according to a Keynesian consumption function.
-
-Desired consumption is given by
+**Consumption** (worker MPC `c1`, lower capitalist MPC; wealth effect `lambda`):
 
 ```text
-Consumption =
-c0 + c1 × Income + λ × Wealth
+C = c0 + mpc * income + lambda * wealth          (bounded by money on hand)
 ```
 
-where
-
-- `c0` is autonomous consumption;
-- `c1` is the marginal propensity to consume;
-- `λ` measures the wealth effect.
-
-Consumption is constrained by available resources.
-
----
-
-# Capitalist Behaviour
-
-Capitalists are households that additionally own firms.
-
-Besides wage income they receive:
-
-- dividend income;
-- ownership wealth.
-
-After consumption, part of their remaining savings is invested into the capital stock of the owned firm.
-
-Investment follows the behavioural rule
+**Capacity** — capital-augmented labour productivity (*capital deepening*):
 
 ```text
-Investment =
-θ × Savings × Utilisation Adjustment
+Y* = A * L * (1 + gamma * (K / L) ** alpha)
 ```
 
-where
+Labour sets a positive floor `A * L`; capital *per worker* raises productivity
+with diminishing returns (`alpha < 1`).  This is deliberately **not** a textbook
+Cobb-Douglas `A K^a L^(1-a)`, which would force capacity to zero as capital
+depreciates and make a demand-constrained baseline impossible to study.
 
-- `θ` is the investment propensity;
-- savings are disposable income not consumed;
-- utilisation adjustment increases investment incentives when firms operate closer to capacity.
-
-Investment is installed with a one-period delay before becoming productive capital.
-
----
-
-# Firm Behaviour
-
-Firms:
-
-- employ workers;
-- receive demand from connected households;
-- produce goods;
-- pay wages;
-- distribute profits to owners;
-- accumulate productive capital.
-
-Maximum productive capacity follows a Cobb-Douglas production function
+**Output** is demand-constrained:
 
 ```text
-Capacity =
-A × K^α × L^(1−α)
+Y = min(demand, Y*)
 ```
 
-where
-
-- `A` denotes productivity;
-- `K` is capital stock;
-- `L` is labour input.
-
-Actual production is demand constrained
+**Investment** out of the accumulated savings hoard:
 
 ```text
-Output =
-min(Demand, Capacity)
+I = theta * hoard * utilisation_effect
+hoard = max(0, money_wealth - precautionary_buffer)
+utilisation_effect = max(0, 1 + sensitivity * (u - u_target))
 ```
 
-ensuring that firms never produce beyond effective demand.
-
-Capital evolves according to
+**Capital** accumulation with depreciation `delta` and a one-period lag:
 
 ```text
-Capital(t+1) =
-(1 − δ) × Capital(t)
-+ Investment(t)
+K(t+1) = (1 - delta) * K(t) + I(t)
 ```
 
-where `δ` is the depreciation rate.
+---
+
+## Simulation sequence
+
+Each period runs in a fixed order so spending, production, income distribution
+and investment settle consistently:
+
+1. households form consumption demand;
+2. capitalists plan investment demand;
+3. firms register the demand they face;
+4. firms produce (subject to capacity) and the goods market rations;
+5. firms distribute revenue (wages + dividends) and update capital;
+6. households settle (credit income, pay for delivered goods);
+7. capitalists settle investment (pay for delivered capital goods).
 
 ---
 
-# Simulation Sequence
+## Recorded indicators
 
-Each simulation period is divided into five ordered stages:
-
-1. Household demand formation
-2. Firm production
-3. Firm accounting
-4. Household accounting
-5. Investment and capital accumulation
-
-This sequential structure ensures a consistent timing of income generation, expenditure and investment.
+`Output`, `Potential_Output`, `Output_Gap`, `Total_Capital`, `Consumption`,
+`Investment`, `Total_Wealth`, `Income_Gini`, `Wealth_Gini` (on net worth =
+money + owned capital) and `Average_Utilization`.
 
 ---
 
-# Experimental Design
+## Results
 
-The current implementation compares two macroeconomic environments.
+Steady-state comparison (100 households, 10 firms, means over 30 seeds):
 
-## Baseline Economy
+| Indicator            | Baseline `theta = 0` | Investment `theta = 0.15` |
+| -------------------- | -------------------: | ------------------------: |
+| Output               |                 ~53 |                      ~148 |
+| Potential output     |                ~100 |                      ~195 |
+| Output gap           |                ~47 % |                     ~24 % |
+| Capital stock        |                 ~0 |                      ~365 |
+| Capacity utilisation |               ~0.53 |                     ~0.76 |
+| Income Gini          |               ~0.19 |                     ~0.18 |
+| Wealth Gini          |               ~0.91 |                     ~0.77 |
 
-No endogenous investment.
+Sweeping the investment propensity `theta` (`theta_sweep.png`) shows output
+rising and the output gap and wealth inequality falling, all at a **diminishing
+rate** as the economy moves from demand-constrained towards capacity-constrained
+territory.
 
-```text
-θ = 0
-```
-
-Savings remain idle and do not contribute to future productive capacity.
-
----
-
-## Endogenous Investment Economy
-
-A positive fraction of accumulated savings is transformed into productive capital.
-
-```text
-θ > 0
-```
-
-Comparing these two scenarios isolates the macroeconomic effects of endogenous investment.
-
-Each experiment is repeated across multiple random seeds in order to reduce stochastic variability.
+![Steady-state response to the investment propensity](theta_sweep.png)
 
 ---
 
-# Recorded Macroeconomic Indicators
-
-The model currently records:
-
-- Aggregate Output
-- Aggregate Capital Stock
-- Income Gini Coefficient
-- Wealth Gini Coefficient
-- Average Capacity Utilisation
-
-These indicators allow both macroeconomic performance and distributional dynamics to be analysed simultaneously.
-
----
-
-# Repository Structure
+## Repository structure
 
 ```text
 src/
-│
-├── agents.py
-├── model.py
-│
+├── agents.py        Firm, Household, Capitalist behaviour
+├── model.py         MacroModel: sequence, settlement, metrics
+└── experiment.py    Monte-Carlo runner, confidence bands, theta sweep
 notebooks/
-│
-└── Endogenous_Investment.ipynb
-│
-README.md
+└── 01_Endogenous_Investment.ipynb   Baseline vs. investment + sweep
+tests/
+├── conftest.py
+└── test_model.py    Stock-flow consistency, determinism, headline result
+performance/
+└── engine.cpp       Fast aggregate (representative-agent) sweep companion
+requirements.txt
+macro_results.png, theta_sweep.png
 ```
 
 ---
 
-# Current Limitations
+## Getting started
 
-The model deliberately abstracts from several important macroeconomic mechanisms in order to isolate the role of endogenous investment.
+```bash
+python -m pip install -r requirements.txt
 
-The current implementation does **not** include:
+# reproduce the figures and analysis
+jupyter nbconvert --to notebook --execute --inplace notebooks/01_Endogenous_Investment.ipynb
 
-- endogenous prices;
-- banking or financial intermediation;
-- credit creation;
-- monetary policy;
-- fiscal policy;
-- firm entry and exit;
-- unemployment dynamics;
-- adaptive expectations;
-- technological change.
+# run the checks (stock-flow consistency, determinism, economic result)
+python -m pytest tests/ -q
+```
 
-These mechanisms may be incorporated in future versions while preserving the existing stock-flow structure.
+Programmatic use:
 
----
+```python
+import sys; sys.path.append("src")
+from experiment import run_experiment, summarize, theta_sweep
 
-# Future Development
+panel = run_experiment(theta=0.15, steps=500, seeds=30)  # multi-seed panel
+band  = summarize(panel)                                 # mean + 95% CI per step
+sweep = theta_sweep([0.0, 0.1, 0.2, 0.3])                # steady-state vs theta
+```
 
-Several extensions are planned, including:
+The optional C++ companion is an **aggregate approximation** (not a bit-for-bit
+port) that reproduces the same `theta -> output` comparative statics at compiled
+speed:
 
-- heterogeneous firm productivity;
-- endogenous markups;
-- adaptive investment expectations;
-- endogenous labour market dynamics;
-- firm entry and bankruptcy;
-- calibration using empirical macroeconomic data;
-- sensitivity analysis through parameter sweeps;
-- robustness analysis across alternative network topologies.
+```bash
+g++ -O2 -std=c++11 performance/engine.cpp -o engine && ./engine
+```
 
 ---
 
-# References
+## Current limitations
 
-Teglio, A. (2024).
-
-*Rationality, inequality, and the output gap: Evidence from a disaggregated Keynesian Cross diagram.* https://link.springer.com/article/10.1007/s11403-024-00412-4
-
-Mesa: Agent-Based Modeling in Python
-
-https://mesa.readthedocs.io/
+The model deliberately abstracts from several mechanisms in order to isolate the
+role of endogenous investment.  It does **not** yet include endogenous prices,
+banking or credit, monetary or fiscal policy, firm entry and exit, an explicit
+labour market with unemployment, adaptive expectations, or technological change.
 
 ---
 
-# Disclaimer
+## Future development
 
-This project is an exploratory computational economics model developed for research and educational purposes.
+Heterogeneous firm productivity; endogenous markups; adaptive investment
+expectations; an explicit labour market; firm entry and bankruptcy; empirical
+calibration; wider sensitivity analysis; and robustness across alternative
+network topologies — all preserving the existing stock-flow structure.
 
-Its objective is to investigate the qualitative implications of alternative behavioural assumptions within a heterogeneous Keynesian framework rather than to provide calibrated forecasts or policy recommendations.
+---
+
+## References
+
+Teglio, A. (2024). *Rationality, inequality, and the output gap: Evidence from a
+disaggregated Keynesian Cross diagram.*
+<https://link.springer.com/article/10.1007/s11403-024-00412-4>
+
+Mesa: Agent-Based Modeling in Python — <https://mesa.readthedocs.io/>
+
+---
+
+## Disclaimer
+
+An exploratory computational economics model for research and education.  It
+investigates the qualitative implications of behavioural assumptions within a
+heterogeneous Keynesian framework; it is not a calibrated forecast or a policy
+recommendation.

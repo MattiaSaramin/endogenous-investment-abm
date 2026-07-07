@@ -1,0 +1,13 @@
+# Core simulation
+mesa>=3.0
+numpy>=1.24
+pandas>=2.0
+
+# Notebook analysis / plotting
+matplotlib>=3.7
+seaborn>=0.12
+jupyter>=1.0
+nbconvert>=7.0
+
+# Testing
+pytest>=7.0
