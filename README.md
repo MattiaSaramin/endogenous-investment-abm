@@ -228,7 +228,7 @@ Teglio, A. (2024). *Rationality, inequality, and the output gap: Evidence from a
 disaggregated Keynesian Cross diagram.*
 <https://link.springer.com/article/10.1007/s11403-024-00412-4>
 
-Mesa: Agent-Based Modeling in Python — <https://mesa.readthedocs.io/>
+Mesa: Agent-Based Modeling in Python - <https://mesa.readthedocs.io/>
 
 ---
 
