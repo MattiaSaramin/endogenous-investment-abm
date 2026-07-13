@@ -72,7 +72,7 @@ away through inconsistent accounting.
 C = c0 + mpc * income + lambda * wealth          (bounded by money on hand)
 ```
 
-**Capacity** — capital-augmented labour productivity (*capital deepening*):
+**Capacity** - capital-augmented labour productivity (*capital deepening*):
 
 ```text
 Y* = A * L * (1 + gamma * (K / L) ** alpha)
