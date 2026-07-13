@@ -1,15 +1,16 @@
 /**
  * Aggregate policy-sweep engine — companion to the Mesa ABM.
- * Endogenous Investment and Demand-Constrained Stagnation.
+ * Endogenous Investment, Unemployment and Demand-Constrained Stagnation.
  *
  * This is NOT a bit-for-bit port of the agent-level Python model.  It is a fast,
- * compiled, *representative-agent* reduction that keeps the same causal
- * mechanics (class saving, stock-financed investment, capital-augmented
- * capacity, demand-constrained output and stock-flow-consistent settlement) and
- * reproduces the same qualitative comparative statics — output rising and the
- * output gap falling as the investment propensity theta increases.  Its purpose
- * is to scan the theta -> output relationship at compiled speed; use the ABM in
- * src/ for the distributional (heterogeneity / network) results.
+ * compiled, *representative-class* reduction (one worker aggregate, one
+ * capitalist aggregate) that keeps the same causal mechanics — class saving,
+ * a demand-driven labour market with a Leontief capital-per-job constraint,
+ * stock-financed investment, a balanced-budget unemployment benefit, and
+ * stock-flow-consistent settlement.  It reproduces the ABM's comparative statics
+ * closely (e.g. baseline unemployment ~0.5 with idle capital; near-full
+ * employment once theta is high enough).  Use the ABM in src/ for the
+ * distributional and cross-seed (heterogeneity / matching) results.
  *
  * Build & run:
  *     g++ -O2 -std=c++11 engine.cpp -o engine && ./engine
@@ -17,106 +18,120 @@
 
 #include <iostream>
 #include <iomanip>
-#include <cmath>
 #include <algorithm>
 
 // ---- Parameters (mirror the Python defaults) ----------------------------
-const int    N_HOUSEHOLDS = 100;
-const int    N_CAPITALIST = 10;          // 10% of households own firms
-const int    N_WORKER     = N_HOUSEHOLDS - N_CAPITALIST;
-const double LABOUR       = 100.0;       // all households supply labour
+const double N   = 100.0;                 // households / workforce
+const double NC  = 10.0;                  // capitalists
+const double NW  = N - NC;                // workers
+const int    NFIRMS = 10;
 
-const double MARKUP       = 0.2;         // profit share = MARKUP/(1+MARKUP)
-const double ALPHA        = 0.5;         // capital-deepening exponent
-const double GAMMA        = 0.5;         // capital-deepening weight
-const double DELTA        = 0.05;        // depreciation
-const double A_TFP        = 1.0;         // total factor productivity
+const double A          = 1.0;            // output per worker
+const double MARKUP     = 0.2;
+const double KAPPA      = 0.5;            // capital per job (Leontief)
+const double CAP_FLOOR  = 3.5 * NFIRMS;  // aggregate capital floor
+const double DELTA      = 0.05;
 
-const double C0           = 0.1;         // autonomous consumption per household
-const double C1           = 0.9;         // worker MPC
-const double MPC_C        = 0.4;         // capitalist MPC
-const double WEALTH_EFF   = 0.02;        // propensity to consume out of wealth
+const double C0         = 0.1;            // autonomous consumption per household
+const double C1         = 0.9;            // worker MPC
+const double MPC_C      = 0.2;            // capitalist MPC
+const double WEALTH_EFF = 0.02;
 
-const double INV_SENS     = 1.0;         // accelerator sensitivity
-const double U_TARGET     = 0.8;         // target utilisation
-const double BUFFER       = 2.0;         // precautionary buffer per capitalist
+const double INV_SENS   = 1.0;
+const double U_TARGET   = 0.9;
+const double BUFFER     = 2.0;
 
-struct Result { double output; double potential; double capital; double gap; };
+const double RHO        = 0.3;            // benefit replacement rate
+const double MAX_TAX    = 0.6;
+
+const double WAGE = A / (1.0 + MARKUP);   // wage rate
+
+struct Result { double output; double unemployment; double capital; };
+
+static double clamp(double x, double lo, double hi) {
+    return std::max(lo, std::min(x, hi));
+}
 
 // One deterministic run of the aggregate economy to (near) steady state.
 Result simulate(double theta, int steps) {
-    double Ww = N_WORKER * 2.0;      // worker money balances
-    double Wc = N_CAPITALIST * 2.0;  // capitalist money balances
-    double Yw = N_WORKER * 2.0;      // worker income flow
-    double Yc = N_CAPITALIST * 2.0;  // capitalist income flow
-    double K  = 50.0;                // aggregate capital (10 firms x 5)
-    double pending = 0.0;            // investment awaiting installation
-    double util = 0.0;
-
-    double output = 0.0, potential = 0.0;
+    double Ww = NW * 2.0, Wc = NC * 2.0;   // money balances
+    double Yw = NW * 2.0, Yc = NC * 2.0;   // disposable income flows
+    double K = 50.0, pending = 0.0;
+    double expected_demand = A * N;
+    double output = 0.0, unemployment = 0.0;
 
     for (int t = 0; t < steps; ++t) {
-        // 1. consumption demand (bounded by money on hand)
-        double Cw = N_WORKER * C0 + C1    * Yw + WEALTH_EFF * Ww;
-        double Cc = N_CAPITALIST * C0 + MPC_C * Yc + WEALTH_EFF * Wc;
-        Cw = std::max(0.0, std::min(Cw, Ww + Yw));
-        Cc = std::max(0.0, std::min(Cc, Wc + Yc));
+        // 0. capital law of motion
+        K = std::max(CAP_FLOOR, (1.0 - DELTA) * K + pending);
+        pending = 0.0;
 
-        // 2. investment out of the accumulated capitalist hoard
-        double hoard = std::max(0.0, Wc - N_CAPITALIST * BUFFER);
-        double util_effect = std::max(0.0, 1.0 + INV_SENS * (util - U_TARGET));
-        double I = theta * hoard * util_effect;
-        double budget = std::max(0.0, Wc + Yc - Cc);   // affordability cap
-        I = std::min(I, budget);
+        // 1-2. demand-driven employment, capped by capital-equipped jobs
+        double jobs = K / KAPPA;
+        double E = clamp(std::min(expected_demand / A, jobs), 0.0, N);
+        double U = N - E;
 
-        // 3. demand, capacity, production, rationing
-        double demand    = Cw + Cc + I;
-        potential = A_TFP * LABOUR * (1.0 + GAMMA * std::pow(K / LABOUR, ALPHA));
-        output    = std::min(demand, potential);
-        double ration = (demand > 1e-12) ? output / demand : 1.0;
-        util = (potential > 1e-12) ? output / potential : 0.0;
+        // 3. class consumption (bounded by money on hand)
+        double Cw = clamp(NW * C0 + C1 * Yw + WEALTH_EFF * Ww, 0.0, Ww + Yw);
+        double Cc = clamp(NC * C0 + MPC_C * Yc + WEALTH_EFF * Wc, 0.0, Wc + Yc);
 
-        double Cw_a = Cw * ration;
-        double Cc_a = Cc * ration;
-        double I_a  = I  * ration;
+        // 4. investment from the accumulated capitalist hoard
+        double hoard = std::max(0.0, Wc - NC * BUFFER);
+        double capU = (jobs > 1e-12) ? E / jobs : 0.0;
+        double ue = std::max(0.0, 1.0 + INV_SENS * (capU - U_TARGET));
+        double I = std::min(theta * hoard * ue, std::max(0.0, Wc + Yc - Cc));
 
-        // 4. distribute revenue (wages to all workers, dividends to capitalists)
-        double wage_bill = output / (1.0 + MARKUP);
-        double dividends = output - wage_bill;
-        double Yw_new = wage_bill * (double)N_WORKER / N_HOUSEHOLDS;
-        double Yc_new = wage_bill * (double)N_CAPITALIST / N_HOUSEHOLDS + dividends;
+        // 5. production + rationing
+        double demand = Cw + Cc + I;
+        double Y = std::min(demand, A * E);
+        double ration = (demand > 1e-12) ? Y / demand : 1.0;
+        double Cw_a = Cw * ration, Cc_a = Cc * ration, I_a = I * ration;
+        expected_demand = demand;
 
-        // 5. settlement: credit income, pay for delivered goods (SFC)
+        // 6. distribute revenue: wages (to employed) then dividends
+        double wage_per = (E > 1e-12) ? std::min(WAGE, Y / E) : 0.0;
+        double dividends = Y - wage_per * E;
+        double Ew = E * NW / N, Ec = E * NC / N;      // employed by class
+        double Uw = U * NW / N, Uc = U * NC / N;      // unemployed by class
+        double Yw_gross = wage_per * Ew;
+        double Yc_gross = wage_per * Ec + dividends;
+
+        // 7. balanced-budget benefit funded by a flat tax
+        double base = std::max(0.0, Yw_gross) + std::max(0.0, Yc_gross);
+        double desired = RHO * WAGE * U;
+        double tax = (base > 0.0 && desired > 0.0) ? std::min(MAX_TAX, desired / base) : 0.0;
+        double benefit = (U > 1e-12) ? tax * base / U : 0.0;
+        double Yw_net = Yw_gross * (1.0 - tax) + benefit * Uw;
+        double Yc_net = Yc_gross * (1.0 - tax) + benefit * Uc;
+
+        // 8. settlement (credit income, pay for delivered goods)
         Ww += Yw; Ww -= Cw_a;
         Wc += Yc; Wc -= Cc_a; Wc -= I_a;
-        Yw = Yw_new;
-        Yc = Yc_new;
+        Yw = Yw_net; Yc = Yc_net;
 
-        // 6. capital: depreciate, then install last period's investment
-        K = (1.0 - DELTA) * K + pending;
+        // 9. queue investment as next period's capital
         pending = I_a;
-    }
 
-    double gap = (potential > 0.0) ? (potential - output) / potential : 0.0;
-    return { output, potential, K, gap };
+        output = Y;
+        unemployment = U / N;
+    }
+    return { output, unemployment, K };
 }
 
 int main() {
     const int STEPS = 500;
     std::cout << "Aggregate endogenous-investment engine (" << STEPS << " steps)\n";
     std::cout << std::fixed << std::setprecision(3);
-    std::cout << "\n theta |   output | potential |  capital |  gap\n";
-    std::cout <<   "-------+----------+-----------+----------+------\n";
+    std::cout << "\n theta |   output | unemployment |  capital\n";
+    std::cout <<   "-------+----------+--------------+---------\n";
 
     double thetas[] = {0.0, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3};
     for (double theta : thetas) {
         Result r = simulate(theta, STEPS);
         std::cout << std::setw(6) << theta << " | "
                   << std::setw(8) << r.output << " | "
-                  << std::setw(9) << r.potential << " | "
-                  << std::setw(8) << r.capital << " | "
-                  << std::setw(4) << r.gap << "\n";
+                  << std::setw(12) << r.unemployment << " | "
+                  << std::setw(8) << r.capital << "\n";
     }
-    std::cout << "\nEndogenous investment raises output and shrinks the gap.\n";
+    std::cout << "\nEndogenous investment lifts output and drives unemployment down.\n";
     return 0;
 }

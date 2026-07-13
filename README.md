@@ -1,18 +1,20 @@
-# Endogenous Investment and Capital Accumulation in a Heterogeneous Keynesian Agent-Based Model
+# Endogenous Investment, Unemployment and Capital Accumulation in a Heterogeneous Keynesian Agent-Based Model
 
 ## Overview
 
 This repository contains an Agent-Based Model (ABM) built in Python with the
-**Mesa** framework.  It extends the heterogeneous Keynesian Cross of **Teglio
-(2024)** with an endogenous investment mechanism that turns accumulated private
-savings into productive capital.
+**Mesa** framework. It extends the heterogeneous Keynesian Cross of **Teglio
+(2024)** with an endogenous investment mechanism, a **labour market with
+unemployment**, and a minimal government that pays a balanced-budget
+unemployment benefit.
 
 The economy is a single-good, fixed-price, **stock-flow-consistent** circular
 flow of income: every unit of money that leaves a household as spending is
-received by a firm as revenue and paid straight back out as wages or dividends,
-so the aggregate money stock is conserved (checked in the test suite).  The
-model is an exploratory computational laboratory for the *qualitative*
-macroeconomics of alternative behavioural assumptions, not a calibrated forecast.
+received by a firm as revenue and paid straight back out as wages, dividends or
+fiscal transfers, so the aggregate money stock is conserved (checked in the test
+suite). The model is an exploratory computational laboratory for the
+*qualitative* macroeconomics of alternative behavioural assumptions, not a
+calibrated forecast.
 
 ---
 
@@ -21,133 +23,152 @@ macroeconomics of alternative behavioural assumptions, not a calibrated forecast
 > **Can endogenous investment financed through accumulated private savings
 > mitigate demand-constrained stagnation in a heterogeneous Keynesian economy?**
 
-**Short answer from the model: yes, substantially.** Moving from no investment
-to a moderate investment propensity roughly **triples steady-state output**,
-**halves the output gap**, sustains a positive capital stock, and **reduces both
-income and wealth inequality**. The effect is conditional, it requires an idle
-savings stock to deploy and that investment spending re-enter the income stream,
-and it runs into diminishing returns as the economy approaches its (expanding)
-capacity.
+**Short answer from the model: yes.** Without investment the economy is trapped
+in high unemployment *with idle capital* — firms will not hire because they
+cannot sell. Deploying accumulated savings into investment recycles demand and
+equips new jobs, driving unemployment from roughly **49% down to near zero**,
+roughly **doubling output**, and lowering **income** inequality. The mitigation
+is conditional: it needs an idle savings stock to deploy and requires that the
+spending re-enter the income stream.
 
 ![Baseline vs. endogenous-investment dynamics](macro_results.png)
 
 ---
 
-## The mechanism in three parts
+## The mechanism in four parts
 
 **1. A persistent demand leakage (the thing to be mitigated).**
-Capitalists have a lower marginal propensity to consume than workers, so they
-persistently save out of dividend income (Kaldor-Kalecki class saving).  With no
-outlet, those savings accumulate as an **idle money hoard**, a leakage from the
-circular flow of income.  A small *wealth effect* (consumption out of wealth)
-stops the baseline from collapsing to zero and instead pins it at a low
-**stagnation** equilibrium in which output sits well below productive capacity.
+Capitalists have a much lower propensity to consume than workers, so they
+persistently save out of dividend income (Kaldor–Kalecki class saving). With no
+outlet, those savings accumulate as an idle money hoard, a leakage from the
+circular flow of income.
 
-**2. Endogenous investment (the proposed remedy).**
-Each period a capitalist converts a fraction `theta` of the **accumulated
-savings** in that hoard into capital goods for the firm they own.  This does two
-things at once:
+**2. A labour market with unemployment.**
+Firms employ only as many workers as they expect to need. Weak demand therefore
+shows up as **unemployment**: workers are laid off *even while spare capital sits
+idle*. The unemployed lose their wage and cut consumption, which deepens the
+demand shortfall — the Keynesian multiplier working in reverse.
 
-- **Demand channel (Keynesian).** The investment spending re-enters aggregate
-  demand and is paid out as wages and dividends; it recycles the leakage.
-- **Supply channel.** The purchased goods become productive capital (with a
-  one-period gestation lag), raising future capacity.
+**3. Endogenous investment (the proposed remedy).**
+Each period a capitalist converts a fraction `theta` of the accumulated savings
+in that hoard into capital goods for the firm they own. This raises demand (more
+hiring) *and* equips new jobs (a Leontief capital constraint on employment), so
+it relaxes both constraints on employment at once.
 
-An accelerator term tilts investment towards firms running above their target
-utilisation and away from slack ones.
-
-**3. Stock-flow-consistent settlement.**
-Firms distribute 100 % of revenue and households only pay for goods actually
-delivered (demand is rationed when a firm hits capacity).  This is what lets the
-Keynesian "investment fills the saving gap" result *emerge* instead of leaking
-away through inconsistent accounting.
+**4. A balanced-budget automatic stabiliser.**
+A flat income tax funds an unemployment benefit; the tax rate adjusts so the
+budget balances each period. It is a pure transfer, so it puts a floor under the
+consumption of the unemployed without creating or destroying money.
 
 ---
 
 ## Model equations
 
+**Production** is Leontief: one employed worker makes `A` units of the good, and
+a job must be backed by `kappa` units of capital, so a firm can staff at most
+`K / kappa` jobs.
+
+```text
+output      = A * employed
+max jobs    = K / kappa            (capital equips jobs)
+```
+
+**Employment** is chosen from adaptive (last-period) demand expectations, capped
+by capital:
+
+```text
+desired employment = min( expected_demand / A , floor(K / kappa) )
+```
+
+**Income distribution.** With the price as numeraire, revenue equals goods sold.
+The wage rate is `w = A / (1 + markup)`, so at full utilisation the wage share is
+`1/(1+markup)` and the profit share is `markup/(1+markup)` — but only *employed*
+workers receive a wage; the unemployed do not.
+
 **Consumption** (worker MPC `c1`, lower capitalist MPC; wealth effect `lambda`):
 
 ```text
-C = c0 + mpc * income + lambda * wealth          (bounded by money on hand)
+C = c0 + mpc * income + lambda * wealth        (bounded by money on hand)
 ```
 
-**Capacity** — capital-augmented labour productivity (*capital deepening*):
-
-```text
-Y* = A * L * (1 + gamma * (K / L) ** alpha)
-```
-
-Labour sets a positive floor `A * L`; capital *per worker* raises productivity
-with diminishing returns (`alpha < 1`).  This is deliberately **not** a textbook
-Cobb-Douglas `A K^a L^(1-a)`, which would force capacity to zero as capital
-depreciates and make a demand-constrained baseline impossible to study.
-
-**Output** is demand-constrained:
-
-```text
-Y = min(demand, Y*)
-```
-
-**Investment** out of the accumulated savings hoard:
+**Investment** out of the accumulated savings hoard, with a capacity accelerator:
 
 ```text
 I = theta * hoard * utilisation_effect
-hoard = max(0, money_wealth - precautionary_buffer)
-utilisation_effect = max(0, 1 + sensitivity * (u - u_target))
+hoard              = max(0, money_wealth - precautionary_buffer)
+utilisation_effect = max(0, 1 + sensitivity * (capital_utilisation - target))
 ```
 
-**Capital** accumulation with depreciation `delta` and a one-period lag:
+**Capital** accumulation with depreciation `delta`, a one-period gestation lag,
+and a floor (basic infrastructure that is never fully scrapped):
 
 ```text
-K(t+1) = (1 - delta) * K(t) + I(t)
+K(t+1) = max( capital_floor , (1 - delta) * K(t) + I(t) )
 ```
+
+**Government** (balanced budget): benefit `= rho * w` per unemployed, funded by a
+flat tax whose rate clears `tax * income_base = benefits`, capped at `max_tax`.
 
 ---
 
 ## Simulation sequence
 
-Each period runs in a fixed order so spending, production, income distribution
-and investment settle consistently:
+Each period runs in a fixed order so the real and monetary flows settle
+consistently:
 
-1. households form consumption demand;
-2. capitalists plan investment demand;
-3. firms register the demand they face;
-4. firms produce (subject to capacity) and the goods market rations;
-5. firms distribute revenue (wages + dividends) and update capital;
-6. households settle (credit income, pay for delivered goods);
-7. capitalists settle investment (pay for delivered capital goods).
+0. firms update capital (install last period's investment, depreciate);
+1. firms plan desired employment from expected demand (capped by capital);
+2. the labour market fires excess workers and fills vacancies (random matching);
+3. households form consumption demand;
+4. capitalists plan investment demand;
+5. firms register demand, produce (subject to employed labour) and ration;
+6. firms distribute revenue as wages and dividends;
+7. the government runs the balanced-budget benefit;
+8. households settle (credit income, pay for delivered goods);
+9. capitalists settle investment (queue capital for next period).
 
 ---
 
 ## Recorded indicators
 
-`Output`, `Potential_Output`, `Output_Gap`, `Total_Capital`, `Consumption`,
-`Investment`, `Total_Wealth`, `Income_Gini`, `Wealth_Gini` (on net worth =
-money + owned capital) and `Average_Utilization`.
+`Output`, `Potential_Output`, `Output_Gap`, `Unemployment_Rate`, `Employment`,
+`Total_Capital`, `Capital_Utilization`, `Consumption`, `Investment`, `Tax_Rate`,
+`Income_Gini` and `Wealth_Gini` (on net worth = money + owned capital).
 
 ---
 
 ## Results
 
-Steady-state comparison (100 households, 10 firms, means over 30 seeds):
+Steady-state comparison (100 households, 10 firms, means over 20 seeds):
 
 | Indicator            | Baseline `theta = 0` | Investment `theta = 0.15` |
 | -------------------- | -------------------: | ------------------------: |
-| Output               |                 ~53 |                      ~148 |
-| Potential output     |                ~100 |                      ~195 |
-| Output gap           |                ~47 % |                     ~24 % |
-| Capital stock        |                 ~0 |                      ~365 |
-| Capacity utilisation |               ~0.53 |                     ~0.76 |
-| Income Gini          |               ~0.19 |                     ~0.18 |
-| Wealth Gini          |               ~0.91 |                     ~0.77 |
+| Output               |                 ~50 |                       ~98 |
+| Potential output     |                 ~70 |                      ~100 |
+| Unemployment rate    |                ~49 % |                     ~1.5 % |
+| Output gap           |                ~29 % |                      ~2 % |
+| Capital stock        |                 ~35 |                      ~245 |
+| Capital utilisation  |               ~0.73 |                     ~0.20 |
+| Income Gini          |               ~0.25 |                     ~0.15 |
+| Wealth Gini          |               ~0.91 |                     ~0.90 |
 
-Sweeping the investment propensity `theta` (`theta_sweep.png`) shows output
-rising and the output gap and wealth inequality falling, all at a **diminishing
-rate** as the economy moves from demand-constrained towards capacity-constrained
-territory.
+The baseline's key signature is **high unemployment with capital utilisation well
+below one**: idle capital proves the constraint is *demand*, not scarcity.
+Investment lowers unemployment, raises output, and cuts **income** inequality
+(more people earn a wage) — though **wealth** inequality stays high, since the
+new capital is owned by the same capitalists.
 
 ![Steady-state response to the investment propensity](theta_sweep.png)
+
+**Validation.** During the adjustment path the model reproduces **Okun's law** —
+a strong negative relationship between output growth and the change in
+unemployment (correlation ≈ −0.8) — a regularity it was never fitted to.
+
+![Okun's law in the transitional dynamics](okun.png)
+
+Because employment is discrete and matching is random, outcomes now vary across
+seeds (visible confidence bands), so the model genuinely exploits its
+agent-based structure rather than collapsing to a representative-agent aggregate.
 
 ---
 
@@ -156,17 +177,17 @@ territory.
 ```text
 src/
 ├── agents.py        Firm, Household, Capitalist behaviour
-├── model.py         MacroModel: sequence, settlement, metrics
+├── model.py         MacroModel: sequence, labour market, government, metrics
 └── experiment.py    Monte-Carlo runner, confidence bands, theta sweep
 notebooks/
-└── 01_Endogenous_Investment.ipynb   Baseline vs. investment + sweep
+└── 01_Endogenous_Investment.ipynb   Baseline vs. investment, sweep, Okun's law
 tests/
 ├── conftest.py
-└── test_model.py    Stock-flow consistency, determinism, headline result
+└── test_model.py    Stock-flow consistency, labour accounting, headline result
 performance/
 └── engine.cpp       Fast aggregate (representative-agent) sweep companion
 requirements.txt
-macro_results.png, theta_sweep.png
+macro_results.png, theta_sweep.png, okun.png
 ```
 
 ---
@@ -179,7 +200,7 @@ python -m pip install -r requirements.txt
 # reproduce the figures and analysis
 jupyter nbconvert --to notebook --execute --inplace notebooks/01_Endogenous_Investment.ipynb
 
-# run the checks (stock-flow consistency, determinism, economic result)
+# run the checks (stock-flow consistency, labour accounting, economic result)
 python -m pytest tests/ -q
 ```
 
@@ -206,19 +227,20 @@ g++ -O2 -std=c++11 performance/engine.cpp -o engine && ./engine
 
 ## Current limitations
 
-The model deliberately abstracts from several mechanisms in order to isolate the
-role of endogenous investment.  It does **not** yet include endogenous prices,
-banking or credit, monetary or fiscal policy, firm entry and exit, an explicit
-labour market with unemployment, adaptive expectations, or technological change.
+The model still abstracts from endogenous prices, banking and credit, monetary
+policy, firm entry and exit, wage bargaining (the wage rate is fixed), adaptive
+expectations beyond a naive rule, and technological change. The government is
+minimal (a balanced-budget benefit, no discretionary fiscal policy).
 
 ---
 
 ## Future development
 
-Heterogeneous firm productivity; endogenous markups; adaptive investment
-expectations; an explicit labour market; firm entry and bankruptcy; empirical
-calibration; wider sensitivity analysis; and robustness across alternative
-network topologies, all preserving the existing stock-flow structure.
+Wage adjustment (a Phillips curve); credit and banking (endogenous money);
+heterogeneous firm productivity with competitive selection; firm entry and
+bankruptcy; endogenous business cycles from expectations and inventories;
+empirical calibration; and global sensitivity analysis — all preserving the
+existing stock-flow structure.
 
 ---
 
@@ -234,7 +256,7 @@ Mesa: Agent-Based Modeling in Python — <https://mesa.readthedocs.io/>
 
 ## Disclaimer
 
-An exploratory computational economics model for research and education.  It
+An exploratory computational economics model for research and education. It
 investigates the qualitative implications of behavioural assumptions within a
 heterogeneous Keynesian framework; it is not a calibrated forecast or a policy
 recommendation.
