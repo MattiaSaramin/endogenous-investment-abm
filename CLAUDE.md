@@ -13,12 +13,34 @@
 Estensione del modello ad agenti (ABM) di **Teglio (2025)** — una "croce
 keynesiana disaggregata" con agenti eterogenei — per aggiungere **investimento
 endogeno e accumulazione di capitale**, endogenizzando così sia la domanda sia
-l'offerta.
+l'offerta. (Citare **2025**: volume a stampa *Journal of Economic Interaction and
+Coordination* 20(1), 107–139; online-first maggio 2024.)
 
-**Stella polare (confermata):** l'investimento deve guidare l'output **via
-capitale** — l'accumulazione di capitale endogenizza il lato dell'offerta.
-Non è "l'investimento cura la disoccupazione da domanda" (tesi diversa, vedi
-§3): il canale di offerta deve essere vivo e marginalmente attivo.
+**Stella polare:** l'investimento deve guidare l'output **via capitale** —
+l'accumulazione di capitale endogenizza il lato dell'offerta. Il canale di
+offerta deve essere vivo e marginalmente attivo. Questo è ciò che il core
+Cobb-Douglas ha stabilito (§7).
+
+**Precisazione importante (dal punto 11 in poi).** "Via capitale" **non**
+significa "il capitale deve sempre vincolare l'output". Con il mercato del lavoro
+(punto 11) il modello riattiva il canale di domanda, e in regime
+demand-constrained la capacità non vincola al margine. I due canali coesistono e
+il regime diventa un **esito**, non un requisito. In particolare:
+
+> **Un esito wage-led è un RISULTATO, non un fallimento.** In regime
+> demand-constrained, più capitale ⇒ meno lavoratori necessari per la stessa
+> domanda (`L_domanda` è decrescente in K) ⇒ disoccupazione tecnologica ⇒ monte
+> salari e quota salari giù ⇒ domanda giù (l'MPC dei capitalisti è più bassa di
+> quella dei lavoratori). Il contro-effetto è la domanda di investimento
+> (`I = ρπ`, π cresce con K). Il segno netto è la questione **wage-led vs
+> profit-led** kaleckiana, ed è un **oggetto di ricerca**, non un bug. Se il
+> modello risultasse wage-led — l'investimento che deprime l'output — quello è il
+> ricongiungimento più forte possibile con il meccanismo di leakage di Teglio, ed
+> è da riportare, **non da ricalibrare via**.
+
+Il modello deve essere insieme **teoricamente coerente** ed **empiricamente
+fondato** (coerente con benchmark macroeconomici reali). Framework: **Mesa**
+(Python), test con `pytest`.
 
 Il modello deve essere insieme **teoricamente coerente** (l'investimento guida
 davvero l'output) ed **empiricamente fondato** (coerente con benchmark
@@ -43,13 +65,16 @@ Tre branch, tre significati distinti. Tenerli separati è un invariante.
   pareggio. ~818 righe testate (15 test verdi). **Prezioso ma fuori rotta**
   (vedi §3): verrà reinnestato al punto 11 sulla fondazione corretta, non prima.
 
-- **`cobb-douglas-core`** — **Core di offerta: costruito, calibrato, committato.**
-  Diverge da `main`. Cobb-Douglas vera + finanziamento interno via utili
-  trattenuti (conto d'impresa infra-periodo, nessun sequestro di moneta). 19 test
-  verdi. Numeri misurati e cornice di regime in §4 e §7. **Ancora sul branch
-  `experiment.py`, notebook, README, figure e C++ engine con l'API vecchia
-  (`theta`):** è lo stato "core nuovo, contorno vecchio" da chiudere nel
-  **consolidamento** (§8), che è il task attivo ora.
+- **`cobb-douglas-core`** — **Core di offerta: costruito, calibrato, committato e
+  CONSOLIDATO.** Diverge da `main`. Cobb-Douglas vera + finanziamento interno via
+  utili trattenuti (conto d'impresa infra-periodo, nessun sequestro di moneta).
+  19 test verdi. README, notebook, `experiment.py` (API `retention_ratio`) e
+  figure allineati al codice; `performance/engine.cpp` **marcato STALE** (mai
+  portato alla Cobb-Douglas — task separato tracciato). Numeri misurati e cornice
+  di regime in §4 e §7. È la **base del punto 11**.
+
+- **`labour-market`** — **Ramo di lavoro attivo** (creato da `cobb-douglas-core`).
+  Punto 11: mercato del lavoro endogeno con salario fisso `w̄`. Vedi §6bis.
 
 ---
 
@@ -167,7 +192,7 @@ risultati. Vale anche per la memoria di progetto.
 
 ---
 
-## 6. Decisione architetturale corrente: sequenziare il mercato del lavoro
+## 6. Decisione architetturale: sequenziare il mercato del lavoro (ESEGUITA)
 
 Il capitale deve tornare a mordere. Serve **sia** una struttura produttiva con
 margine intensivo vivo **sia** un regime operativo in cui il capitale vincola
@@ -188,6 +213,58 @@ Ripartire da `main` (non dal branch Leontief) perché la baseline Fase 1 ha già
 lavoro semplice e imprese possedute dai capitalisti: ricostruire da lì cambia
 due cose (produzione, finanziamento) e tiene il resto, invece di smontare prima
 mercato del lavoro e governo.
+
+---
+
+## 6bis. Punto 11 — decisioni di design (task attivo)
+
+**Fuori sequenza, DELIBERATAMENTE.** La roadmap (§8) colloca il punto 11 dopo 8,
+9 e 10. Ci si va direttamente, saltando eterogeneità, markup endogeno e
+aspettative adattive. È una **decisione presa consapevolmente** dal PI (a
+differenza del salto fuori sequenza del branch Leontief, che fu scoperto a
+posteriori): il punto 11 è ciò che completa la narrazione del modello, e gli 8–10
+non ne sono prerequisiti. **Registrato qui perché non torni a sembrare una
+discrepanza silenziosa.**
+
+**Salario fisso `w̄`, non residuale.** In Leontief `output = A·L` (prodotto per
+lavoratore costante) faceva sì che salario fisso ⟺ quota salari costante. In
+Cobb-Douglas il prodotto per lavoratore è `A·(K/L)^α` e **quella coincidenza si
+rompe**: o salario fisso (la disoccupazione taglia il monte salari ⇒ canale di
+domanda vivo) o quota salari pinnata (ma monte salari invariante all'occupazione
+⇒ mercato del lavoro cosmetico). Scelto **salario fisso**.
+
+**Conseguenza: `markup` RIMOSSO.** Con prezzo fisso a 1 e salario parametrico, la
+distribuzione la determina `w̄`; il profitto diventa residuo (`sales − w̄·L`).
+`w̄` è il nuovo parametro distributivo.
+
+> **La quota salari 0.667 cessa di essere un'identità e diventa un esito
+> misurato.** Non è una perdita: un'identità vera per costruzione non valida
+> nulla. Limite strutturale nuovo: l'impresa non assume mai dove `MPL < w̄`,
+> quindi **quota salari ≤ 1−α sempre**, con uguaglianza solo al profit-max
+> (knife-edge). Il target giusto è il **range empirico 0.60–0.68**, non 0.667.
+
+**Occupazione a tre regimi:** `L = min(L_domanda, L_profitmax, N)` — demand-
+constrained (disoccupazione keynesiana involontaria), profit-constrained
+(disoccupazione classica; qui e solo qui quota salari = 1−α), labour-constrained
+(piena occupazione).
+
+**Trappola AK — invariante strutturale.** Con `w̄` fisso e lavoro illimitato,
+`L_profitmax ∝ K` ⇒ `Y* ∝ K`: rendimenti costanti al capitale, crescita
+illimitata, nessuno steady state. **Il tetto `L ≤ N` è ciò che restituisce i
+rendimenti decrescenti**, non un dettaglio realistico. Da assertare in test.
+
+**Ridefinizione dell'utilizzo (necessaria).** Con `L` scelto per soddisfare la
+domanda attesa, `Y*` insegue `Y` e `u ≈ 1` per costruzione: l'acceleratore
+riceverebbe un segnale morto. Capacità ridefinita al profit-max:
+`Y*_firm = A·K^α·L_profitmax^(1−α)`.
+
+**Il regime è un esito, non un requisito** — vedi la precisazione in §1
+(wage-led vs profit-led). I criteri di accettazione devono chiedere di
+**riportare quale vincolo morde**, non di garantirne uno.
+
+**Debito di calibrazione che si ripaga qui:** `c0=1.0` e `wealth_effect=0.08`
+erano cranked up per forzare il capacity-constraint in assenza di mercato del
+lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
 
 ---
 
@@ -232,33 +309,60 @@ mercato del lavoro e governo.
 
 ## 8. Roadmap
 
-**Fatto:** core Cobb-Douglas + finanziamento interno (§7) — costruito, calibrato,
-committato su `cobb-douglas-core` (19 test verdi).
+**Fatto:**
+- Core Cobb-Douglas + finanziamento interno (§7): costruito, calibrato,
+  committato su `cobb-douglas-core` (19 test verdi).
+- **Consolidamento**: README, notebook, `experiment.py`, figure allineati al
+  codice; cornice onesta scritta nel README; `engine.cpp` marcato STALE.
+- **Blocco bibliografico (punto 4)**: `parameter_notes.md` nel repo — fonte,
+  stima, range e verdetto di ancoraggio per ogni parametro. Vedi §4 e §11.
 
-**Prossimo (attivo): consolidamento.** Il core è committato ma `experiment.py`,
-notebook, README, figure e `engine.cpp` usano ancora l'API vecchia (`theta`).
-Allinearli alla nuova architettura (`retention_ratio`, sweep su ρ), rifare il
-confronto baseline-vs-esteso e le figure, e **scrivere nel README la cornice
-onesta** (regime di offerta, canale di domanda dormiente, parametri scelti per
-regime) per prevenire il prossimo mismatch. Poi: **blocco bibliografico**
-(punto 4) per saldare il debito di ancoraggio parametri (§4).
+**Attivo: punto 11** — mercato del lavoro endogeno su `labour-market`. Design in
+§6bis.
 
-**Successivi:** 8) produttività eterogenea tra imprese; 9) prezzi e markup
-endogeni (tocca la calibrazione della quota salari, da ricalibrare con α);
-10) aspettative adattive su domanda e investimento; **11) mercato del lavoro
-esplicito con disoccupazione** (reinnesto del checkpoint Leontief sulla nuova
-fondazione); 12) entrata/uscita/fallimento imprese; 13) cambiamento tecnologico
-(crescita di A); 14) banche e credito (estende la matrice SFC: depositi,
-prestiti); 15) politica monetaria e fiscale; 16) stesura metodologia e risultati.
+**Successivi:** 8) produttività eterogenea tra imprese; **9) prezzi endogeni
+(RISCRITTO — vedi sotto)**; 10) aspettative adattive su domanda e investimento
+(al punto 11 l'aspettativa è **statica**: domanda del periodo precedente);
+12) entrata/uscita/fallimento imprese; 13) cambiamento tecnologico (crescita di
+A); 14) banche e credito (estende la matrice SFC: depositi, prestiti);
+15) politica monetaria e fiscale — il **governo con sussidio a bilancio in
+pareggio esiste già** sul branch `labour-market-leontief`, da reinnestare;
+16) stesura metodologia e risultati.
 
-**Ricerca bibliografica (continua):** ogni parametro deve avere una fonte o
-essere dichiarato come scelta di modellazione. Priorità immediate senza fonte,
-tutte nel core corrente: **α (=1/3), `retention_ratio` (=0.40), δ (=0.05),
-`c0` (=1.0), `wealth_effect` (=0.08), `investment_floor` (=0.1), `beta` (=0.5),
-`target_utilization` (=0.90)**. In particolare `wealth_effect=0.08` è alto vs
-MPC-ricchezza empirico ~0.03–0.05. Per il futuro reinnesto del lavoro (punto 11):
-κ, `capital_floor`, `benefit_replacement_rate`, `max_tax`, tarati nel branch
-Leontief senza ancoraggio.
+> **Punto 9 riscritto.** Diceva: "markup endogeno che risponde a
+> domanda/concorrenza; il markup fissa oggi le quote fattoriali, quindi
+> endogenizzarlo tocca la quota salari". **Obsoleto dal punto 11**, che rimuove
+> il parametro `markup` (§6bis). Cosa resta da endogenizzare: il **prezzo** (oggi
+> numerario = 1) e il **salario `w̄`** (curva di Phillips: salario che risponde
+> alla disoccupazione — follow-up naturale del punto 11, tenuto fuori scope lì
+> per non muovere due cose insieme in calibrazione). Nota: rimosso il parametro,
+> il **markup implicito** (`prodotto medio / w̄`) diventa già un **esito**
+> endogeno — parte del punto 9 arriva come effetto collaterale. Per il resto
+> serviranno dati sui markup (De Loecker, Eeckhout & Unger 2020).
+
+**Ricerca bibliografica (continua, primo blocco FATTO → `parameter_notes.md`):**
+ogni parametro deve avere una fonte o essere dichiarato come scelta di
+modellazione. Stato attuale:
+- **Ancorati:** α (1/3), quote fattoriali, K/Y, I/Y, **δ (0.05)** e
+  **`retention_ratio` (0.40)** — questi due **congiuntamente**: dati i target
+  `K/Y≈2.6` e `I/Y≈0.13`, l'identità `I = δK` impone `δ ≈ 0.05` e `ρ` fissa I/Y.
+  **Non sono ancorabili in isolamento; non ricalibrarli "verso il centro della
+  letteratura"** (vedi `parameter_notes.md`, §"Il sistema congiunto").
+- **Scelte di regime dichiarate (non stime):** `c0`, `wealth_effect`,
+  `target_utilization`, e l'utilizzo realizzato 0.99 (l'empirico è ~0.80).
+  Ancoraggio **rimandato al punto 11**, dove λ può scendere a ~0.05.
+- **Scelte di modellazione senza referente:** `investment_floor`, `beta` — si
+  trattano in sensitivity analysis (punto 5), non con l'ancoraggio.
+- **Nuovi dal punto 11, da dichiarare:** `w̄`, `N`. Per un eventuale reinnesto del
+  governo (punto 15): `benefit_replacement_rate`, `max_tax`, tarati nel branch
+  Leontief senza ancoraggio.
+
+**Punto 5 (analisi di sensibilità globale): RIMANDATO PER DECISIONE** al modello
+finito — non si stabilisce la robustezza su una tappa intermedia nota.
+
+**Debito residuo:** verificare I/Y con una serie BEA primaria (ora è ordine di
+grandezza); **fissare l'unità temporale del periodo** (δ, K/Y, I/Y sono
+implicitamente annualizzati).
 
 ---
 
@@ -271,9 +375,17 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   settlement. Con il finanziamento a utili trattenuti, la ritenzione **non deve**
   rompere la conservazione (profitti trattenuti = posta monetaria d'impresa, da
   aggiungere alla grandezza conservata).
-- **Sequenza del periodo** in `model.py`, esplicita e motivata: domanda → piani
-  di investimento → produzione/razionamento → contabilità imprese → settlement
-  famiglie → settlement investimenti. Ogni deviazione va dichiarata e giustificata.
+- **Sequenza del periodo** in `model.py`, esplicita e motivata nel docstring.
+  Sequenza **effettiva sul codice committato** (`cobb-douglas-core`):
+  domanda → piani di investimento → registrazione domanda →
+  produzione/razionamento → contabilità imprese → **settlement investimenti** →
+  **settlement famiglie**. Nota: il settlement investimenti precede quello delle
+  famiglie, così il dividendo residuo non subisce un lag aggiuntivo.
+  *(Correzione 2026-07: questo file elencava l'ordine inverso — famiglie prima di
+  investimenti — in contraddizione col codice committato e col README. Il drift è
+  durato dalla riscrittura del core al punto 11. Il documento anti-drift era
+  driftato: è il motivo per cui va riletto contro il codice a ogni brief.)*
+  Ogni deviazione va dichiarata e giustificata.
 - **Determinismo per seed** e **test verdi** dopo ogni modifica.
 - **README, codice e figure coerenti tra loro** (è già emerso un disallineamento
   documentale in passato — la spec "Fase 2" fantasma: non deve ripetersi).
@@ -305,4 +417,10 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 - `src/experiment.py` — runner Monte-Carlo, bande di confidenza, sweep
 - `notebooks/01_Endogenous_Investment.ipynb` — baseline vs esteso + sweep
 - `tests/test_model.py`, `tests/conftest.py` — SFC, determinismo, risultato headline
-- `performance/engine.cpp` — aggregato di confronto (approssimazione, non port)
+- `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
+  non il core Cobb-Douglas. Non usare per risultati finché non è portato.
+- `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di
+  ancoraggio per ogni parametro; §"Il sistema congiunto" (α, ρ, δ, K/Y, I/Y).
+  **Da estendere a ogni nuova estensione.**
+- `CLAUDE.md` — questo file. **Da rileggere contro il codice a ogni brief**: ha
+  già driftato una volta (§9).
