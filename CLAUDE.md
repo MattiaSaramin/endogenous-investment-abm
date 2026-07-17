@@ -50,50 +50,55 @@ macroeconomici reali). Framework: **Mesa** (Python), test con `pytest`.
 
 ## 2. Stato reale del repository (topologia dei branch)
 
-**Cinque branch locali**, significati distinti. Tenerli separati è un invariante.
-Sono in relazione lineare: `main` → `cobb-douglas-core` → `labour-market` →
-`ces-production` (ciascuno contiene il precedente). *Nota:* alcuni tip **remoti**
-su GitHub (`main`, `cobb-douglas-core`, `labour-market-leontief`) hanno commit
-**solo di documentazione** più avanti dei tip locali; il codice `src/`/`tests/`
-coincide (verificato con `git diff --stat`).
+Dopo il merge del brief 06, **`main` è la linea principale corrente** (CES +
+mercato del lavoro) e **contiene tutto il lavoro**; la baseline Fase 1 è
+preservata dal **tag** `phase-1-baseline`. Gli altri branch restano come
+checkpoint storici citabili, con il codice ormai contenuto in `main`. Relazione
+lineare: `phase-1-baseline` (tag) → `cobb-douglas-core` → `labour-market` →
+`ces-production` → **merge in `main`**. *Nota:* alcuni tip **remoti** su GitHub
+(`cobb-douglas-core`, `labour-market-leontief`) hanno commit **solo di
+documentazione** più avanti dei tip locali; il codice `src/`/`tests/` coincide
+(verificato con `git diff --stat`).
 
-- **`main`** — **Baseline Fase 1** (additiva-nesting). Economia a bene unico,
-  prezzo fisso, stock-flow-consistent. Capacità con capital-deepening
-  `Y* = A·L·(1 + γ·(K/L)^α)`; investimento `I = θ·hoard·util_effect` finanziato
-  dal risparmio monetario personale del capitalista (stock). Nessun mercato del
-  lavoro. README e codice **coincidono**. È la **baseline citabile in tesi**,
-  taggata `phase-1-baseline` (vedi *Nota sui tag*).
+- **`main`** — **linea principale corrente.** Core a **CES normalizzata**
+  `Y* = Y0·[π0·(K/K0)^r + (1−π0)·(L/L0)^r]^(1/r)` con **mercato del lavoro
+  endogeno** (salario fisso `w̄`, `L = min(L_domanda, L_profitmax, N)`) e
+  finanziamento interno via utili trattenuti. Risultato del merge di
+  `ces-production` (brief 06). README, notebook, figure e codice **coincidono**;
+  CSV misurati in `results/`; driver riproducibile `scripts/run_brief05.py`.
+  **345 test verdi.** Numeri e cornice di regime nel README e in §4/§7.
 
-- **`labour-market-leontief`** — **Checkpoint del punto 11 della roadmap,
-  costruito fuori sequenza.** Produzione **Leontief** `output = A·L` con vincolo
-  di capitale sui posti (`max_jobs = K/κ`); mercato del lavoro con
-  disoccupazione involontaria; settore pubblico con sussidio a bilancio in
-  pareggio. ~818 righe testate (15 test verdi). **Prezioso ma fuori rotta**
-  (vedi §3): verrà reinnestato solo per il governo (punto 15), non mergiato.
+- **`phase-1-baseline`** (tag, non branch) — **Baseline Fase 1 citabile**
+  (additiva-nesting): capacità `Y* = A·L·(1 + γ·(K/L)^α)`, investimento
+  `I = θ·hoard·util_effect`, nessun mercato del lavoro. README e codice
+  coincidono; **12 test verdi**. È lo stato che `main` aveva *prima* del merge
+  brief 06 (commit `a02bf65`). Baseline citabile in tesi.
 
-- **`cobb-douglas-core`** — **Core di offerta** (Cobb-Douglas + finanziamento
-  interno via utili trattenuti; conto d'impresa infra-periodo, nessun sequestro di
-  moneta). 19 test. **Checkpoint storico: il suo codice è contenuto in
-  `labour-market` e `ces-production`.** Numeri e cornice di regime in §4 e §7.
+- **`cobb-douglas-core`** (branch, checkpoint storico) — Core di offerta
+  (Cobb-Douglas + finanziamento interno via utili trattenuti; conto d'impresa
+  infra-periodo, nessun sequestro di moneta). 19 test. **Il suo codice è contenuto
+  in `main`.** Numeri e cornice di regime in §4 e §7.
 
-- **`labour-market`** — **Punto 11: mercato del lavoro endogeno** (salario fisso
-  `w̄`, occupazione `L = min(L_domanda, L_profitmax, N)`, `markup` rimosso, profitto
-  residuo). 17 test. **Checkpoint: contenuto in `ces-production`.** Design in §6bis.
+- **`labour-market`** (branch, checkpoint storico) — Punto 11: mercato del lavoro
+  endogeno sul core Cobb-Douglas (salario fisso `w̄`, `markup` rimosso, profitto
+  residuo). 17 test. **Contenuto in `main`.** Design in §6bis.
 
-- **`ces-production`** — **Ramo di lavoro corrente e consolidato.** Generalizza il
-  core a una **CES normalizzata** con elasticità σ (brief 04: sweep σ e *sign
-  frontier* — il segno di `dY/dρ` dipende da σ) più lo **stack di robustezza**
-  brief 05 (pannello per-seed a 20 seed, slope OLS su supporto viable comune,
-  bootstrap CI su σ*, sensibilità a supporto e ancora, curvatura) e il
-  **consolidamento documentale** brief 06 (README, notebook, figure allineati al
-  codice; CSV in `results/`; driver riproducibile `scripts/run_brief05.py`, thread
-  BLAS pinnati). **345 test verdi.**
+- **`ces-production`** (branch, checkpoint storico) — Dove sono stati svolti brief
+  04 (CES + sign frontier), brief 05 (stack di robustezza) e brief 06
+  (consolidamento). **Mergiato in `main`** (contenuto in `main`); il suo tip è il
+  secondo parent del commit di merge.
+
+- **`labour-market-leontief`** (branch) — Checkpoint del punto 11 costruito fuori
+  sequenza: produzione **Leontief** `output = A·L` con vincolo di capitale sui
+  posti (`max_jobs = K/κ`) e settore pubblico a bilancio in pareggio. 15 test.
+  **Fuori rotta e NON mergiato**: da reinnestare solo per il governo (punto 15).
 
 **Nota sui tag.** `phase-1-baseline` è il tag **citabile** della baseline Fase 1
-(creato sul tip di `main`). Esiste anche un tag preesistente `phase1-baseline`
-(senza il secondo trattino), su un commit diverso e **non correlato**: non usarlo
-come referente — è tenuto solo per non riscrivere la storia dei tag. Altri tag
-storici: `cobb-douglas-core-v1`, `labour-market-v1`, `leontief-exploration`.
+(sul commit `a02bf65`, ex tip di `main`). Esiste anche un tag preesistente
+`phase1-baseline` (senza il secondo trattino), su un commit diverso e **non
+correlato**: non usarlo come referente — è tenuto solo per non riscrivere la
+storia dei tag. Altri tag storici: `cobb-douglas-core-v1`, `labour-market-v1`,
+`leontief-exploration`.
 
 ---
 
