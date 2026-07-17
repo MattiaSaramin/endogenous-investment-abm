@@ -50,31 +50,50 @@ macroeconomici reali). Framework: **Mesa** (Python), test con `pytest`.
 
 ## 2. Stato reale del repository (topologia dei branch)
 
-Tre branch, tre significati distinti. Tenerli separati è un invariante.
+**Cinque branch locali**, significati distinti. Tenerli separati è un invariante.
+Sono in relazione lineare: `main` → `cobb-douglas-core` → `labour-market` →
+`ces-production` (ciascuno contiene il precedente). *Nota:* alcuni tip **remoti**
+su GitHub (`main`, `cobb-douglas-core`, `labour-market-leontief`) hanno commit
+**solo di documentazione** più avanti dei tip locali; il codice `src/`/`tests/`
+coincide (verificato con `git diff --stat`).
 
 - **`main`** — **Baseline Fase 1** (additiva-nesting). Economia a bene unico,
   prezzo fisso, stock-flow-consistent. Capacità con capital-deepening
   `Y* = A·L·(1 + γ·(K/L)^α)`; investimento `I = θ·hoard·util_effect` finanziato
   dal risparmio monetario personale del capitalista (stock). Nessun mercato del
-  lavoro. README e codice **coincidono**. È la **baseline citabile in tesi**.
+  lavoro. README e codice **coincidono**. È la **baseline citabile in tesi**,
+  taggata `phase-1-baseline` (vedi *Nota sui tag*).
 
 - **`labour-market-leontief`** — **Checkpoint del punto 11 della roadmap,
   costruito fuori sequenza.** Produzione **Leontief** `output = A·L` con vincolo
   di capitale sui posti (`max_jobs = K/κ`); mercato del lavoro con
   disoccupazione involontaria; settore pubblico con sussidio a bilancio in
   pareggio. ~818 righe testate (15 test verdi). **Prezioso ma fuori rotta**
-  (vedi §3): verrà reinnestato al punto 11 sulla fondazione corretta, non prima.
+  (vedi §3): verrà reinnestato solo per il governo (punto 15), non mergiato.
 
-- **`cobb-douglas-core`** — **Core di offerta: costruito, calibrato, committato e
-  CONSOLIDATO.** Diverge da `main`. Cobb-Douglas vera + finanziamento interno via
-  utili trattenuti (conto d'impresa infra-periodo, nessun sequestro di moneta).
-  19 test verdi. README, notebook, `experiment.py` (API `retention_ratio`) e
-  figure allineati al codice; `performance/engine.cpp` **marcato STALE** (mai
-  portato alla Cobb-Douglas — task separato tracciato). Numeri misurati e cornice
-  di regime in §4 e §7. È la **base del punto 11**.
+- **`cobb-douglas-core`** — **Core di offerta** (Cobb-Douglas + finanziamento
+  interno via utili trattenuti; conto d'impresa infra-periodo, nessun sequestro di
+  moneta). 19 test. **Checkpoint storico: il suo codice è contenuto in
+  `labour-market` e `ces-production`.** Numeri e cornice di regime in §4 e §7.
 
-- **`labour-market`** — **Ramo di lavoro attivo** (creato da `cobb-douglas-core`).
-  Punto 11: mercato del lavoro endogeno con salario fisso `w̄`. Vedi §6bis.
+- **`labour-market`** — **Punto 11: mercato del lavoro endogeno** (salario fisso
+  `w̄`, occupazione `L = min(L_domanda, L_profitmax, N)`, `markup` rimosso, profitto
+  residuo). 17 test. **Checkpoint: contenuto in `ces-production`.** Design in §6bis.
+
+- **`ces-production`** — **Ramo di lavoro corrente e consolidato.** Generalizza il
+  core a una **CES normalizzata** con elasticità σ (brief 04: sweep σ e *sign
+  frontier* — il segno di `dY/dρ` dipende da σ) più lo **stack di robustezza**
+  brief 05 (pannello per-seed a 20 seed, slope OLS su supporto viable comune,
+  bootstrap CI su σ*, sensibilità a supporto e ancora, curvatura) e il
+  **consolidamento documentale** brief 06 (README, notebook, figure allineati al
+  codice; CSV in `results/`; driver riproducibile `scripts/run_brief05.py`, thread
+  BLAS pinnati). **345 test verdi.**
+
+**Nota sui tag.** `phase-1-baseline` è il tag **citabile** della baseline Fase 1
+(creato sul tip di `main`). Esiste anche un tag preesistente `phase1-baseline`
+(senza il secondo trattino), su un commit diverso e **non correlato**: non usarlo
+come referente — è tenuto solo per non riscrivere la storia dei tag. Altri tag
+storici: `cobb-douglas-core-v1`, `labour-market-v1`, `leontief-exploration`.
 
 ---
 
@@ -312,13 +331,26 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
 **Fatto:**
 - Core Cobb-Douglas + finanziamento interno (§7): costruito, calibrato,
   committato su `cobb-douglas-core` (19 test verdi).
-- **Consolidamento**: README, notebook, `experiment.py`, figure allineati al
-  codice; cornice onesta scritta nel README; `engine.cpp` marcato STALE.
+- **Punto 11 — mercato del lavoro endogeno** (salario fisso `w̄`, occupazione
+  `L = min(L_domanda, L_profitmax, N)`, `markup` rimosso, profitto residuo):
+  costruito su `labour-market`, poi portato su `ces-production`. Design §6bis;
+  esito **wage-led a σ=1** misurato.
+- **Brief 04 — CES normalizzata** (elasticità σ, sweep e *sign frontier*): la
+  produzione è ora `Y* = Y0·[π0·(K/K0)^r + (1−π0)·(L/L0)^r]^(1/r)` con
+  `r = (σ−1)/σ`, che nidifica la Cobb-Douglas (σ=1) e la Leontief (σ→0). Il
+  **segno di `dY/dρ` dipende da σ** (σ* ≈ 0.65 a c0=1.0).
+- **Brief 05 — stack di robustezza**: pannello per-seed (20 seed), slope OLS su
+  supporto viable comune, **bootstrap CI su σ***, sensibilità a supporto e ancora
+  (Temple 2012), curvatura. Driver **riproducibile** `scripts/run_brief05.py`
+  (thread BLAS pinnati); output in `results/ces_b05_*.csv`.
+- **Consolidamento (brief 06)**: README, notebook, figure allineati al codice
+  CES + mercato del lavoro; cornice onesta nel README; CSV spostati in `results/`;
+  `engine.cpp` resta STALE. **README, notebook, figure e codice coincidono.**
 - **Blocco bibliografico (punto 4)**: `parameter_notes.md` nel repo — fonte,
-  stima, range e verdetto di ancoraggio per ogni parametro. Vedi §4 e §11.
+  stima, range e verdetto di ancoraggio per ogni parametro, **allineato ai default
+  del codice**. Vedi §4 e §11.
 
-**Attivo: punto 11** — mercato del lavoro endogeno su `labour-market`. Design in
-§6bis.
+**Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** 8) produttività eterogenea tra imprese; **9) prezzi endogeni
 (RISCRITTO — vedi sotto)**; 10) aspettative adattive su domanda e investimento
@@ -412,13 +444,23 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 
 ## 11. Struttura del codice
 
-- `src/agents.py` — Firm, Household, Capitalist
-- `src/model.py` — MacroModel: sequenza del periodo, settlement, metriche
-- `src/experiment.py` — runner Monte-Carlo, bande di confidenza, sweep
-- `notebooks/01_Endogenous_Investment.ipynb` — baseline vs esteso + sweep
-- `tests/test_model.py`, `tests/conftest.py` — SFC, determinismo, risultato headline
+- `src/agents.py` — Firm (CES normalizzata, salario fisso, finanziamento interno),
+  Household, Capitalist; helper CES (`ces_capacity`, `ces_labour_*`, `ces_mpl`, …)
+- `src/model.py` — MacroModel: mercato del lavoro, sequenza del periodo,
+  settlement, metriche; ancore di normalizzazione `ANCHOR_*`
+- `src/experiment.py` — runner Monte-Carlo, sweep ρ, griglia (σ, ρ) e sign
+  frontier (brief 04), stack di robustezza brief 05 (`run_grid_panel`,
+  `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …)
+- `scripts/run_brief05.py` — driver **riproducibile** degli stage A/B/C del brief
+  05; rigenera `results/ces_b05_*.csv` (thread BLAS pinnati per determinismo)
+- `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
+  con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
+- `results/` — output misurati committati: `ces_*.csv` (brief 04) e
+  `ces_b05_*.csv` (brief 05). Rigenerabili dal driver / notebook
+- `tests/test_model.py`, `tests/conftest.py` — SFC, determinismo, contabilità del
+  lavoro, nesting CES, pin di regressione (tolleranza), stack di robustezza
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
-  non il core Cobb-Douglas. Non usare per risultati finché non è portato.
+  non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di
   ancoraggio per ogni parametro; §"Il sistema congiunto" (α, ρ, δ, K/Y, I/Y).
   **Da estendere a ogni nuova estensione.**

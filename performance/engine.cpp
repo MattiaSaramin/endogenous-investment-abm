@@ -1,3 +1,11 @@
+// STALE: implements the additive Phase-1 model, NOT the current Cobb-Douglas
+// core. Do not use for results until ported. See README.
+//
+// The Python ABM in src/ is now a true Cobb-Douglas supply core with internal
+// (retained-earnings) financing; this aggregate engine still uses the old
+// additive capacity `A*L*(1+gamma*(K/L)^alpha)` and a `theta` savings-financed
+// investment rule. Porting + re-validation against the ABM is a separate task.
+
 /**
  * Aggregate policy-sweep engine — companion to the Mesa ABM.
  * Endogenous Investment and Demand-Constrained Stagnation.
