@@ -1,30 +1,29 @@
 """
 Macro model for the Endogenous-Investment Keynesian ABM
-(core di offerta: Cobb-Douglas + finanziamento interno).
+(Cobb-Douglas core + endogenous labour market — roadmap point 11).
 
 Single-good, fixed-price (numeraire = 1), stock-flow-consistent circular flow of
-income.  Capital is essential (Cobb-Douglas), investment is financed by firms out
-of *current* retained earnings (a within-period pass-through, not an accumulating
-stock), and the wage share fixed by pricing is tied to the labour elasticity via
-``markup = alpha/(1-alpha)``.
+income.  Capital is essential (Cobb-Douglas); firms hire endogenously at a fixed
+wage ``w_bar``; the unemployed earn nothing, so employment drives demand.
 
-Period sequence:
+Period sequence (employment is set *before* households form demand, because
+expected income depends on employment status):
 
-    1. households form consumption demand
-    2. firms plan investment I_planned (accelerator on last period's utilisation,
-       from the flow of profit; capped by profit, no external credit)
-    3. firms register demand (consumption + investment)
-    4. firms produce: Y* = A*K^alpha*L^(1-alpha); Y = min(demand, Y*); ration; save u
-    5. firm accounting: wages, retained (= I_planned) and residual dividends
-    6. investment settlement: pay I_delivered from the retained earnings;
-       K(t+1) = (1-delta)*K(t) + I_delivered; return any residual as dividends so
-       the money buffer returns to zero (no sequestration)
-    7. households settle (credit income, pay for delivered goods)
+    1. firms form expectations, compute desired employment; the labour market
+       fires the excess and fills vacancies (random matching) -> employment
+    2. households form consumption demand (income = wage if employed, else 0;
+       plus dividends for capitalists)
+    3. firms plan investment (profit flow, accelerator on last utilisation)
+    4. firms register demand (consumption + investment)
+    5. firms produce: Y = min(demand, A*K^alpha*L^(1-alpha)); ration; set u
+    6. firm accounting: wage_bill = w_bar*L, retained (= I_planned), residual dividends
+    7. investment settlement: pay I_delivered; K(t+1) = (1-delta)K + I_delivered;
+       buffer returns to zero
+    8. household settlement (credit income, pay for delivered goods)
 
-Conserved quantity (checked in ``tests/test_model.py``); at a period boundary the
-buffer is zero, so this reduces to ``sum(household wealth + income)``:
-
-    sum(household wealth + income + income accruing) + sum(firm money_buffer) = const
+Conserved quantity (checked in ``tests/``): at a period boundary the buffer is
+zero, so ``sum(household wealth + income) + sum(firm money_buffer)`` is constant.
+The unemployed simply receive nothing, so money is still conserved.
 """
 
 import mesa
@@ -61,7 +60,6 @@ def compute_income_gini(model):
 
 
 def compute_wealth_gini(model):
-    """Inequality of net worth (money + owned firm's money & capital)."""
     net_worth = [
         h.net_worth() if isinstance(h, Capitalist) else h.wealth
         for h in _households(model)
@@ -73,11 +71,26 @@ def compute_output(model):
     return sum(f.production for f in _firms(model))
 
 
+def compute_employment(model):
+    return sum(len(f.workers) for f in _firms(model))
+
+
+def compute_unemployment(model):
+    n = model.num_households
+    return 1.0 - compute_employment(model) / n if n > 0 else 0.0
+
+
 def compute_potential_output(model):
-    return sum(f.capacity for f in _firms(model))
+    """Full-employment output benchmark: A * K_agg^alpha * N^(1-alpha)."""
+    k = compute_aggregate_capital(model)
+    n = model.num_households
+    if k <= 0 or n <= 0:
+        return 0.0
+    return model.productivity * (k ** model.alpha) * (n ** (1.0 - model.alpha))
 
 
 def compute_output_gap(model):
+    """Gap of output below full-employment potential (Teglio's output-gap concept)."""
     potential = compute_potential_output(model)
     if potential <= 0:
         return 0.0
@@ -89,6 +102,7 @@ def compute_aggregate_capital(model):
 
 
 def compute_average_utilization(model):
+    """Mean firm utilisation Y / profit-max capacity (weak-demand signal)."""
     firms = _firms(model)
     if not firms:
         return 0.0
@@ -108,7 +122,7 @@ def compute_total_money_buffer(model):
 
 
 def compute_wage_share(model):
-    """Aggregate wage bill divided by aggregate sales (0 if no output)."""
+    """Aggregate wage bill / sales — now a *measured outcome* (<= 1 - alpha)."""
     firms = _firms(model)
     sales = sum(f.sales for f in firms)
     if sales <= 0:
@@ -129,40 +143,30 @@ def compute_profit_share(model):
 # ============================================================
 
 class MacroModel(mesa.Model):
-    """Heterogeneous Keynesian economy: Cobb-Douglas core + internal financing.
+    """Cobb-Douglas core with an endogenous labour market and a fixed wage.
 
     Parameters
     ----------
-    alpha : float
-        Capital elasticity in ``Y* = A*K^alpha*L^(1-alpha)`` (default 1/3;
-        standard textbook value, **to be anchored** to a primary source).
-        The markup is derived from it, not set independently.
-    delta : float
-        Capital depreciation rate (default 0.05; **to be anchored**).
-    retention_ratio : float
-        Share of gross profit retained to fund investment (default 0.40; **to be
-        anchored** to corporate-finance evidence).
-    beta : float
-        Sensitivity of the investment accelerator to capacity utilisation.
-    target_utilization : float
-        Reference utilisation of the accelerator (~ expected steady-state u).
-    investment_floor : float
-        Minimum capex per firm (anti-collapse guardrail); also the minimum
-        retention, so the buffer can fund it even at ``retention_ratio = 0``.
-    initial_capital : float
-        K(0) per firm; must be positive (capital is essential).
+    alpha, delta, productivity, initial_capital : float
+        Technology (``Y* = A*K^alpha*L^(1-alpha)``; alpha = 1/3), depreciation, A,
+        and K(0) per firm.
+    wage_rate : float
+        The fixed wage ``w_bar`` per employed worker.  This is now the distributive
+        parameter (replaces ``markup``): profit is the residual ``sales - w_bar*L``,
+        so the wage share is a measured outcome, bounded above by ``1-alpha``.
+    retention_ratio, beta, target_utilization, investment_floor : float
+        Internal-financing investment rule (unchanged from the core).
     c0, c1, capitalist_mpc, wealth_effect : float
-        Consumption function terms.
-    productivity : float
-        Total factor productivity A.
+        Consumption function terms.  ``c0`` and ``wealth_effect`` are demand levers
+        (chosen values, not empirical estimates).
     seed : int or None
-        Seed for the model's random stream.
+        Seed for the model's random stream (network, hiring/firing order).
 
     Notes
     -----
-    Distributive coherence: ``markup = alpha/(1-alpha)`` so that
-    ``1/(1+markup) = 1-alpha`` (wage share = labour elasticity).  ``markup`` is a
-    derived attribute, not a free parameter.
+    The workforce cap ``L <= N`` (there are only ``num_households`` workers) is what
+    restores decreasing returns to capital: with unlimited labour and a fixed wage,
+    ``L_profitmax ∝ K`` gives ``Y* ∝ K`` (an AK model with no steady state).
     """
 
     def __init__(
@@ -175,7 +179,10 @@ class MacroModel(mesa.Model):
         alpha=1.0 / 3.0,
         delta=0.05,
         productivity=1.0,
-        initial_capital=5.0,
+        initial_capital=40.0,
+
+        # Distribution
+        wage_rate=0.9,
 
         # Internal financing / investment
         retention_ratio=0.40,
@@ -184,10 +191,10 @@ class MacroModel(mesa.Model):
         investment_floor=0.10,
 
         # Consumption
-        c0=1.0,
+        c0=2.0,
         c1=0.9,
         capitalist_mpc=0.4,
-        wealth_effect=0.08,
+        wealth_effect=0.05,
 
         seed=None,
     ):
@@ -203,10 +210,7 @@ class MacroModel(mesa.Model):
         self.alpha = alpha
         self.delta = delta
         self.productivity = productivity
-
-        # Distributive coherence: markup tied to alpha (NOT a free parameter).
-        self.markup = alpha / (1.0 - alpha)
-        assert abs(1.0 / (1.0 + self.markup) - (1.0 - alpha)) < 1e-12
+        self.wage_rate = wage_rate
 
         self.retention_ratio = retention_ratio
         self.beta = beta
@@ -223,24 +227,26 @@ class MacroModel(mesa.Model):
         self.total_investment_realised = 0.0
         self.investment_rationing = 1.0
 
-        # --- build agents -----------------------------------------------
+        # --- build firms ------------------------------------------------
         firms = [
             Firm(self, productivity=productivity, initial_capital=initial_capital)
             for _ in range(num_firms)
         ]
 
+        # --- build households -------------------------------------------
         num_capitalists = int(num_households * pct_capitalists)
-
         for i in range(num_households):
-            employer = firms[i % num_firms]
-
             if i < num_capitalists:
                 owned = firms[i % num_firms]
-                household = Capitalist(self, firm_employer=employer, firm_owned=owned)
+                household = Capitalist(self, firm_owned=owned)
                 owned.owner = household
             else:
-                household = Household(self, firm_employer=employer)
+                household = Household(self)
 
+            # Initial employment: assign round-robin (fully employed at t=0).
+            employer = firms[i % num_firms]
+            household.employed = True
+            household.employer = employer
             employer.workers.append(household)
 
             num_links = max(1, num_firms // 2)
@@ -250,12 +256,23 @@ class MacroModel(mesa.Model):
             for firm in linked:
                 firm.customers.append(household)
 
+        # Initial expectations so the first-period labour market is not a shock.
+        for f in firms:
+            L0 = len(f.workers)
+            f.expected_demand = (
+                productivity * (initial_capital ** alpha) * (L0 ** (1.0 - alpha))
+                if L0 > 0 else 0.0
+            )
+            f.utilization_last_period = target_utilization
+
         # --- data collection --------------------------------------------
         self.datacollector = mesa.DataCollector(
             model_reporters={
                 "Output": compute_output,
                 "Potential_Output": compute_potential_output,
                 "Output_Gap": compute_output_gap,
+                "Unemployment_Rate": compute_unemployment,
+                "Employment": compute_employment,
                 "Total_Capital": compute_aggregate_capital,
                 "Money_Buffer": compute_total_money_buffer,
                 "Consumption": compute_consumption,
@@ -270,41 +287,73 @@ class MacroModel(mesa.Model):
         self.datacollector.collect(self)
 
     # ------------------------------------------------------------------
+    def labour_market(self, firms, households):
+        """Fire the excess into an unemployed pool, then fill vacancies randomly.
+
+        Workers are mobile: an unemployed household can be hired by any firm with a
+        vacancy.  Firms may leave vacancies unfilled when the pool is empty (the
+        ``L <= N`` cap), which is what caps aggregate employment at the workforce.
+        """
+        for f in firms:
+            f.plan_employment()
+
+        unemployed = [h for h in households if not h.employed]
+
+        for f in firms:
+            while len(f.workers) > f.desired_employment:
+                worker = f.workers.pop()
+                worker.employed = False
+                worker.employer = None
+                unemployed.append(worker)
+
+        self.random.shuffle(unemployed)
+        for f in firms:
+            vacancies = f.desired_employment - len(f.workers)
+            while vacancies > 0 and unemployed:
+                worker = unemployed.pop()
+                worker.employed = True
+                worker.employer = f
+                f.workers.append(worker)
+                vacancies -= 1
+
+    # ------------------------------------------------------------------
     def step(self):
         households = _households(self)
         firms = _firms(self)
 
-        # 1. consumption demand
+        # 1. labour market (employment set before demand)
+        self.labour_market(firms, households)
+
+        # 2. consumption demand
         for h in households:
             h.step_demand()
 
-        # 2. firms plan investment (from the profit flow; accelerator on u_last)
+        # 3. firms plan investment
         for f in firms:
             f.plan_investment()
         self.total_investment_demand = sum(f.desired_investment for f in firms)
 
-        # 3. firms register demand (consumption + investment)
+        # 4. firms register demand
         for f in firms:
             f.register_demand()
 
-        # 4. production + goods-market rationing
+        # 5. production + goods-market rationing
         for f in firms:
             f.step_production()
         self.investment_rationing = (
             sum(f.rationing for f in firms) / len(firms) if firms else 1.0
         )
 
-        # 5. firm accounting: wages, retained (= I_planned), residual dividends
+        # 6. firm accounting
         for f in firms:
             f.step_accounting()
 
-        # 6. investment settlement: pay I_delivered, update capital, return the
-        #    residual as dividends so the buffer returns to zero (no sequestration)
+        # 7. investment settlement (buffer -> 0)
         for f in firms:
             f.step_investment()
         self.total_investment_realised = sum(f.investment_delivered for f in firms)
 
-        # 7. household settlement (credit income incl. this period's dividends)
+        # 8. household settlement
         for h in households:
             h.step_settlement()
 

@@ -1,56 +1,56 @@
 """
 Agent definitions for the Endogenous-Investment Keynesian ABM
-(core di offerta: Cobb-Douglas + finanziamento interno).
+(Cobb-Douglas core + endogenous labour market — roadmap point 11).
 
 The model is *stock-flow consistent* (SFC).  With internal (retained-earnings)
 financing the conserved money stock is
 
-    sum(household wealth + household income) + sum(firm money_buffer) = const
+    sum(household wealth + income) + sum(firm money_buffer) = const
 
-Nothing is created or destroyed in settlement: retained profits stay as a money
-balance on the firm's books (``money_buffer``) and re-enter the circuit when the
-firm pays for delivered investment goods (see ``tests/``).
+and the firm cash account is an intra-period pass-through (``money_buffer`` returns
+to zero every period).
 
 Behavioural core:
 
 1. **Cobb-Douglas production with essential capital.**
-   ``Y* = A * K^alpha * L^(1-alpha)`` — if ``K -> 0`` then ``Y* -> 0``.  Capital
-   has a live intensive margin; this is what makes investment drive output *via
-   capital* rather than only via the demand multiplier.
+   ``Y* = A * K^alpha * L^(1-alpha)`` — if ``K -> 0`` then ``Y* -> 0``.
 
-2. **Distributive coherence.**  The markup is tied to alpha (``markup =
-   alpha/(1-alpha)``, set in the model) so the wage share fixed by pricing
-   (``1/(1+markup)``) equals the labour elasticity (``1-alpha``).
+2. **Fixed wage ``w_bar`` (not residual).**  Distribution is set by the wage:
+   ``wage_bill = w_bar * L`` and profit is the residual ``sales - w_bar*L``.  The
+   wage share therefore becomes a *measured outcome* (bounded above by ``1-alpha``),
+   not an identity.  Unemployed households earn no wage, so their consumption falls
+   — this is what makes the Keynesian demand channel bite.
 
-3. **Internal financing via retained earnings.**  Firms retain a share of gross
-   profit into a money buffer and fund investment from that accumulated buffer,
-   not from the capitalist's personal savings.  With essential capital this
-   breaks the collapse spiral that personal-savings financing would create.  An
-   ``investment_floor`` is the anti-shutdown guardrail.
+3. **Endogenous employment.**  Each firm hires the minimum of three limits:
+   labour needed for expected demand, the profit-maximising labour (where the
+   marginal product equals ``w_bar``), and what the unemployed pool can supply.
+   The economy-wide cap ``L <= N`` is what restores decreasing returns to capital
+   (otherwise ``L_profitmax ∝ K`` gives an AK model with no steady state).
 
-4. **Class saving + wealth effect** (unchanged): workers consume a large share of
-   income, capitalists a small share; consumption also responds to money wealth.
+4. **Internal financing via retained earnings.**  Firms retain exactly what they
+   invest and distribute the rest as dividends; investment is a profit-flow
+   decision with a utilisation accelerator and a floor.
 
-Labour is simple in this task: ``L`` is fixed per firm (the workers assigned at
-construction).  An explicit labour market is a later task.
+5. **Class saving + wealth effect.**  Workers consume a large share of income,
+   capitalists a small share; consumption also responds to money wealth.
 """
 
 import mesa
 
 
 class Firm(mesa.Agent):
-    """A productive unit with Cobb-Douglas technology and an internal money buffer.
+    """A productive unit: Cobb-Douglas technology, fixed wage, internal financing.
 
-    Holds capital and a money buffer fed by retained profits; faces consumption
-    demand (from linked customers) plus economy-wide investment demand; funds its
-    own investment out of the accumulated buffer.
+    Chooses employment from expected demand and the profit-max condition, produces
+    with the workers it actually hires, pays a fixed wage ``w_bar`` per employed
+    worker, and funds its own investment out of current retained earnings.
     """
 
     def __init__(self, model, productivity=1.0, initial_capital=5.0):
         super().__init__(model)
 
-        # Network links (populated by the model during construction)
-        self.workers = []
+        # Network / labour links
+        self.workers = []            # currently employed households
         self.customers = []
         self.owner = None
 
@@ -59,23 +59,30 @@ class Firm(mesa.Agent):
         self.capital = initial_capital            # K (essential: K=0 -> Y*=0)
 
         # Internal finance
-        self.money_buffer = 0.0                   # M_f: retained profits held as money
-        self.profit_last_period = 0.0             # drives next period's investment
-        self.utilization_last_period = 0.0        # drives the accelerator
+        self.money_buffer = 0.0
+        self.profit_last_period = 0.0
+        self.utilization_last_period = 0.0
+
+        # Expectations / employment
+        self.expected_demand = 0.0
+        self.desired_employment = 0
+        self.L_profitmax = 0.0                    # labour where MPL = w_bar
 
         # Investment plan / delivery
         self.desired_investment = 0.0
         self.investment_delivered = 0.0
+        self.util_effect = 1.0                    # diagnostic: accelerator signal
 
         # Flow variables (recomputed every period)
         self.consumption_demand = 0.0
         self.investment_demand = 0.0
         self.faced_demand = 0.0
-        self.capacity = 0.0
+        self.capacity = 0.0              # A*K^a*L^(1-a) with L = employed
+        self.profitmax_capacity = 0.0    # A*K^a*L_profitmax^(1-a)
         self.production = 0.0
         self.sales = 0.0
         self.rationing = 1.0
-        self.utilization = 0.0
+        self.utilization = 0.0           # Y / profitmax_capacity
 
         # Distribution
         self.wage_bill = 0.0
@@ -84,62 +91,63 @@ class Firm(mesa.Agent):
         self.dividend_pool = 0.0
 
     # ------------------------------------------------------------------
-    # Supply side
+    # Labour demand
     # ------------------------------------------------------------------
-    def calculate_capacity(self):
-        """True Cobb-Douglas capacity: ``Y* = A * K^alpha * L^(1-alpha)``.
+    def plan_employment(self):
+        """Desired headcount = floor(min(labour-for-demand, profit-max labour)).
 
-        Capital is **essential**: with ``K = 0`` (or no workers) capacity is zero.
-        The collapse risk this creates is handled by ``investment_floor`` and a
-        positive ``initial_capital``, not by a floor on capacity.
+            L_demand    = (Y_e / (A*K^alpha)) ** (1/(1-alpha))    # invert Cobb-Douglas
+            L_profitmax = ((1-alpha)*A*K^alpha / w_bar) ** (1/alpha)   # MPL = w_bar
+            desired     = floor(min(L_demand, L_profitmax))
+
+        ``Y_e`` is last period's realised demand (static expectations).  ``floor``
+        (not round) so a firm never overshoots the profit-max point.  The firm never
+        hires where the marginal product of labour is below the wage, which keeps
+        gross profit positive.
         """
-        labour = len(self.workers)
+        K = self.capital
+        A = self.productivity
+        alpha = self.model.alpha
+        w = self.model.wage_rate
 
-        if labour == 0 or self.capital <= 0.0:
-            self.capacity = 0.0
+        if K <= 0.0 or A <= 0.0:
+            self.desired_employment = 0
+            self.L_profitmax = 0.0
             return
 
-        self.capacity = (
-            self.productivity
-            * (self.capital ** self.model.alpha)
-            * (labour ** (1.0 - self.model.alpha))
-        )
+        AKa = A * (K ** alpha)
 
+        if self.expected_demand > 0.0:
+            labour_for_demand = (self.expected_demand / AKa) ** (1.0 / (1.0 - alpha))
+        else:
+            labour_for_demand = 0.0
+
+        if w > 0.0:
+            self.L_profitmax = ((1.0 - alpha) * AKa / w) ** (1.0 / alpha)
+        else:
+            self.L_profitmax = float(self.model.num_households)
+
+        self.desired_employment = max(0, int(min(labour_for_demand, self.L_profitmax)))
+
+    # ------------------------------------------------------------------
+    # Investment plan (unchanged in form; accelerator on last utilisation)
+    # ------------------------------------------------------------------
     def plan_investment(self):
-        """Plan investment from the *flow* of profit (internal finance, no stock).
-
-            util_effect = max(0, 1 + beta * (u_last - target_utilization))
-            I_planned   = clip(retention_ratio * profit_last_period * util_effect,
-                               investment_floor, profit_last_period)
-
-        Investment is a real decision keyed to profit (a flow) and utilisation,
-        not to an accumulated money stock.  The upper cap is the firm's own profit
-        (no external credit; that arrives in a later task): in the relevant range
-        ``I/Y = rho*alpha < alpha = profit/Y`` so the cap does not bind at steady
-        state.  ``profit_last_period`` is used as the (known) basis so demand can
-        be registered before this period's profit is realised; at steady state it
-        equals current profit, so the firm retains exactly what it invests and the
-        money buffer nets to zero every period (see ``step_investment``).
-        """
+        """Plan investment from the flow of profit, capped by current profit."""
         util_effect = 1.0 + self.model.beta * (
             self.utilization_last_period - self.model.target_utilization
         )
         util_effect = max(0.0, util_effect)
+        self.util_effect = util_effect          # diagnostic: accelerator signal
 
         desired = self.model.retention_ratio * self.profit_last_period * util_effect
-
-        # At least the floor, never more than the firm's own profit (no credit).
         self.desired_investment = min(
             max(desired, self.model.investment_floor), self.profit_last_period
         )
         self.desired_investment = max(0.0, self.desired_investment)
 
     def register_demand(self):
-        """Aggregate consumption orders (via the network) plus investment orders.
-
-        A single-good economy: capital goods are the same good that is consumed,
-        so economy-wide investment demand is shared equally across firms.
-        """
+        """Aggregate consumption orders (via the network) plus investment orders."""
         self.consumption_demand = sum(
             h.desired_consumption / h.num_consumption_links
             for h in self.customers
@@ -149,75 +157,94 @@ class Firm(mesa.Agent):
         )
         self.faced_demand = self.consumption_demand + self.investment_demand
 
+    # ------------------------------------------------------------------
+    # Supply side
+    # ------------------------------------------------------------------
     def step_production(self):
-        """Produce up to capacity; record the rationing share and utilisation."""
-        self.calculate_capacity()
+        """Produce with the employed workforce; ration; set utilisation.
+
+        Production capacity uses *employed* labour; utilisation is measured
+        against the *profit-max* capacity, so ``u < 1`` signals a firm held below
+        its profit-max scale by weak demand (the correct accelerator signal) and
+        ``u = 1`` at the profit-max point.
+        """
+        L = len(self.workers)
+        A = self.productivity
+        alpha = self.model.alpha
+        K = self.capital
+
+        if K > 0.0 and L > 0:
+            self.capacity = A * (K ** alpha) * (L ** (1.0 - alpha))
+        else:
+            self.capacity = 0.0
 
         self.production = min(self.faced_demand, self.capacity)
 
         self.rationing = (
             self.production / self.faced_demand if self.faced_demand > 1e-12 else 1.0
         )
+
+        if K > 0.0 and self.L_profitmax > 0.0:
+            self.profitmax_capacity = A * (K ** alpha) * (self.L_profitmax ** (1.0 - alpha))
+        else:
+            self.profitmax_capacity = 0.0
+
         self.utilization = (
-            self.production / self.capacity if self.capacity > 1e-12 else 0.0
+            self.production / self.profitmax_capacity
+            if self.profitmax_capacity > 1e-12 else 0.0
         )
-        # Utilisation feeds next period's investment accelerator.
         self.utilization_last_period = self.utilization
+
+        # Static expectation for next period.
+        self.expected_demand = self.faced_demand
 
     # ------------------------------------------------------------------
     # Accounting / distribution
     # ------------------------------------------------------------------
     def step_accounting(self):
-        """Split revenue into wages, retained earnings and dividends.
+        """Pay a fixed wage per employed worker; profit is the residual.
 
-        With a normalised price of one, revenue = goods sold.  The markup
-        (tied to alpha in the model) fixes the wage share ``1/(1+markup) =
-        1-alpha`` and the gross-profit share ``markup/(1+markup) = alpha``.
+            wage_bill    = w_bar * L
+            gross_profit = sales - wage_bill
+            retained     = I_planned
+            dividends    = gross_profit - retained
 
-        The firm retains **exactly what it plans to invest** (a within-period
-        pass-through, not an accumulating stock) and distributes all the rest of
-        gross profit as dividends.  The distribution identity
-        ``wage_bill + dividends + retained == sales`` holds exactly.
+        Identity ``wage_bill + dividends + retained == sales`` holds exactly.
+        Unemployed households are simply not paid, so the wage bill falls with
+        employment — the demand channel.
         """
         self.sales = self.production
+        L = len(self.workers)
 
-        self.wage_bill = self.sales / (1.0 + self.model.markup)
+        self.wage_bill = self.model.wage_rate * L
         self.gross_profit = self.sales - self.wage_bill
 
-        # Retain exactly the planned investment; distribute the residual.
         self.retained = self.desired_investment
         self.dividend_pool = self.gross_profit - self.retained
         self.money_buffer += self.retained
 
-        if self.workers:
-            wage = self.wage_bill / len(self.workers)
+        if L > 0:
             for worker in self.workers:
-                worker.next_income += wage
+                worker.next_income += self.model.wage_rate
 
         if self.owner is not None:
             self.owner.next_income += self.dividend_pool
 
-        # Remember gross profit for next period's investment plan.
         self.profit_last_period = self.gross_profit
 
     def step_investment(self):
-        """Pay for delivered investment goods; return any residual as dividends.
+        """Pay for delivered investment goods; return the residual as dividends.
 
-        Investment demand is rationed by the goods market
-        (``investment_rationing``); the delivered amount is paid out of the buffer
-        (which holds exactly this period's retained earnings).  Whatever retention
-        was not spent — because the goods market rationed the order — is paid to
-        the owner as an extra dividend, so **the buffer returns to zero every
-        period** (the structural guarantee against money sequestration).  Capital
-        follows a one-period gestation lag: goods delivered in ``t`` are
-        productive in ``t+1``.
+        The buffer holds exactly this period's retained earnings; after paying for
+        delivered goods, any residual (from goods-market rationing) is paid to the
+        owner, so **the buffer returns to zero every period**.  Capital follows a
+        one-period gestation lag.
         """
         self.investment_delivered = self.desired_investment * self.model.investment_rationing
 
         self.money_buffer -= self.investment_delivered
         self.capital = (1.0 - self.model.delta) * self.capital + self.investment_delivered
 
-        # Return the un-invested residual (never sequestered) and zero the buffer.
         if self.owner is not None:
             self.owner.next_income += self.money_buffer
         self.money_buffer = 0.0
@@ -226,16 +253,20 @@ class Firm(mesa.Agent):
 class Household(mesa.Agent):
     """A worker household.
 
-    Consumes ``C = c0 + mpc * income + lambda * wealth`` out of a money balance,
-    supplies labour, and accumulates any unspent income as wealth.
+    Supplies labour (employed or unemployed), consumes
+    ``C = c0 + mpc * income + lambda * wealth`` out of a money balance, and
+    accumulates unspent income as wealth.  Income is the wage received while
+    employed (zero when unemployed), plus dividends for capitalists.
     """
 
     is_capitalist = False
 
-    def __init__(self, model, firm_employer):
+    def __init__(self, model):
         super().__init__(model)
 
-        self.employer = firm_employer
+        # Employment state (set by the labour market)
+        self.employed = False
+        self.employer = None
 
         self.wealth = 2.0
         self.income = 2.0
@@ -244,6 +275,7 @@ class Household(mesa.Agent):
         self.desired_consumption = 0.0
         self.actual_consumption = 0.0
         self.savings = 0.0
+        self.cash_constrained = False      # diagnostic: liquidity cap binds
 
         self.consumption_firms = []
         self.num_consumption_links = 1
@@ -260,6 +292,9 @@ class Household(mesa.Agent):
             + self.model.wealth_effect * self.wealth
         )
         affordable = self.wealth + self.income
+        # Diagnostic: the liquidity cap binds -> the household spends everything
+        # it has (effective MPC ~ 1 at the margin).
+        self.cash_constrained = target > affordable
         self.desired_consumption = min(max(target, 0.0), affordable)
 
     # ------------------------------------------------------------------
@@ -282,16 +317,15 @@ class Household(mesa.Agent):
 class Capitalist(Household):
     """A household that also owns a firm and receives its dividends.
 
-    Investment is now a *firm* decision funded by retained earnings, so the
-    capitalist no longer plans or finances investment personally; it consumes
-    like any household (at a lower MPC) and collects dividends.  Its net worth
-    includes the money and capital of the firm it owns.
+    It supplies labour like any household (can be employed or unemployed) and, in
+    addition, collects the dividends of the firm it owns.  Its net worth includes
+    the money and capital of that firm.
     """
 
     is_capitalist = True
 
-    def __init__(self, model, firm_employer, firm_owned):
-        super().__init__(model, firm_employer)
+    def __init__(self, model, firm_owned):
+        super().__init__(model)
         self.owned_firm = firm_owned
 
     def marginal_propensity(self):
