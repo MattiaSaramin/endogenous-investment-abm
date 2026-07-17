@@ -154,6 +154,12 @@ quanto il "0.671" di prima.
 
 ## 4. Correzione dei "numeri fantasma"
 
+> **⚠️ Superseded by the CES + labour-market core — see README/§2.** Questa sezione
+> è un **record storico** dello stadio `cobb-douglas-core` (σ=1, senza mercato del
+> lavoro). I numeri "effettivamente misurati" qui sotto sono di **quello** stadio; il
+> modello corrente su `main` (CES + mercato del lavoro) ha numeri diversi — vedi il
+> README e §2. Tenuta per la lezione anti-drift, non come descrizione del core attuale.
+
 La versione precedente di questo file (e la memoria di progetto) riportava come
 **risultati raggiunti** i seguenti valori:
 
@@ -293,6 +299,13 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
 ---
 
 ## 7. Architettura del core di offerta (IMPLEMENTATA — riferimento al codice su `cobb-douglas-core`)
+
+> **⚠️ Superseded by the CES + labour-market core — see README/§2.** Descrive lo
+> stadio `cobb-douglas-core` (σ=1, `markup`, nessun mercato del lavoro). Il core
+> corrente su `main` generalizza la produzione a una **CES normalizzata** con
+> elasticità σ e aggiunge il **mercato del lavoro endogeno** (salario fisso `w̄`,
+> `markup` rimosso): equazioni e cornice nel README. Sezione tenuta come record
+> dell'architettura di quello stadio.
 
 - **Produzione:** Cobb-Douglas vera `Y* = A·K^α·L^(1−α)`, `Y = min(domanda, Y*)`.
   Capitale essenziale. α ≈ 1/3 come quota del capitale — **da ancorare a fonte
