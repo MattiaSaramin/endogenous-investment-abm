@@ -12,8 +12,12 @@
 
 | Parametro | Valore modello | Ancoraggio | Nota |
 |---|---|---|---|
-| `alpha` | 1/3 | **Buono** | standard growth accounting; ma quota del capitale in aumento nel XXI sec. |
-| `markup` | 0.5 (derivato) | **Per costruzione** | vincolato ad α; non libero |
+| `sigma` (σ) | **sweep**, default 1.0 | **Buono — e rigetta il default** | 0.40–0.60 (Chirinko 2008); ~0.40 (Chirinko & Mallick 2017); 0.45–0.87 meta-regressione che **rigetta Cobb-Douglas** (Knoblach et al. 2020); Fed SIGMA 0.5. Puzzle σ>1: Karabarbounis & Neiman (2014). **Da sweepare, non scegliere.** |
+| `pi0` (π0) | 1/3 | **Buono** | = il vecchio `alpha` rinominato: unica nozione di quota del capitale nel codice |
+| `K0`, `L0` | 41.87, 7.395 (per impresa) | **Scelta di modellazione** | ancora di normalizzazione CES; misurata una volta a σ=1, ρ=0.40, poi congelata |
+| `Y0` | derivato | **Non libero** | `A·K0^π0·L0^(1−π0)`, calcolato — mai misurato |
+| `alpha` | 1/3 | **Buono** | standard growth accounting; ma quota del capitale in aumento nel XXI sec. → ora `pi0` |
+| `markup` | ~~0.5 (derivato)~~ | **RIMOSSO al punto 11** | sostituito dal salario fisso `w̄`; sezione sotto marcata STALE |
 | `delta` | 0.05 | **Buono (congiunto)** | implicato da K/Y e I/Y; non ancorabile in isolamento |
 | `retention_ratio` | 0.40 | **Buono (via I/Y)** | ρ fissa il tasso di investimento, non è un payout |
 | `wealth_effect` (λ) | 0.08 | **Debole — sopra l'empirico** | empirico 0.03–0.05; scelto come leva di domanda |
@@ -48,7 +52,78 @@ profitti, I/Y, utilizzo — vedi sotto.
 - **Verdetto:** ben ancorato come valore standard; dichiarare l'assunzione di
   quote costanti come scelta.
 
+### `sigma` (σ) = sweep, default 1.0 — elasticità di sostituzione K/L
+> Introdotto dal brief 04 (branch `ces-production`). **È il parametro che determina
+> il segno del risultato headline del progetto**, non un dettaglio tecnico.
+
+- **Ruolo:** produzione **CES normalizzata**
+  `Y* = Y0·[π0·(K/K0)^r + (1−π0)·(L/L0)^r]^(1/r)`, con `r = (σ−1)/σ`. Nidifica la
+  Cobb-Douglas (σ=1, il core attuale) e la Leontief (σ→0). σ regola la forza della
+  sostituzione capitale-lavoro, cioè **il meccanismo stesso** del risultato wage-led:
+  più capitale ⇒ meno lavoratori per la stessa domanda ⇒ disoccupazione tecnologica.
+- **Empirico:** la letteratura **rigetta esplicitamente σ = 1**.
+  - Chirinko (2008), *J. Macroeconomics* 30(2): il peso dell'evidenza colloca σ tra
+    **0.40 e 0.60**.
+  - Chirinko & Mallick (2017), *AEJ: Macroeconomics* 9(4): stima **≈ 0.40**.
+  - Knoblach, Roessler & Zwerschke (2020), *Oxford Bulletin of Economics and
+    Statistics* 82(1): meta-regressione su **2.419 stime da 77 studi** → **0.45–0.87**,
+    e **rigetta l'ipotesi Cobb-Douglas**.
+  - Il modello **SIGMA** della Federal Reserve usa **0.5**.
+  - **In controtendenza:** Karabarbounis & Neiman (2014), *QJE* 129(1), e Piketty &
+    Zucman stimano **σ > 1**.
+- **Il puzzle, dichiarato non nascosto:** la micro-letteratura converge sotto
+  l'unità; la macro-letteratura sul declino della quota salari richiede σ>1. È una
+  ragione **in più** per fare lo sweep invece di scegliere un valore.
+- **Verdetto:** σ=0.5 è il valore centrale difendibile, ed è **più vicino a Leontief
+  (σ=0) che alla Cobb-Douglas (σ=1)**: l'headline del branch `labour-market` poggia
+  sull'estremo che i dati rigettano. Ma σ resta **uno sweep**, non un punto: il range
+  plausibile (≈0.3–1.3, incluso il puzzle σ>1) copre entrambi i segni possibili.
+  **Il default resta 1.0** perché deve riprodurre esattamente il branch precedente
+  (criterio di identità), non perché 1.0 sia difendibile.
+
+### `pi0` (π0) = 1/3 — quota del capitale nel punto base
+- **Ruolo:** sostituisce `alpha` come **unica** nozione di quota del capitale nel
+  codice. Con σ=1 è esattamente l'esponente Cobb-Douglas del capitale; per ogni σ è
+  la quota del capitale **nel punto base** (proprietà della normalizzazione).
+- **Ancoraggio:** identico ad `alpha` sopra (non è un parametro nuovo, è lo stesso
+  rinominato). `Y0` è **derivato** (`A·K0^π0·L0^(1−π0)`), non un parametro libero.
+
+### `K0`, `L0` = 41.87, 7.395 (per impresa) — ancora di normalizzazione
+- **Ruolo:** punto base della CES normalizzata. **Scelta di modellazione, non una
+  stima** — nessun referente empirico, e non ne serve uno.
+- **Perché serve:** la CES "da manuale" non è sweepabile. Variando `r` a `(A, a)`
+  fissi si muovono anche le quote fattoriali implicite e l'efficienza, quindi `A` e
+  `a` **non sono confrontabili tra σ diversi** e il cambio di comportamento è
+  **inattribuibile**. La normalizzazione fissa un punto base per cui passano tutte le
+  varianti di σ con le stesse quote: solo così due economie differiscono *solo* per σ.
+  Fonti: **Klump & de La Grandville (2000)**, *AER* 90(1) (introduce la
+  normalizzazione); **Klump & Saam (2008)**, *Economics Letters* 98(3) (calibrazione
+  nei modelli dinamici; senza normalizzazione il confronto tra σ è "arbitrario e
+  inconsistente"); **Klump, McAdam & Willman (2012)**, *J. Economic Surveys* 26(5)
+  (rassegna).
+- **Caveat da riportare, non da nascondere:** **Temple (2012)**, *J. Macroeconomics*
+  34(2), critica l'idea che la normalizzazione isoli gli effetti "puri" di σ e che σ
+  sia un parametro profondo. Qui la normalizzazione è dichiarata per quello che è —
+  un **dispositivo di confronto** che rende commensurabili le varianti di σ in un
+  punto base — **non** una garanzia di causalità.
+- **Come è stata ottenuta:** **misurata una volta** sullo steady state del branch
+  `labour-market` (σ=1) a `ρ=0.40`, seed {0,1,2}, 2000 step, media delle ultime 50
+  osservazioni, tutti gli altri parametri ai default (`initial_capital=40`,
+  `wage_rate=0.9`, `c0=2.0`, N=100, 10 imprese). Aggregati misurati:
+  K = 418.7356984217038, L = 73.95333333333333 su 10 imprese. Poi **congelata** in
+  `model.ANCHOR_K0` / `model.ANCHOR_L0`: **la stessa per tutta la griglia** (σ, ρ),
+  altrimenti la normalizzazione non normalizza niente.
+- **Nota:** a σ=1 l'ancora è **irrilevante** (l'identità con la CD vale per qualunque
+  `(K0, L0)` purché `Y0` sia calcolato); conta solo per σ≠1, e centra l'esperimento
+  sulla regione di interesse. Per rendimenti di scala costanti la CES normalizzata è
+  omogenea di grado 1: ancora per-impresa e ancora aggregata danno la stessa funzione.
+- **Verdetto:** scelta di modellazione, dichiarata. Da riportare come tale.
+
 ### `markup` = 0.5 — derivato da α
+> ⚠️ **STALE**: il parametro `markup` è stato **rimosso** dal codice al punto 11
+> (branch `labour-market`), dove il salario fisso `w̄` è diventato il parametro
+> distributivo e il profitto il residuo. Questa sezione descrive il core
+> Cobb-Douglas *precedente*. Non risolto qui: fuori dallo scope del brief 04.
 - **Ruolo:** fissa i prezzi e quindi la quota salari (`1/(1+markup)`). Vincolato:
   `markup = α/(1−α)` ⇒ quota salari = 1−α.
 - **Empirico:** i markup medi misurati sono ben più alti (De Loecker, Eeckhout &
@@ -273,7 +348,29 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
 - Crafts, N. (2021). Growth accounting in economic history. *Journal of Economic
   Surveys*. <https://onlinelibrary.wiley.com/doi/10.1111/joes.12348>
 - Karabarbounis, L. & Neiman, B. (2014). The Global Decline of the Labor Share.
-  *Quarterly Journal of Economics*.
+  *Quarterly Journal of Economics*, 129(1), 61–103.
+
+### Elasticità di sostituzione σ (brief 04)
+- Chirinko, R. S. (2008). σ: The long and short of it. *Journal of Macroeconomics*,
+  30(2), 671–686.
+- Chirinko, R. S. & Mallick, D. (2017). The Substitution Elasticity, Factor Shares,
+  and the Low-Frequency Panel Model. *American Economic Journal: Macroeconomics*,
+  9(4), 225–253.
+- Knoblach, M., Roessler, M. & Zwerschke, P. (2020). The Elasticity of Substitution
+  Between Capital and Labour in the US Economy: A Meta-Regression Analysis. *Oxford
+  Bulletin of Economics and Statistics*, 82(1), 62–82.
+
+### CES normalizzata (brief 04)
+- Klump, R. & de La Grandville, O. (2000). Economic Growth and the Elasticity of
+  Substitution: Two Theorems and Some Suggestions. *American Economic Review*,
+  90(1), 282–291.
+- Klump, R. & Saam, M. (2008). Calibration of normalised CES production functions in
+  dynamic models. *Economics Letters*, 98(3), 256–259.
+- Klump, R., McAdam, P. & Willman, A. (2012). The Normalized CES Production Function:
+  Theory and Empirics. *Journal of Economic Surveys*, 26(5), 769–799.
+- Temple, J. (2012). The calibration of CES production functions. *Journal of
+  Macroeconomics*, 34(2), 294–303. (**critica**: la normalizzazione non isola effetti
+  "puri" di σ; σ non è un parametro profondo — da riportare, non nascondere.)
 - Antràs, P. (2004). Is the U.S. Aggregate Production Function Cobb-Douglas?
 - Solow, R. (1957). Technical change and the aggregate production function.
 - BEA, Fixed Assets Accounts & Depreciation Rates. <https://www.bea.gov/itable/fixed-assets>
