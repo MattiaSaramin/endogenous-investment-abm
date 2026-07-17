@@ -1,4 +1,4 @@
-# Note bibliografiche — ancoraggio dei parametri (core Cobb-Douglas)
+# Note bibliografiche — ancoraggio dei parametri (core CES normalizzato)
 
 > Roadmap punto 4. Per ogni parametro: valore nel modello, stima empirica e
 > range, fonte, come entra nel modello, e verdetto di ancoraggio. Da mantenere e
@@ -7,6 +7,15 @@
 > **Regola:** un valore è "ancorato" solo con fonte citabile. Dove il valore è
 > una scelta di modellazione o di regime, va dichiarato tale — non spacciato per
 > stima empirica. Diversi parametri di questo core sono scelte, non stime.
+>
+> **⚠️ Allineamento al codice (brief 05 §7, 2026-07-17).** Questo file dichiarava
+> `c0 = 1.0` e `wealth_effect = 0.08` mentre il codice girava `c0 = 2.0` e
+> `wealth_effect = 0.05`. Non erano "note stale ereditate": erano note
+> bibliografiche che descrivevano **un modello diverso da quello che produce i
+> numeri**. È lo stesso disallineamento README/codice che il progetto ha già
+> pagato una volta (la spec "Fase 2" fantasma), solo spostato in un altro file.
+> Corretto qui. **I valori qui sotto sono ora quelli dei default di `MacroModel`;
+> verificarlo contro il codice a ogni brief, non fidarsi di questa riga.**
 
 ## Sintesi (tiers di ancoraggio)
 
@@ -15,15 +24,20 @@
 | `sigma` (σ) | **sweep**, default 1.0 | **Buono — e rigetta il default** | 0.40–0.60 (Chirinko 2008); ~0.40 (Chirinko & Mallick 2017); 0.45–0.87 meta-regressione che **rigetta Cobb-Douglas** (Knoblach et al. 2020); Fed SIGMA 0.5. Puzzle σ>1: Karabarbounis & Neiman (2014). **Da sweepare, non scegliere.** |
 | `pi0` (π0) | 1/3 | **Buono** | = il vecchio `alpha` rinominato: unica nozione di quota del capitale nel codice |
 | `K0`, `L0` | 41.87, 7.395 (per impresa) | **Scelta di modellazione** | ancora di normalizzazione CES; misurata una volta a σ=1, ρ=0.40, poi congelata |
+| `K0`, `L0` @ρ=0.50 | 52.566, 6.320 (per impresa) | **Scelta di modellazione — ancora alternativa** | brief 05 §4: misurata a σ=1, **ρ=0.50**, seed {0,1,2}, 2000 step, `c0`=2.0, altri default; congelata in `model.ANCHOR_*_RHO050`. Serve **solo** al test di sensibilità all'ancora (Temple 2012), non è il default |
 | `Y0` | derivato | **Non libero** | `A·K0^π0·L0^(1−π0)`, calcolato — mai misurato |
 | `alpha` | 1/3 | **Buono** | standard growth accounting; ma quota del capitale in aumento nel XXI sec. → ora `pi0` |
 | `markup` | ~~0.5 (derivato)~~ | **RIMOSSO al punto 11** | sostituito dal salario fisso `w̄`; sezione sotto marcata STALE |
 | `delta` | 0.05 | **Buono (congiunto)** | implicato da K/Y e I/Y; non ancorabile in isolamento |
 | `retention_ratio` | 0.40 | **Buono (via I/Y)** | ρ fissa il tasso di investimento, non è un payout |
-| `wealth_effect` (λ) | 0.08 | **Debole — sopra l'empirico** | empirico 0.03–0.05; scelto come leva di domanda |
-| `c0`, `c1` | 1.0, ~0.9 | **Struttura sì, livello no** | forma da Teglio; `c0` è scala, non stima |
+| `wealth_effect` (λ) | **0.05** | **BUONO — ancorato** | Slacalek (2009): ≈5 cent, media su 16 paesi. Corretto da 0.08 (fuori range) → 0.05 centra la media cross-country |
+| `c0` | **2.0** | **NON ancorabile — e attivamente sospetto** | cerotto compensativo; la sua giustificazione originaria è **falsificata** (vedi voce) |
+| `c1` | ~0.9 | **Struttura sì, livello no** | forma da Teglio; MPC lavoratori |
+| `w_bar` (salario) | 0.9 | **Da dichiarare (punto 11)** | parametro distributivo; nessuna fonte ancora |
+| `N` (forza lavoro) | 100 | **Scelta di modellazione** | scala del modello |
 | `beta` (acceleratore) | 0.5 | **Debole** | esiste letteratura sull'acceleratore, ma nessun numero canonico |
 | `investment_floor` | 0.1 | **Scelta di modellazione** | guardrail, nessun referente empirico |
+| `initial_capital` | 40.0 | **Scelta di modellazione — NON toccare negli sweep** | seleziona il bacino: equilibri multipli e soglia di viability |
 | `target_utilization` | 0.90 | **Debole — sopra l'empirico** | utilizzo reale ~0.80 |
 
 Benchmark di validazione (non parametri, ma target): quota salari, K/Y, quota
@@ -186,36 +200,57 @@ profitti, I/Y, utilizzo — vedi sotto.
   la fascia bassa del plowback d'impresa è secondario e non va usato come
   giustificazione principale.
 
-### `c0` = 1.0, `c1` ≈ 0.9 — consumo autonomo e MPC sul reddito
-- **Ruolo:** funzione di consumo `C = c0 + c1·income + λ·wealth`. `c1` è l'MPC dei
-  lavoratori; i capitalisti hanno MPC più bassa (leakage di risparmio).
-- **Empirico/struttura:** la forma `c0 + c1·Y` viene direttamente da Teglio
-  (2025): la domanda di consumo è la somma di una componente costante c0 e una
-  proporzionale al reddito c1·Y. Il termine `λ·wealth` è l'estensione di questo
-  progetto (wealth effect, vedi sotto). L'MPC aggregato è dibattuto (stime micro
-  eterogenee, spesso 0.2–0.6 su shock transitori/permanenti; molto più alto per
-  famiglie vincolate).
-- **Fonti:** Teglio (2025) per la struttura c0+c1Y.
-- **Verdetto:** la **forma** è ancorata a Teglio; il **livello** di `c0=1.0` è una
-  scala del modello (10× la Fase 1), scelta per portare domanda nel regime
-  capacity-constrained — è una scelta di regime, non una stima. `c1` come MPC è
-  ragionevole ma non calibrato a una fonte specifica.
+### `c0` = 2.0 — consumo autonomo
+> ⚠️ **Il codice gira `c0 = 2.0`.** Questo file diceva 1.0 fino al brief 05 (§7).
 
-### `wealth_effect` (λ) = 0.08 — MPC sulla ricchezza
-- **Ruolo:** termine `λ·wealth` nel consumo; leva di domanda che aiuta a portare
-  l'economia capacity-constrained.
+- **Ruolo:** funzione di consumo `C = c0 + c1·income + λ·wealth`, poi troncata a
+  ciò che la famiglia può permettersi (`min(target, wealth + income)`).
+- **Perché è **attivamente sospetto**, non solo "non ancorato":**
+  1. È un **cerotto compensativo**: introdotto per portare domanda nel regime
+     desiderato, non stimato. La regola trasversale del progetto è che un
+     parametro introdotto per aggirare un meccanismo va **rimosso quando il
+     meccanismo è capito**, non ereditato.
+  2. **La sua giustificazione originaria è falsificata.** Si giustificava `c0=2.0`
+     col fatto che crea il vincolo di cassa da cui nasce il differenziale di MPC
+     fra lavoratori e capitalisti. Ma i lavoratori risultano cash-constrained
+     **al 100% anche a `c0 = 1.0`**: la causa è la condizione **`c0 ≥ w̄`**
+     (con `w̄ = 0.9`), non il valore 2.0. Il livello 2.0 non fa il lavoro che gli
+     si attribuiva.
+- **Empirico/struttura:** la forma `c0 + c1·Y` viene direttamente da Teglio
+  (2025): consumo = componente costante + componente proporzionale al reddito. Il
+  termine `λ·wealth` è l'estensione di questo progetto. La **forma** è ancorata;
+  il **livello** di `c0` non lo è e non è ancorabile: è una scala del modello.
+- **Fonti:** Teglio (2025) per la struttura c0+c1Y. **Nessuna fonte per il livello,
+  e non se ne cerchi una: non è una quantità stimabile in questo modello.**
+- **Verdetto:** **NON ancorabile.** Da dichiarare come cerotto compensativo con
+  giustificazione falsificata. **Esito misurato (brief 05 §2): vedi la sezione
+  "c0 — esito dello stress test" più sotto**, che riporta quanto del risultato
+  headline dipende da questo valore.
+
+### `wealth_effect` (λ) = 0.05 — MPC sulla ricchezza
+> ✅ **Corretto da 0.08 a 0.05 e ora ANCORATO.** Il codice gira 0.05; questo file
+> diceva 0.08 fino al brief 05 (§7). La correzione va nella direzione giusta e va
+> registrata come tale: 0.08 era **fuori** dal range centrale empirico.
+
+- **Ruolo:** termine `λ·wealth` nel consumo; leva di domanda.
 - **Empirico:** consenso robusto su **0.03–0.05** (3–5 cent per dollaro di
-  ricchezza), range complessivo 0.02–0.07. Slacalek (2009): ~0.05 su 16 paesi.
-  Case, Quigley & Shiller (2005): 3–4 cent (housing). Carroll, Otsuka & Slacalek
-  (2011): immediato ~0.01–0.02, eventuale ~0.09 (housing). Fed FEDS note (2025):
-  ~3.5 cent, in calo a ~2.7 cent. Effetto housing > finanziario.
-- **Fonti:** Slacalek (2009); Case–Quigley–Shiller (2005); Carroll–Otsuka–
-  Slacalek (2011); Federal Reserve FEDS note (2025), "Wealth Heterogeneity and
-  Consumer Spending"; Paiella (2009) per la rassegna.
-- **Verdetto:** **λ=0.08 è sopra il tetto empirico** e ~2× la stima centrale.
-  Dichiarare esplicitamente come leva di regime. Per una calibrazione empirica,
-  abbassare a ~0.03–0.05 (e ri-verificare che il regime capacity-constrained
-  regga, o compensare con altre leve di domanda).
+  ricchezza), range complessivo 0.02–0.07. **Slacalek (2009)** — la fonte
+  verificata per questo valore — stima l'MPC di lungo periodo sulla ricchezza
+  **totale** a ≈ **5 cent** in media su **16 paesi**; **4–6 cent** nelle economie
+  market-based; le stime per singolo paese stanno tipicamente fra **0 e 10 cent**.
+  Il valore **0.05 centra la media cross-country**. Case, Quigley & Shiller (2005):
+  3–4 cent (housing). Carroll, Otsuka & Slacalek (2011): immediato ~0.01–0.02,
+  eventuale ~0.09 (housing). Fed FEDS note (2025): ~3.5 cent, in calo a ~2.7 cent.
+  Effetto housing > finanziario.
+- **Fonti:** **Slacalek, J. (2009), "What Drives Personal Consumption? The Role of
+  Housing and Financial Wealth", *The B.E. Journal of Macroeconomics* 9(1)** (anche
+  ECB Working Paper 1117) — fonte verificata per λ = 0.05; Case–Quigley–Shiller
+  (2005); Carroll–Otsuka–Slacalek (2011); Federal Reserve FEDS note (2025);
+  Paiella (2009) per la rassegna.
+- **Verdetto:** **BUONO — ancorato.** λ = 0.05 è la media cross-country di
+  Slacalek (2009) e sta dentro il range centrale del consenso. Non è più una leva
+  di regime dichiarata: è una stima con fonte. (Il vecchio 0.08 era ~2× la stima
+  centrale e sopra il tetto empirico.)
 
 ### `beta` = 0.5 — sensibilità dell'acceleratore all'utilizzo
 - **Ruolo:** `util_effect = max(0, 1 + β·(u_last − target))`; modula
@@ -243,6 +278,49 @@ profitti, I/Y, utilizzo — vedi sotto.
   Utilization); voce "Capacity utilization" (media storica ~81.6%).
 - **Verdetto:** scelta di regime, sopra l'empirico. Coerente col fatto che il
   core opera a quasi-piena-capacità (vedi benchmark utilizzo).
+
+---
+
+## `c0` — esito dello stress test (brief 05 §2) — **il cerotto non regge, ma non per la ragione attesa**
+
+Misurato: griglia σ×ρ×`c0`, 20 seed, 2000 step, media ultime 50 (Stadio A, 3.080 run);
+sonda `c0 = 0.5` (Stadio B, 560 run). Vedi `ces_b05_stage_a_panel.csv`.
+
+**1. La giustificazione di `c0=2.0` è falsificata — per misura, non per argomento.**
+La frazione di famiglie cash-constrained è **0.90 a `c0`=2.0, 1.0 E 0.5**. Con 90
+lavoratori su 100 famiglie, 0.90 significa **tutti i lavoratori, sempre**. Quindi
+`c0=2.0` non compra nulla al meccanismo del gap di MPC.
+
+**2. Ma anche la diagnosi del brief ("la causa è `c0 ≥ w̄`") è falsificata.** A
+`c0 = 0.5 < w̄ = 0.9` i lavoratori restano cash-constrained al **99.97%**
+(media 0.8997). La causa vera è **endogena**: un lavoratore è vincolato se
+`wealth < (c0 − 0.09)/0.95`, e all'equilibrio i lavoratori **non accumulano
+ricchezza** — spendono tutto, quindi restano senza cuscinetto, quindi restano
+vincolati. Abbassare `c0` abbassa anche la soglia *e* la ricchezza: il vincolo non
+si allenta. **Il gap di MPC è strutturale, non un prodotto di `c0`.**
+> Conseguenza per il brief: la sonda §6.2 **non poteva** eseguire il test che si
+> proponeva ("testare se il motore sopravvive quando i lavoratori NON sono
+> cash-constrained al 100%"), perché `c0 < w̄` **non li libera**. Per liberarli
+> servirebbe un altro intervento (es. dare ricchezza iniziale ai lavoratori, o
+> `c1 < 1` con reddito più alto): proposta, non implementata.
+
+**3. `c0` NON è neutrale sui risultati** (è una leva di regime vera):
+| | `c0`=0.5 | `c0`=1.0 | `c0`=2.0 |
+|---|---|---|---|
+| Y (σ=0.5, ρ=0.40) | 68.2 | 88.7 | 129.5 |
+| disoccupazione | 63.0% | 52.4% | 31.1% |
+| quota salari | 0.488 | 0.482 | 0.479 |
+
+`c0=0.5` produce un'economia con **63% di disoccupazione**: sonda di meccanismo, non
+un'economia plausibile. La **quota salari è invece quasi invariante a `c0`** (0.479–0.488).
+
+**4. Verdetto.** `c0` resta **non ancorabile** e va dichiarato come scelta di scala.
+La sua rimozione non è però una decisione tecnica indolore: cambia i livelli di tutto
+(Y, U) anche se non la quota salari. **Non ricalibrare senza decidere prima quale
+regime di disoccupazione si vuole dichiarare** — a `c0=1.0` il modello gira al ~52% di
+disoccupazione, che è esso stesso fuori scala rispetto a qualunque benchmark.
+**Questa è la tensione aperta più grande del progetto, e il brief 05 non la chiude:
+la registra.**
 
 ---
 
@@ -284,10 +362,28 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
 
 ## Benchmark di validazione (target, non parametri liberi)
 
-### Quota salari / quota profitti — 0.667 / 0.333
-- Nel modello: esatte per costruzione (markup = α/(1−α)). Empiricamente la quota
-  salari USA è ~0.60–0.68 (compensation share) → il valore 0.667 è realistico.
-  Fonte: Cottrell (2019); Gollin (2002). **Match buono.**
+> ⚠️ **I benchmark di questa sezione sono in gran parte STALE.** Descrivono il core
+> Cobb-Douglas **senza mercato del lavoro**, rimosso al punto 11. Marcati uno per
+> uno qui sotto (brief 05 §7). Non citarli come risultati del modello attuale.
+
+### ~~Quota salari / quota profitti — 0.667 / 0.333~~ — **STALE**
+> ⚠️ **STALE dal punto 11.** "Esatte per costruzione (markup = α/(1−α))" non ha più
+> referente: `markup` è stato **rimosso** e il salario fisso `w̄` è il parametro
+> distributivo. **La quota salari è ora un ESITO MISURATO, non un'identità** — e
+> un'identità vera per costruzione non validava comunque nulla.
+> Limite strutturale nuovo: l'impresa non assume dove `MPL < w̄`, quindi la quota
+> salari è **strutturalmente limitata dall'alto** dalla quota salari al profit-max
+> — che vale `1−π0` **solo a σ=1** e dipende da σ altrove
+> (`(1−π0)·z^(1−σ)`, vedi `agents.ces_wage_share_profitmax`).
+> Il target giusto non è 0.667: è il **range empirico 0.60–0.68**.
+> **Misurato (brief 05, celle viable, 20 seed): 0.351–0.606 a `c0`=1.0; 0.387–0.603
+> a `c0`=2.0.** Quasi tutto **sotto** il range empirico 0.60–0.68, e il massimo lo
+> tocca solo a σ=1.5 e ρ basso. Tensione aperta da riportare, non da ricalibrare via.
+> Nota: la quota salari è **quasi invariante a `c0`** (0.479–0.488 a σ=0.5, ρ=0.40
+> per `c0` ∈ {0.5, 1.0, 2.0}) — è σ e ρ a muoverla, non la leva di domanda.
+- Testo storico: nel modello esatte per costruzione (markup = α/(1−α));
+  empiricamente la quota salari USA è ~0.60–0.68 (compensation share).
+  Fonte: Cottrell (2019); Gollin (2002).
 
 ### K/Y — 2.58 (target 2.5–3)
 - Nel modello: `K/Y = ρα/δ`. Empiricamente il rapporto capitale-prodotto
@@ -300,11 +396,24 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
   residenziale/PIL USA (~0.13–0.14) — **coincidenza incoraggiante, DA VERIFICARE**
   con dato primario (BEA NIPA); attenzione a gross vs net e al perimetro.
 
-### Utilizzo della capacità — 0.99 (modello) vs ~0.80 (empirico)
-- **Discrepanza rilevante, dichiarata.** Il modello opera a quasi-piena-capacità
-  ovunque; l'economia reale opera ~80% con slack persistente. È la firma del
-  regime supply-constrained del core (vedi README, *Interpretive frame*). Fonte:
-  Federal Reserve G.17. **Non un match** — è una scelta di regime da esplicitare.
+### ~~Utilizzo della capacità — 0.99 (modello)~~ vs ~0.80 (empirico) — **STALE**
+> ⚠️ **STALE dal punto 11.** Il "0.99" apparteneva al core Cobb-Douglas **senza
+> mercato del lavoro**, che era capacity-constrained ovunque. Quel regime **non
+> esiste più**: con l'occupazione endogena il modello è **demand-constrained**
+> quasi ovunque (brief 05: 76 celle viable su 77 a `c0`=1.0), e l'utilizzo misurato
+> sta fra **0.222 e 0.870** a seconda di (σ, ρ) — vedi `ces_b05_stage_a_cells.csv`.
+> Anche la *definizione* è cambiata: `u` è ora misurato contro la capacità al
+> **profit-max**, non contro `Y*(K, L)` (che degenererebbe a `u ≡ 1` con L
+> endogeno).
+- **Cautela sulla lettura di `u` (brief 05).** La capacità profit-max usata dal
+  denominatore **non è vincolata dalla forza lavoro**: a `w̄ = 0.9` le imprese
+  vorrebbero collettivamente ~170 lavoratori, ma ne esistono `N = 100`. Quindi `u`
+  misura la distanza da una scala **irraggiungibile**, e siede strutturalmente
+  sotto `target_utilization = 0.90` → l'acceleratore è **permanentemente in
+  frenata**. Non è un bug del brief 05 (che non tocca il modello): è una proposta
+  di revisione, registrata e non implementata.
+- Confronto empirico invariato: l'economia reale opera ~80% con slack persistente.
+  Fonte: Federal Reserve G.17.
 
 ---
 
@@ -314,12 +423,34 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
    diversamente:** ρ va ancorato a I/Y, non al payout (vedi voce `retention_ratio`
    e §"Il sistema congiunto"). Nessuna ricalibrazione δ/ρ: la coppia attuale è
    congiuntamente coerente.
-2. **`wealth_effect=0.08` e `target_utilization=0.90`** sono sopra l'empirico:
-   decidere se (a) ricalibrare verso i valori empirici e accettare un regime
-   diverso, o (b) tenerli come leve di regime *dichiarate*. Non presentarli come
-   stime.
+2. ~~**`wealth_effect=0.08`**~~ **RISOLTO (brief 05):** il codice gira **0.05**, che
+   è la media cross-country di **Slacalek (2009)** → **ancorato**. Restava
+   `target_utilization = 0.90`, sopra l'empirico (~0.80): tuttora una **leva di
+   regime dichiarata**, non una stima.
+   > **Nota di discrepanza (brief 05).** Il brief 05 §2.1 elenca
+   > `target_utilization = 0.70` fra i cerotti compensativi. **Il codice gira
+   > 0.90** (`model.MacroModel`), e questo file diceva 0.90 già prima. Il valore
+   > 0.70 non ha referente nel codice: registrato come discrepanza del brief, non
+   > "corretto" nel codice — il modello non si tocca in un task di validazione.
+3. **`c0 = 2.0` è il debito aperto più grande.** Non ancorabile e con
+   giustificazione falsificata (vedi voce). L'esito dello stress test del brief 05
+   è nella sezione dedicata più sotto: è quello che decide se il parametro va
+   rimosso, e con quali conseguenze sull'headline.
 3. **Unità temporale del periodo:** chiarirla, perché δ, K/Y, I/Y sono
    annualizzati implicitamente.
+3bis. **⚠️ La disoccupazione è fuori scala a ogni `c0` (misurato, brief 05).** Alla
+   ρ calibrata (0.40) e nel range empirico di σ, il modello gira a **U ≈ 52%**
+   (`c0`=1.0) o **U ≈ 31%** (`c0`=2.0); la sonda `c0`=0.5 dà **63%**. Nessuno di
+   questi è un'economia plausibile (USA: ~4–10%). **Non è un benchmark che si
+   aggiusta con `c0`**: nessun `c0` testato porta U in banda. È una tensione
+   strutturale del punto 11 (salario fisso `w̄=0.9` + `L=min(...)`), da affrontare
+   come questione di design — non da nascondere scegliendo il `c0` meno imbarazzante.
+3ter. **`σ*` non è un numero — è una frontiera `σ*(ρ)` (misurato, brief 05).**
+   `Y(ρ)` è a **U** (curvatura significativa in 20 celle su 22, |t| fino a 20.5;
+   punto di svolta **dentro** il supporto in 19 su 22), quindi il segno di `dY/dρ`
+   dipende da **ρ** oltre che da σ. Una pendenza OLS su tutto il supporto è
+   **precisa e sbagliata**: adatta una retta a una curva. Riportare `σ*(ρ)`, mai un
+   `σ*` unico. Vedi `ces_b05_curvature.csv`, `ces_b05_support_sensitivity.csv`.
 4. **Assunzione Cobb-Douglas a quote costanti:** dichiararla come scelta, citando
    la critica empirica (Karabarbounis–Neiman; Antràs).
 5. **Verificare I/Y** con dato BEA primario (serie NIPA investimento fisso non
@@ -377,8 +508,11 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
 - BLS (2022). Alternative Capital Asset Depreciation Rates for U.S. Capital.
   <https://www.bls.gov/opub/mlr/2022/article/alternative-capital-asset-depreciation-rates-for-us-capital-and-total-factor-productivity-measures.htm>
 - Angeletos, G.-M. (2007). Uninsured idiosyncratic investment risk. (δ=0.08, α=0.36)
-- Slacalek, J. (2009). What Drives Personal Consumption? The Role of Housing and
-  Financial Wealth. *B.E. Journal of Macroeconomics*.
+- **Slacalek, J. (2009). What Drives Personal Consumption? The Role of Housing and
+  Financial Wealth. *The B.E. Journal of Macroeconomics* 9(1)** (anche ECB Working
+  Paper 1117). — **fonte verificata di `wealth_effect` = 0.05**: MPC di lungo periodo
+  sulla ricchezza totale ≈ 5 cent, media su 16 paesi; 4–6 cent nelle economie
+  market-based; stime per paese tipicamente 0–10 cent.
 - Case, K., Quigley, J. & Shiller, R. (2005/2013). Comparing Wealth Effects.
 - Carroll, C., Otsuka, M. & Slacalek, J. (2011). How Large Are Housing and
   Financial Wealth Effects? *Journal of Money, Credit and Banking*.

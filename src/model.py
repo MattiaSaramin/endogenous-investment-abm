@@ -69,6 +69,37 @@ ANCHOR_K0 = 41.87356984217038
 ANCHOR_L0 = 7.395333333333333
 
 
+# --- The re-anchoring check (brief 05 §4) ---------------------------------
+#
+# WHY A SECOND ANCHOR EXISTS.  The anchor above sits at rho = 0.40, which is the
+# LOWEST viable rho: the whole sweep therefore lies on one side of it.  Since the
+# first derivatives are identical across sigma *at* the anchor, the effects of sigma
+# are mechanically a function of the distance travelled from it — which is precisely
+# Temple's (2012) objection: normalisation makes the sigma-variants comparable AT a
+# point, it does not make the comparison away from that point neutral to the choice
+# of point.  So the experiment is repeated with the anchor moved to the CENTRE of the
+# viable support, and sigma* is checked for movement.  If it does move, sigma* depends
+# on the anchor and must be reported as such — one does not pick the anchor that gives
+# the preferred answer.
+#
+# Measured ONCE by the same procedure as the rho = 0.40 anchor above:
+#
+#     retention_ratio = 0.50, sigma = 1, seeds {0, 1, 2}, 2000 steps, mean of the last
+#     50 observations, all other parameters at their defaults
+#     (initial_capital = 40.0, wage_rate = 0.9, c0 = 2.0, N = 100, 10 firms).
+#
+# Measured aggregates: K = 525.6635921973111, L = 63.20261437908497 over 10 firms.
+#
+# c0 = 2.0 here deliberately, matching how the rho = 0.40 anchor was measured: the
+# anchor belongs to the PRODUCTION specification, not the demand block, so it is held
+# fixed across c0 (brief 05 §4.3).  Re-measuring it per c0 would change the production
+# function whenever demand changed, and differences between c0 would stop being
+# attributable to c0.  Consequence, reported rather than hidden: at c0 = 1.0 the model
+# operates at a different distance from the anchor.
+ANCHOR_K0_RHO050 = 52.56635921973111
+ANCHOR_L0_RHO050 = 6.320261437908497
+
+
 # ============================================================
 # Metrics
 # ============================================================
@@ -133,8 +164,59 @@ def compute_potential_output(model):
 
 
 def compute_output_gap(model):
-    """Gap of output below full-employment potential (Teglio's output-gap concept)."""
+    """``gap_N = 1 - Y/Y*(K, N)`` — output below FULL-EMPLOYMENT potential.
+
+    **This is the headline gap** (brief 05 §5.3).  It is the definition that carries
+    the project's research question: it measures *unused heads*, so it is the one
+    commensurable with Teglio's (2025) output-gap concept and the one that moves with
+    unemployment.  Its companion :func:`compute_output_gap_profitmax` measures unused
+    *capacity* instead — a different quantity, reported alongside rather than in place
+    of this one, because the difference between them is itself informative.
+    """
     potential = compute_potential_output(model)
+    if potential <= 0:
+        return 0.0
+    return (potential - compute_output(model)) / potential
+
+
+def compute_potential_output_profitmax(model):
+    """Capacity benchmark at the *profit-max* scale: ``Y*(K_agg, min(sum L_pm, N))``.
+
+    Aggregated the same way as :func:`compute_potential_output` (aggregate K, one CES
+    evaluation with the per-firm anchor) so the two are commensurable and their
+    ordering is exact; the per-firm ``L_profitmax`` are summed and then capped at the
+    workforce, because there are only ``N`` workers however much labour the firms
+    would each like at ``MPL = w_bar``.
+
+    ``L_profitmax`` is ``+inf`` when MPL never falls to the wage (sigma > 1, low wage);
+    the sum is then ``+inf`` and the cap returns ``N``, so this collapses onto the
+    full-employment benchmark rather than blowing up.
+    """
+    k = compute_aggregate_capital(model)
+    n = model.num_households
+    if k <= 0 or n <= 0:
+        return 0.0
+    # min() over a possibly-infinite sum: no branch needed, inf loses to N.
+    labour = min(sum(f.L_profitmax for f in _firms(model)), float(n))
+    if labour <= 0:
+        return 0.0
+    return ces_capacity(
+        k, labour, model.productivity, model.K0, model.L0, model.pi0, model.sigma
+    )
+
+
+def compute_output_gap_profitmax(model):
+    """``gap_pm = 1 - Y/Y*(K, min(L_profitmax, N))`` — output below PROFIT-MAX capacity.
+
+    Consistent with the point-11 definition of utilisation (which is also measured
+    against the profit-max scale), this measures *unused capacity*, not unused heads.
+
+    ``gap_pm <= gap_N`` always, because ``min(sum L_pm, N) <= N`` and the CES is
+    non-decreasing in labour — the profit-max benchmark is the weaker one.  The two
+    coincide exactly when the firms would hire the whole workforce at ``MPL = w_bar``.
+    Asserted in tests: if the ordering ever inverts, one of the two is misimplemented.
+    """
+    potential = compute_potential_output_profitmax(model)
     if potential <= 0:
         return 0.0
     return (potential - compute_output(model)) / potential
@@ -401,7 +483,11 @@ class MacroModel(mesa.Model):
             model_reporters={
                 "Output": compute_output,
                 "Potential_Output": compute_potential_output,
+                # Two gaps, deliberately: gap_N is unused heads (headline), gap_pm is
+                # unused capacity.  See compute_output_gap (brief 05 §5.3).
                 "Output_Gap": compute_output_gap,
+                "Potential_Output_PM": compute_potential_output_profitmax,
+                "Output_Gap_PM": compute_output_gap_profitmax,
                 "Unemployment_Rate": compute_unemployment,
                 "Employment": compute_employment,
                 "Total_Capital": compute_aggregate_capital,

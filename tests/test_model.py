@@ -21,6 +21,8 @@ Run with ``pytest`` from the repository root.  The suite pins down:
 
 import math
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from model import (
@@ -28,8 +30,21 @@ from model import (
     ANCHOR_K0,
     ANCHOR_L0,
     compute_gini,
+    compute_output_gap,
+    compute_output_gap_profitmax,
     _households,
     _firms,
+)
+from experiment import (
+    bootstrap_sigma_star,
+    cells_from_panel,
+    common_viable_support,
+    ols_slope,
+    quadratic_curvature,
+    run_grid_panel,
+    sigma_star_interp,
+    slopes_by_sigma,
+    _gradient_weights,
 )
 from agents import (
     Firm,
@@ -569,13 +584,19 @@ GRID_SIGMA = [0.3, 0.5, 1.0, 1.25]
 GRID_RHO = [0.40, 0.60]
 
 
+@pytest.mark.parametrize("c0", [1.0, 2.0])
 @pytest.mark.parametrize("seed", [0, 1])
 @pytest.mark.parametrize("rho", GRID_RHO)
 @pytest.mark.parametrize("sigma", GRID_SIGMA)
-def test_invariants_hold_across_the_grid(sigma, rho, seed):
+def test_invariants_hold_across_the_grid(sigma, rho, seed, c0):
     """SFC, the zero buffer, the distribution identity and the labour accounting
-    must survive every cell of the sigma x rho grid, not just sigma = 1."""
-    model = MacroModel(retention_ratio=rho, seed=seed, sigma=sigma)
+    must survive every cell of the sigma x rho x c0 grid, not just sigma = 1.
+
+    c0 joins the grid in brief 05: it is swept as a full dimension there, so the
+    invariants have to hold across it too — a demand lever that broke stock-flow
+    consistency would invalidate every c0 comparison the task rests on.
+    """
+    model = MacroModel(retention_ratio=rho, seed=seed, sigma=sigma, c0=c0)
     initial = total_money(model)
     for _ in range(250):
         model.step()
@@ -635,3 +656,296 @@ def test_gini_bounds():
     assert compute_gini([0, 0, 0, 100]) == pytest.approx(0.75)
     assert compute_gini([]) == 0.0
     assert compute_gini([1, 2, 3]) == pytest.approx(compute_gini([10, 20, 30]))
+
+
+# ======================================================================
+# Brief 05 — the robustness stack
+# ======================================================================
+
+# ----------------------------------------------------------------------
+# The two output gaps (brief 05 §5.3)
+# ----------------------------------------------------------------------
+
+@pytest.mark.parametrize("sigma", [0.3, 0.5, 1.0, 1.5])
+@pytest.mark.parametrize("c0", [1.0, 2.0])
+def test_profitmax_gap_never_exceeds_full_employment_gap(sigma, c0):
+    """``gap_pm <= gap_N`` — the ordering the two definitions must have.
+
+    ``min(sum L_pm, N) <= N`` and the CES is non-decreasing in labour, so the
+    profit-max potential is the weaker benchmark and its gap the smaller one.  If this
+    inverts, one of the two is implemented against the wrong labour input (brief §9).
+    """
+    model = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=sigma, c0=c0)
+    for _ in range(300):
+        model.step()
+        assert compute_output_gap_profitmax(model) <= compute_output_gap(model) + 1e-9
+
+
+def test_gaps_coincide_when_firms_would_hire_the_whole_workforce():
+    """The two gaps are EQUAL whenever the firms' profit-max scale exceeds N.
+
+    Not a tautology worth pinning for its own sake — it pins the *reason* the two
+    definitions turn out to measure the same thing in this economy's viable region:
+    at w_bar = 0.9 the firms would collectively hire far more than the 100 workers
+    that exist, so the workforce, not the profit-max point, is what caps potential.
+    """
+    model = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=1.0)
+    for _ in range(300):
+        model.step()
+
+    assert sum(f.L_profitmax for f in _firms(model)) > model.num_households
+    assert compute_output_gap_profitmax(model) == pytest.approx(
+        compute_output_gap(model), rel=1e-12
+    )
+
+
+def test_gaps_are_finite_and_gini_in_bounds_across_the_grid():
+    """No NaN/inf and no out-of-range shares in a living cell (brief §9)."""
+    for sigma in (0.3, 1.0):
+        s = _steady(sigma=sigma, steps=400)
+        for col in ("Output_Gap", "Output_Gap_PM", "Income_Gini", "Wealth_Gini",
+                    "Wage_Share", "Unemployment_Rate"):
+            assert math.isfinite(float(s[col])), col
+        for col in ("Income_Gini", "Wealth_Gini", "Wage_Share", "Unemployment_Rate"):
+            assert 0.0 <= float(s[col]) <= 1.0, col
+
+
+# ----------------------------------------------------------------------
+# The regression pin — GATING (brief 05 §9, §10.1)
+# ----------------------------------------------------------------------
+
+#: Brief 04's committed grid (``ces_sigma_rho_grid.csv``) at sigma = 1.0, c0 = 2.0,
+#: anchor rho = 0.40, seeds {0, 1, 2}, 2000 steps, mean of the last 50.  The CSV
+#: carries 10 significant digits, which is what sets the tolerance below.
+BRIEF04_GRID_REFERENCE = {
+    0.40: {"Y": 131.8056201, "K": 418.7977892, "Employment": 73.97385621,
+           "Unemployment_Rate": 0.2602614379, "Wage_Share": 0.5050298243},
+    0.50: {"Y": 128.0175548, "K": 525.6635922, "Employment": 63.20261438,
+           "Unemployment_Rate": 0.3679738562, "Wage_Share": 0.4442896486},
+    0.60: {"Y": 126.3940834, "K": 620.1016309, "Employment": 57.09150327,
+           "Unemployment_Rate": 0.4290849673, "Wage_Share": 0.4065135381},
+}
+
+
+def test_regression_pin_reproduces_brief04_grid():
+    """The brief-05 panel path must reproduce brief 04's grid EXACTLY, same seeds.
+
+    This is the gate on the whole task (brief §10.1): the new grid adds a c0 dimension,
+    a denser rho grid, more seeds and a different derivative estimator, and none of
+    that is comparable with brief 04 unless the underlying cells are identical.  If
+    this fails, the two grids measure different things and every difference downstream
+    is an artefact of the refactor rather than a finding.
+    """
+    panel = run_grid_panel(
+        sigmas=[1.0], rhos=[0.40, 0.50, 0.60], seeds=3, steps=2000, workers=1, c0=2.0,
+    )
+    cells = cells_from_panel(panel)
+
+    for _, row in cells.iterrows():
+        expected = BRIEF04_GRID_REFERENCE[round(float(row["rho"]), 2)]
+        for metric, value in expected.items():
+            assert float(row[metric]) == pytest.approx(value, rel=1e-8), (
+                f"rho={row['rho']} {metric}"
+            )
+
+
+# ----------------------------------------------------------------------
+# The OLS slope and the sigma* interpolation
+# ----------------------------------------------------------------------
+
+def test_ols_slope_recovers_an_exact_line():
+    slope, se = ols_slope([0.0, 1.0, 2.0, 3.0], [1.0, 3.0, 5.0, 7.0])
+    assert slope == pytest.approx(2.0)
+    assert se == pytest.approx(0.0, abs=1e-12)
+
+
+def test_ols_slope_matches_numpy_polyfit_on_noisy_data():
+    rng = np.random.default_rng(0)
+    x = np.linspace(0.35, 0.65, 7)
+    y = 3.0 - 40.0 * x + rng.normal(0, 2.0, x.size)
+    slope, se = ols_slope(x, y)
+    assert slope == pytest.approx(float(np.polyfit(x, y, 1)[0]), rel=1e-10)
+    assert se > 0.0
+
+
+def test_ols_slope_is_undefined_without_variation():
+    assert all(math.isnan(v) for v in ols_slope([1.0, 1.0], [2.0, 3.0]))
+    assert all(math.isnan(v) for v in ols_slope([1.0], [2.0]))
+    # Exactly two points: the slope exists, the standard error cannot.
+    slope, se = ols_slope([0.0, 1.0], [0.0, 5.0])
+    assert slope == pytest.approx(5.0) and math.isnan(se)
+
+
+def test_quadratic_curvature_recovers_an_exact_parabola():
+    """``y = 2 - 3x + 5x**2``: curvature 5, turning point at x = 3/(2*5) = 0.3."""
+    x = [0.0, 0.25, 0.5, 0.75, 1.0]
+    y = [2.0 - 3.0 * xi + 5.0 * xi ** 2 for xi in x]
+    c, se, turn = quadratic_curvature(x, y)
+    assert c == pytest.approx(5.0)
+    assert se == pytest.approx(0.0, abs=1e-9)
+    assert turn == pytest.approx(0.3)
+
+
+def test_quadratic_curvature_is_undefined_with_too_few_points():
+    assert all(math.isnan(v) for v in quadratic_curvature([0.0, 1.0], [1.0, 2.0]))
+    # Exactly three points: the coefficient and turning point exist, the SE cannot.
+    c, se, turn = quadratic_curvature([0.0, 1.0, 2.0], [0.0, 1.0, 4.0])
+    assert c == pytest.approx(1.0) and math.isnan(se) and turn == pytest.approx(0.0)
+
+
+def test_sigma_star_interp_matches_a_hand_built_analytic_case():
+    """Interpolated sigma* against a case whose answer is known by hand (brief §9).
+
+    Slopes +10 at sigma = 0.5 and -10 at sigma = 1.0 are symmetric about zero, so the
+    crossing sits exactly halfway, at 0.75.
+    """
+    star, crossings = sigma_star_interp([0.5, 1.0], [10.0, -10.0])
+    assert star == pytest.approx(0.75)
+    assert crossings == 1
+
+    # Asymmetric slopes: the crossing sits proportionally nearer the smaller |slope|.
+    star, _ = sigma_star_interp([0.0, 1.0], [3.0, -1.0])
+    assert star == pytest.approx(0.75)
+
+
+def test_sigma_star_is_undefined_when_the_sign_never_turns():
+    """No crossing is a RESULT, reported as nan — not an error and not a dropped case."""
+    star, crossings = sigma_star_interp([0.3, 0.5, 1.0], [5.0, 4.0, 3.0])
+    assert math.isnan(star) and crossings == 0
+
+
+def test_sigma_star_reports_multiple_crossings():
+    """A non-monotone slope profile crosses more than once; the count must surface it,
+    because a single point estimate would silently hide the structure."""
+    star, crossings = sigma_star_interp([0.0, 1.0, 2.0, 3.0], [1.0, -1.0, 1.0, -1.0])
+    assert crossings == 3
+    assert star == pytest.approx(0.5)          # the first crossing, by convention
+
+
+# ----------------------------------------------------------------------
+# The bootstrap
+# ----------------------------------------------------------------------
+
+def _synthetic_panel(slopes, seeds=8, noise=0.0, rng_seed=0):
+    """A panel with ``Y = 100 + slope(sigma)*rho`` and controllable inter-seed noise.
+
+    Lets the bootstrap be tested against an answer known in closed form, with no
+    simulation involved.
+    """
+    rng = np.random.default_rng(rng_seed)
+    rows = []
+    for sigma, slope in slopes.items():
+        for rho in (0.4, 0.5, 0.6):
+            for seed in range(seeds):
+                y = 100.0 + slope * rho + (rng.normal(0, noise) if noise else 0.0)
+                rows.append({"sigma": sigma, "rho": rho, "seed": seed, "Output": y})
+    return pd.DataFrame(rows)
+
+
+def test_gradient_weights_reproduce_numpy_gradient():
+    """The finite-difference operator must be recovered exactly as a matrix.
+
+    This is what lets ``sigma*(rho)`` and the OLS ``sigma*`` share one bootstrap; if
+    the matrix drifted from ``numpy.gradient``, the brief-04-comparable view would
+    silently stop being brief-04's estimator.
+    """
+    rho = np.array([0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65])
+    G = _gradient_weights(rho)
+    rng = np.random.default_rng(3)
+    for _ in range(5):
+        y = rng.normal(120.0, 10.0, rho.size)
+        assert np.allclose(G @ y, np.gradient(y, rho), rtol=1e-12, atol=1e-12)
+
+
+def test_bootstrap_is_deterministic_given_its_rng_seed():
+    panel = _synthetic_panel({0.5: 20.0, 1.0: -20.0}, noise=3.0)
+    a = bootstrap_sigma_star(panel, [0.4, 0.5, 0.6], n_resamples=200, rng_seed=123)
+    b = bootstrap_sigma_star(panel, [0.4, 0.5, 0.6], n_resamples=200, rng_seed=123)
+    assert (a["sigma_star"], a["ci_lo"], a["ci_hi"]) == (b["sigma_star"], b["ci_lo"], b["ci_hi"])
+
+    c = bootstrap_sigma_star(panel, [0.4, 0.5, 0.6], n_resamples=200, rng_seed=456)
+    assert (c["ci_lo"], c["ci_hi"]) != (a["ci_lo"], a["ci_hi"])
+
+
+def test_bootstrap_recovers_the_analytic_sigma_star_without_noise():
+    """Zero inter-seed variance: every resample is the same data, so the CI must
+    collapse onto the analytic sigma* and nothing may be undefined."""
+    panel = _synthetic_panel({0.5: 20.0, 1.0: -20.0}, noise=0.0)
+    bs = bootstrap_sigma_star(panel, [0.4, 0.5, 0.6], n_resamples=200, rng_seed=7)
+
+    assert bs["sigma_star"] == pytest.approx(0.75)
+    assert bs["ci_lo"] == pytest.approx(0.75)
+    assert bs["ci_hi"] == pytest.approx(0.75)
+    assert bs["frac_undefined"] == 0.0
+    assert bs["slopes"][0.5] == pytest.approx(20.0)
+
+
+def test_bootstrap_counts_undefined_resamples_instead_of_dropping_them():
+    """When no sigma in range turns the sign, sigma* is undefined in every resample.
+
+    The contract that matters (brief §3.2.4): report the fraction, do not quietly drop
+    those resamples and hand back a confident CI built on the survivors.
+    """
+    panel = _synthetic_panel({0.5: 20.0, 1.0: 10.0}, noise=1.0)
+    bs = bootstrap_sigma_star(panel, [0.4, 0.5, 0.6], n_resamples=200, rng_seed=7)
+
+    assert math.isnan(bs["sigma_star"])
+    assert bs["frac_undefined"] == 1.0
+    assert math.isnan(bs["ci_lo"]) and math.isnan(bs["ci_hi"])
+
+
+def test_bootstrap_ci_widens_with_inter_seed_noise():
+    quiet = bootstrap_sigma_star(
+        _synthetic_panel({0.5: 20.0, 1.0: -20.0}, noise=0.5, rng_seed=1),
+        [0.4, 0.5, 0.6], n_resamples=400, rng_seed=7,
+    )
+    loud = bootstrap_sigma_star(
+        _synthetic_panel({0.5: 20.0, 1.0: -20.0}, noise=8.0, rng_seed=1),
+        [0.4, 0.5, 0.6], n_resamples=400, rng_seed=7,
+    )
+    assert (loud["ci_hi"] - loud["ci_lo"]) > (quiet["ci_hi"] - quiet["ci_lo"])
+
+
+# ----------------------------------------------------------------------
+# Panel / cell plumbing
+# ----------------------------------------------------------------------
+
+def test_common_viable_support_drops_rho_collapsed_at_any_sigma():
+    """A rho is in the common support only if EVERY sigma survives it — slopes taken
+    on different supports would confound sigma with which cells happened to live."""
+    cells = pd.DataFrame({
+        "sigma": [0.5, 0.5, 1.0, 1.0],
+        "rho": [0.35, 0.40, 0.35, 0.40],
+        "collapsed": [False, False, True, False],
+    })
+    assert common_viable_support(cells) == [0.40]
+
+
+def test_cells_from_panel_flags_a_mixed_basin():
+    """Some seeds alive and some dead is a basin boundary, and must be visible rather
+    than averaged into a mean that describes neither."""
+    panel = pd.DataFrame({
+        "sigma": [1.0] * 4,
+        "rho": [0.35] * 4,
+        "seed": [0, 1, 2, 3],
+        "Output": [0.0, 0.0, 120.0, 130.0],
+        "Bound_Demand": [0.0, 0.0, 1.0, 1.0],
+        "Bound_Profitmax": [0.0] * 4,
+        "Bound_Capital": [1.0, 1.0, 0.0, 0.0],
+        "Bound_Workforce": [0.0] * 4,
+    })
+    cells = cells_from_panel(panel)
+    assert bool(cells["mixed_basin"].iloc[0])
+    assert cells["frac_seeds_collapsed"].iloc[0] == pytest.approx(0.5)
+    assert not bool(cells["collapsed"].iloc[0])       # the mean is alive
+
+
+def test_slopes_by_sigma_uses_only_the_common_support():
+    cells = pd.DataFrame({
+        "sigma": [1.0, 1.0, 1.0],
+        "rho": [0.35, 0.40, 0.50],
+        "Y": [999.0, 10.0, 20.0],       # 0.35 is an outlier excluded by the support
+    })
+    out = slopes_by_sigma(cells, support=[0.40, 0.50])
+    assert out["dY_drho"].iloc[0] == pytest.approx(100.0)
+    assert int(out["n_points"].iloc[0]) == 2
