@@ -5,12 +5,15 @@ Macro model for the Endogenous-Investment Keynesian ABM
 Single-good, fixed-price (numeraire = 1), stock-flow-consistent circular flow of
 income.  Production is a *normalised* CES with elasticity of substitution ``sigma``
 (``sigma = 1`` is the Cobb-Douglas core; ``sigma -> 0`` is Leontief); firms hire
-endogenously at a fixed wage ``w_bar``; the unemployed earn nothing, so employment
-drives demand.
+endogenously at the wage ``w_t``; the unemployed earn nothing, so employment drives
+demand.  The wage is set by a Blanchflower-Oswald *wage curve* on last period's
+unemployment (brief 07); ``eta = 0`` fixes it at ``w_bar`` and nests the old model.
 
 Period sequence (employment is set *before* households form demand, because
-expected income depends on employment status) — UNCHANGED by brief 04:
+expected income depends on employment status) — step 0 added by brief 07:
 
+    0. wage determination: w_t from the wage curve on U_{t-1} (eta = 0 -> w_t = w_bar).
+       Set here, before the labour market, to avoid the w <-> U simultaneity.
     1. firms form expectations, compute desired employment; the labour market
        fires the excess and fills vacancies (random matching) -> employment
     2. households form consumption demand (income = wage if employed, else 0;
@@ -18,7 +21,7 @@ expected income depends on employment status) — UNCHANGED by brief 04:
     3. firms plan investment (profit flow, accelerator on last utilisation)
     4. firms register demand (consumption + investment)
     5. firms produce: Y = min(demand, Y*(K, L)); ration; set u
-    6. firm accounting: wage_bill = w_bar*L, retained (= I_planned), residual dividends
+    6. firm accounting: wage_bill = w_t*L, retained (= I_planned), residual dividends
     7. investment settlement: pay I_delivered; K(t+1) = (1-delta)K + I_delivered;
        buffer returns to zero
     8. household settlement (credit income, pay for delivered goods)
@@ -98,6 +101,61 @@ ANCHOR_L0 = 7.395333333333333
 # operates at a different distance from the anchor.
 ANCHOR_K0_RHO050 = 52.56635921973111
 ANCHOR_L0_RHO050 = 6.320261437908497
+
+
+# ============================================================
+# Wage-curve reference unemployment — a MODELLING CHOICE, measured once and frozen
+# ============================================================
+#
+# Brief 07 endogenises the wage via a Blanchflower-Oswald wage curve
+#
+#     w_t = max(w_min, w_bar * (max(U_{t-1}, U_min) / U_REF) ** (-eta)),
+#
+# normalised at ``U_REF``: the unemployment rate at which the wage equals ``w_bar``,
+# i.e. the wage at which the ANCHOR_* above were measured.  U_REF is MEASURED, not
+# chosen: an arbitrary value would make the steady-state wage level a hidden degree of
+# freedom of the calibration.  Anchoring it to the ANCHOR_* scenario makes the
+# wage-curve model at ``eta = 0`` pass through the same point as the current model in
+# the reference scenario.
+#
+# Measured ONCE on the CURRENT model (pre-wage-curve) by the same procedure as the
+# ANCHOR_* above:
+#
+#     retention_ratio = 0.40, sigma = 1, seeds {0, 1, 2}, 2000 steps, mean of the
+#     LAST 50 observations of Unemployment_Rate, all other parameters at their
+#     defaults (initial_capital = 40.0, wage_rate = 0.9, c0 = 2.0, N = 100, 10 firms).
+#
+# Tail convention: ``df.tail(50)`` (the 50 rows at index 1951..2000), which is the one
+# that reproduces ANCHOR_L0 * 10 = 73.95333333 exactly — the same discipline as the
+# ANCHOR.  (The other convention in the codebase, ``df.index >= steps - tail``, keeps
+# 51 rows and is what the brief-04 grid pin uses; it would give 0.2602614379 instead.)
+#
+# Per-seed tail-50 means: 0.2570 (seed 0), 0.2680 (seed 1), 0.2564 (seed 2);
+# mean over seeds = 0.2604666667.
+#
+# This is a modelling choice, NOT an estimate of the NAIRU: it is only the point at
+# which the wage curve is normalised to the pre-modification wage.
+U_REF = 0.2604666666666667
+
+
+def wage_from_curve(w_bar, U_prev, eta, U_ref, U_min, w_min):
+    """Blanchflower-Oswald wage curve — the *level* of the wage, given last U (brief 07).
+
+        w = max( w_min,  w_bar * (max(U_prev, U_min) / U_ref) ** (-eta) )
+
+    A *level* relation (not a Phillips *change* relation): it has a well-defined steady
+    state for every U, so it is compatible with comparative statics.  ``eta = 0`` returns
+    ``w_bar`` exactly (``x ** -0.0 == 1.0`` in IEEE-754), which is why the model can nest
+    the fixed-wage case; the caller still short-circuits eta = 0 to avoid the pow entirely
+    and guarantee bit-identity.
+
+    ``U_min`` guards the singularity at full employment (U -> 0 would send w -> +inf for
+    eta > 0); ``w_min`` is the subsistence floor against a deflationary spiral at high eta.
+    Both are declared conventions, not estimates (see parameter_notes.md).
+    """
+    U_eff = U_prev if U_prev > U_min else U_min
+    w = w_bar * (U_eff / U_ref) ** (-eta)
+    return w if w > w_min else w_min
 
 
 # ============================================================
@@ -280,6 +338,26 @@ def compute_profit_share(model):
     return sum(f.gross_profit for f in firms) / sales
 
 
+# --- wage-curve diagnostics (brief 07) ------------------------------------
+
+def compute_wage_rate(model):
+    """The current wage ``w_t`` (a *measured outcome* once the wage curve is on).
+
+    Constant at ``w_bar`` when ``eta = 0`` (the nested fixed-wage model).
+    """
+    return model.wage_rate
+
+
+def compute_wage_floor_binding(model):
+    """1.0 if the subsistence floor ``w_min`` binds this period, else 0.0.
+
+    Model-level bool (brief 07 §4): its tail-average over a run is the fraction of
+    steady-state periods in which the floor caught the wage — the map of "stably
+    floored" cells that must be reported rather than hidden.
+    """
+    return 1.0 if model.wage_rate <= model.wage_floor else 0.0
+
+
 # --- regime diagnostics (brief 04 §9) -------------------------------------
 
 def _binding(model, label):
@@ -353,10 +431,21 @@ class MacroModel(mesa.Model):
         any sigma/rho grid: the model has multiple equilibria and a viability
         threshold near rho = 0.30, so K(0) selects the basin.
     wage_rate : float
-        The fixed wage ``w_bar`` per employed worker.  This is the distributive
-        parameter (it replaced ``markup``): profit is the residual ``sales - w_bar*L``,
-        so the wage share is a measured outcome, bounded above by the profit-max wage
-        share (``1-pi0`` only at sigma = 1).
+        The wage-curve *normalisation point* ``w_bar`` per employed worker (brief 07):
+        the wage paid at ``U = U_REF``, and the value the wage holds at every U when
+        ``eta = 0``.  This is the distributive parameter (it replaced ``markup``):
+        profit is the residual ``sales - w_t*L``, so the wage share is a measured
+        outcome, bounded above by the profit-max wage share (``1-pi0`` only at sigma = 1).
+    eta : float
+        Wage-curve elasticity (Blanchflower-Oswald).  ``0.0`` (default) fixes the wage at
+        ``w_bar`` and reproduces the pre-brief-07 model bit-for-bit; ``eta > 0`` lets the
+        wage fall with last period's unemployment, ``w_t = w_bar*(U/U_REF)**(-eta)``,
+        floored at ``wage_floor``.  Empirical range ~0.07-0.10 (Nijkamp & Poot 2005;
+        Blanchflower & Oswald 1994); swept, not chosen.
+    wage_floor : float
+        Subsistence floor ``w_min`` on the wage (a design target, not anchored): guards
+        the deflationary spiral at high ``eta``.  Cells where it binds stably are mapped
+        and reported, not hidden.
     retention_ratio, beta, target_utilization, investment_floor : float
         Internal-financing investment rule (unchanged from the core).
     c0, c1, capitalist_mpc, wealth_effect : float
@@ -389,6 +478,10 @@ class MacroModel(mesa.Model):
 
         # Distribution
         wage_rate=0.9,
+
+        # Wage curve (brief 07): eta = 0 nests the fixed-wage model exactly
+        eta=0.0,
+        wage_floor=0.45,
 
         # Internal financing / investment
         retention_ratio=0.40,
@@ -425,7 +518,16 @@ class MacroModel(mesa.Model):
         self.Y0 = _Y0(productivity, K0, L0, pi0)
         self.delta = delta
         self.productivity = productivity
+
+        # Wage: ``w_bar`` is the normalisation point of the wage curve (the old fixed
+        # wage); ``wage_rate`` is the *current* wage, set each period by the curve on
+        # last period's unemployment.  They coincide identically when eta = 0.
+        self.w_bar = wage_rate
         self.wage_rate = wage_rate
+        self.eta = eta
+        self.wage_floor = wage_floor
+        #: Below the workforce resolution U is not observable; guards w -> inf at U = 0.
+        self.U_min = 1.0 / num_households if num_households > 0 else 0.0
 
         self.retention_ratio = retention_ratio
         self.beta = beta
@@ -498,6 +600,9 @@ class MacroModel(mesa.Model):
                 "Wage_Share": compute_wage_share,
                 "Wage_Share_Profitmax": compute_wage_share_profitmax,
                 "Profit_Share": compute_profit_share,
+                # Wage curve (brief 07): current wage and floor-binding flag.
+                "Wage_Rate": compute_wage_rate,
+                "Wage_Floor_Binding": compute_wage_floor_binding,
                 "Income_Gini": compute_income_gini,
                 "Wealth_Gini": compute_wealth_gini,
                 # Which constraint bites (brief 04 §9.3)
@@ -546,6 +651,23 @@ class MacroModel(mesa.Model):
     def step(self):
         households = _households(self)
         firms = _firms(self)
+
+        # 0. wage determination (brief 07): set w_t from LAST period's unemployment,
+        #    BEFORE the labour market.  Fixing the wage on U_{t-1} (not U_t) avoids the
+        #    simultaneity w <-> U within the period — the only sequence change in brief 07,
+        #    declared here.  At start-of-step the households' `employed` flags are still
+        #    last period's, so compute_unemployment reads U_{t-1}.  eta = 0 is
+        #    short-circuited to w_bar so the fixed-wage model is reproduced bit-for-bit
+        #    (no float pow), mirroring the sigma = 1 branch in ces_capacity.  The t = 0
+        #    round-robin start has U = 0, so the U_min guard makes w spike for a single
+        #    period — documented, irrelevant to the tail-50 steady state.
+        if self.eta == 0.0:
+            self.wage_rate = self.w_bar
+        else:
+            U_prev = compute_unemployment(self)
+            self.wage_rate = wage_from_curve(
+                self.w_bar, U_prev, self.eta, U_REF, self.U_min, self.wage_floor
+            )
 
         # 1. labour market (employment set before demand)
         self.labour_market(firms, households)

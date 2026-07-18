@@ -20,16 +20,19 @@ Behavioural core:
    Leontief the ``sigma -> 0`` member.  Capital is essential only for ``sigma <= 1``.
    See :func:`ces_capacity` for why the *normalised* form is mandatory here.
 
-2. **Fixed wage ``w_bar`` (not residual).**  Distribution is set by the wage:
-   ``wage_bill = w_bar * L`` and profit is the residual ``sales - w_bar*L``.  The
-   wage share is a *measured outcome*, bounded above by the profit-max wage share
+2. **Wage ``w_t`` set by a wage curve (not residual).**  Distribution is set by the
+   wage: ``wage_bill = w_t * L`` and profit is the residual ``sales - w_t*L``.  The
+   wage is ``w_bar`` fixed when ``eta = 0`` and falls with last period's unemployment
+   when ``eta > 0`` (brief 07); firms read the current ``model.wage_rate`` either way.
+   The wage share is a *measured outcome*, bounded above by the profit-max wage share
    :func:`ces_wage_share_profitmax` (which equals ``1-pi0`` only at ``sigma = 1``).
    Unemployed households earn no wage, so their consumption falls — this is what
    makes the Keynesian demand channel bite.
 
 3. **Endogenous employment.**  Each firm hires the minimum of three limits:
    labour needed for expected demand, the profit-maximising labour (where the
-   marginal product equals ``w_bar``), and what the unemployed pool can supply.
+   marginal product equals the current wage ``w_t``), and what the unemployed pool
+   can supply.
    The economy-wide cap ``L <= N`` is what restores decreasing returns to capital
    (otherwise ``L_profitmax ∝ K`` gives an AK model with no steady state).
 
@@ -280,11 +283,12 @@ def ces_wage_share_profitmax(A, w, K0, L0, pi0, sigma):
 
 
 class Firm(mesa.Agent):
-    """A productive unit: normalised-CES technology, fixed wage, internal financing.
+    """A productive unit: normalised-CES technology, wage-curve wage, internal financing.
 
     Chooses employment from expected demand and the profit-max condition, produces
-    with the workers it actually hires, pays a fixed wage ``w_bar`` per employed
-    worker, and funds its own investment out of current retained earnings.
+    with the workers it actually hires, pays the current wage ``w_t`` (``model.wage_rate``,
+    fixed at ``w_bar`` only when ``eta = 0``) per employed worker, and funds its own
+    investment out of current retained earnings.
     """
 
     def __init__(self, model, productivity=1.0, initial_capital=5.0):
@@ -467,9 +471,9 @@ class Firm(mesa.Agent):
     # Accounting / distribution
     # ------------------------------------------------------------------
     def step_accounting(self):
-        """Pay a fixed wage per employed worker; profit is the residual.
+        """Pay the current wage per employed worker; profit is the residual.
 
-            wage_bill    = w_bar * L
+            wage_bill    = w_t * L          (w_t = model.wage_rate, the wage-curve wage)
             gross_profit = sales - wage_bill
             retained     = I_planned
             dividends    = gross_profit - retained

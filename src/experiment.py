@@ -310,7 +310,10 @@ RHO_SWEEP_B05 = [0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65]
 #: NOT here — it is a separate mechanism probe (stage B), not a calibration candidate.
 C0_SWEEP = [1.0, 2.0]
 
-#: Steady-state metrics carried from a run into the panel.
+#: Steady-state metrics carried from a run into the panel.  The wage-curve pair
+#: (Wage_Rate, Wage_Floor_Binding) is appended for brief 07; it is APPENDED, not
+#: interleaved, so the brief-04/05 columns keep their positions and the eta = 0 slice
+#: stays byte-comparable to ces_b05_stage_a_panel on the shared columns.
 _PANEL_METRICS = [
     "Output", "Total_Capital", "Investment", "Consumption", "Employment",
     "Unemployment_Rate", "Wage_Share", "Wage_Share_Profitmax", "Profit_Share",
@@ -318,6 +321,7 @@ _PANEL_METRICS = [
     "Potential_Output", "Potential_Output_PM", "Average_Utilization",
     "Money_Buffer", "Cash_Constrained",
     "Bound_Demand", "Bound_Profitmax", "Bound_Capital", "Bound_Workforce",
+    "Wage_Rate", "Wage_Floor_Binding",
 ]
 
 

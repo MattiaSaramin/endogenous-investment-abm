@@ -367,11 +367,30 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
 - **Blocco bibliografico (punto 4)**: `parameter_notes.md` nel repo — fonte,
   stima, range e verdetto di ancoraggio per ogni parametro, **allineato ai default
   del codice**. Vedi §4 e §11.
+- **Brief 07 — blocco salariale (punto 9, parte salario)**: salario endogeno via
+  **wage curve** di Blanchflower–Oswald
+  `w_t = max(w_min, w_bar·(max(U_{t-1},U_min)/U_REF)^(-η))`, fissato su `U_{t-1}`
+  prima del mercato del lavoro (**step 0** della sequenza). `η=0` annida il modello
+  a salario fisso **bit-for-bit** (check di annidamento **byte-identico** η=0 vs
+  `ces_b05_stage_a_panel`: PASS su entrambi i c0, dev 0). `U_REF=0.2604666667`
+  misurato allo scenario `ANCHOR_*` e congelato. **Esito headline (c0=1.0): σ*(η)
+  SALE** 0.654→0.740 al crescere di η (l'empirico σ 0.40–0.60 resta **sotto** σ*):
+  la flessibilità salariale **non ribalta** il wage-led, lo **rafforza** (il canale
+  di domanda kaleckiano — paradosso dei costi — domina la sostituzione); la
+  disoccupazione media sale con η (0.53→0.58). **c0=2.0 (secondario):
+  destabilizzato** — l'angolo alto-σ/basso-ρ collassa con η (σ=1.25: 43% dei seed a
+  η=0.15), σ* erratico/indefinito; il floor `w_min` **non morde mai** (collasso di
+  viability, non artefatto del floor). **359 test verdi.** Driver
+  `scripts/run_brief07.py` (due fasi, soglie di halt esplicite); CSV
+  `results/ces_b07_*.csv`; figura `results/ces_b07_sigma_star_eta.png`. Design §6bis
+  del brief; note parametri (η, U_REF, U_min, w_min, declassamento w̄) in
+  `parameter_notes.md`.
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** 8) produttività eterogenea tra imprese; **9) prezzi endogeni
-(RISCRITTO — vedi sotto)**; 10) aspettative adattive su domanda e investimento
+(parte salario FATTA col brief 07; resta il PREZZO — vedi sotto)**; 10) aspettative
+adattive su domanda e investimento
 (al punto 11 l'aspettativa è **statica**: domanda del periodo precedente);
 12) entrata/uscita/fallimento imprese; 13) cambiamento tecnologico (crescita di
 A); 14) banche e credito (estende la matrice SFC: depositi, prestiti);
@@ -379,16 +398,18 @@ A); 14) banche e credito (estende la matrice SFC: depositi, prestiti);
 pareggio esiste già** sul branch `labour-market-leontief`, da reinnestare;
 16) stesura metodologia e risultati.
 
-> **Punto 9 riscritto.** Diceva: "markup endogeno che risponde a
-> domanda/concorrenza; il markup fissa oggi le quote fattoriali, quindi
-> endogenizzarlo tocca la quota salari". **Obsoleto dal punto 11**, che rimuove
-> il parametro `markup` (§6bis). Cosa resta da endogenizzare: il **prezzo** (oggi
-> numerario = 1) e il **salario `w̄`** (curva di Phillips: salario che risponde
-> alla disoccupazione — follow-up naturale del punto 11, tenuto fuori scope lì
-> per non muovere due cose insieme in calibrazione). Nota: rimosso il parametro,
-> il **markup implicito** (`prodotto medio / w̄`) diventa già un **esito**
-> endogeno — parte del punto 9 arriva come effetto collaterale. Per il resto
-> serviranno dati sui markup (De Loecker, Eeckhout & Unger 2020).
+> **Punto 9 riscritto — e parzialmente FATTO col brief 07.** Diceva: "markup
+> endogeno che risponde a domanda/concorrenza; il markup fissa oggi le quote
+> fattoriali, quindi endogenizzarlo tocca la quota salari". **Obsoleto dal punto
+> 11**, che rimuove il parametro `markup` (§6bis). Restavano due cose da
+> endogenizzare: il **salario `w̄`** e il **prezzo**. **Il salario è FATTO (brief
+> 07):** wage curve di Blanchflower–Oswald, `w̄` declassato a punto di
+> normalizzazione, `η` nuovo parametro distributivo (vedi la voce "Fatto" sopra e
+> `parameter_notes.md`). **Resta aperto il PREZZO** (oggi numerario = 1) — punto
+> **9-bis**, esplicitamente fuori scope nel brief 07 (niente spirale
+> prezzi-salari). Nota: già senza prezzi endogeni il **markup implicito**
+> (`prodotto medio / w_t`) è un **esito**. Per il blocco prezzi serviranno dati sui
+> markup (De Loecker, Eeckhout & Unger 2020).
 
 **Ricerca bibliografica (continua, primo blocco FATTO → `parameter_notes.md`):**
 ogni parametro deve avere una fonte o essere dichiarato come scelta di
@@ -462,28 +483,37 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 
 ## 11. Struttura del codice
 
-- `src/agents.py` — Firm (CES normalizzata, salario fisso, finanziamento interno),
-  Household, Capitalist; helper CES (`ces_capacity`, `ces_labour_*`, `ces_mpl`, …)
-- `src/model.py` — MacroModel: mercato del lavoro, sequenza del periodo,
-  settlement, metriche; ancore di normalizzazione `ANCHOR_*`
+- `src/agents.py` — Firm (CES normalizzata, salario dalla wage curve, finanziamento
+  interno), Household, Capitalist; helper CES (`ces_capacity`, `ces_labour_*`,
+  `ces_mpl`, …)
+- `src/model.py` — MacroModel: mercato del lavoro, sequenza del periodo (step 0 =
+  wage curve, brief 07), settlement, metriche; ancore di normalizzazione `ANCHOR_*`,
+  costante `U_REF` e helper `wage_from_curve` (brief 07)
 - `src/experiment.py` — runner Monte-Carlo, sweep ρ, griglia (σ, ρ) e sign
   frontier (brief 04), stack di robustezza brief 05 (`run_grid_panel`,
-  `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …)
+  `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …); `eta` passa
+  al modello via `**params`, come `c0` (brief 07)
 - `scripts/run_brief04.py` — driver **riproducibile** dello sweep (σ, ρ) e della
   sign frontier del brief 04; rigenera 5 dei 6 `results/ces_*.csv` (thread BLAS
   pinnati). **Non** rigenera `ces_decomposition.csv` (vedi sotto).
 - `scripts/run_brief05.py` — driver **riproducibile** degli stage A/B/C del brief
   05; rigenera `results/ces_b05_*.csv` (thread BLAS pinnati per determinismo)
+- `scripts/run_brief07.py` — driver **riproducibile** dello sweep σ×ρ×η×c0 del
+  brief 07 (wage curve); due fasi (recon 3-seed con soglie di halt esplicite →
+  panel 20-seed), check di annidamento byte-identico η=0 vs `ces_b05_stage_a_panel`,
+  σ*(η) sul supporto comune-across-η; rigenera `results/ces_b07_*.csv`
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati. `ces_b05_*.csv` (brief 05) → rigenerati
+- `results/` — output misurati committati. `ces_b07_*.csv` (brief 07) → rigenerati
+  da `run_brief07.py`. `ces_b05_*.csv` (brief 05) → rigenerati
   da `run_brief05.py`. `ces_sigma_rho_grid.csv`, `ces_derivatives*.csv`,
   `ces_sign_frontier*.csv` (brief 04, 5 file) → rigenerati da `run_brief04.py`.
   **`ces_decomposition.csv` è ARCHIVIATO: generatore non committato, non
   riproducibile** (analisi ad hoc di spiazzamento del lavoro; i suoi numeri non
   sono citati in alcun documento). Da ricostruire con spec dichiarata se servirà.
 - `tests/test_model.py`, `tests/conftest.py` — SFC, determinismo, contabilità del
-  lavoro, nesting CES, pin di regressione (tolleranza), stack di robustezza
+  lavoro, nesting CES, pin di regressione (tolleranza), stack di robustezza,
+  wage curve (brief 07: annidamento η=0, lag U_{t-1}, canale di sostituzione)
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di

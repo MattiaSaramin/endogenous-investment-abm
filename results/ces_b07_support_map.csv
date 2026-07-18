@@ -1,0 +1,9 @@
+c0,eta,natural_support,n_natural,across_eta_support,n_across_eta,n_viable_cells,n_stably_floored,frac_floored
+1.0,0.0,"[np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",7,"[np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",7,77,0,0.0
+1.0,0.05,"[np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",7,"[np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",7,77,0,0.0
+1.0,0.1,"[np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",7,"[np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",7,77,0,0.0
+1.0,0.15,"[np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",7,"[np.float64(0.35), np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",7,77,0,0.0
+2.0,0.0,"[np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",6,"[np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",4,76,0,0.0
+2.0,0.05,"[np.float64(0.4), np.float64(0.45), np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",6,"[np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",4,74,0,0.0
+2.0,0.1,"[np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",4,"[np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",4,71,0,0.0
+2.0,0.15,"[np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",4,"[np.float64(0.5), np.float64(0.55), np.float64(0.6), np.float64(0.65)]",4,73,0,0.0

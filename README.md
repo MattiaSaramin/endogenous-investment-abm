@@ -15,10 +15,11 @@ macroeconomics of alternative behavioural assumptions, not a calibrated forecast
 
 Production is a **normalised CES** with elasticity of substitution `sigma`
 (`sigma = 1` is the Cobb-Douglas core, `sigma -> 0` is Leontief); firms hire
-**endogenously** at a fixed wage `w_bar`, and the unemployed earn nothing - so
-employment drives demand. `sigma` governs the strength of capital–labour
-substitution, which is the mechanism that decides whether the model is wage-led
-or profit-led.
+**endogenously** at a wage `w_t` set by a Blanchflower–Oswald **wage curve** on
+last period's unemployment (`eta = 0` fixes it at `w_bar` and recovers the
+fixed-wage model exactly), and the unemployed earn nothing - so employment drives
+demand. `sigma` governs the strength of capital–labour substitution, which is the
+mechanism that decides whether the model is wage-led or profit-led.
 
 ---
 
@@ -72,15 +73,23 @@ point (where `MPL = w_bar`), capped by the workforce `N`. The cap `L <= N` is
 what restores decreasing returns to capital - without it `L_profitmax` scales
 with `K` and `Y*` becomes linear in `K` (an AK model with no steady state).
 
-**Fixed wage; profit is the residual:**
+**Wage curve; profit is the residual:**
 
 ```text
-wage_bill    = w_bar * L
+w_t          = max( w_min, w_bar * (max(U_{t-1}, U_min)/U_REF)^(-eta) )   (brief 07)
+wage_bill    = w_t * L
 gross_profit = sales - wage_bill
 ```
 
-The wage share is a **measured outcome**, structurally bounded above by the
-`sigma`-dependent profit-max wage share (`1 - pi0` only at `sigma = 1`).
+The wage is set by a Blanchflower–Oswald **wage curve** on last period's
+unemployment: a *level* relation (not a Phillips *change* relation), so it has a
+well-defined steady state for every `U`. `eta = 0` fixes the wage at `w_bar` and
+reproduces the earlier model **bit-for-bit**; `eta > 0` (empirical range
+~0.07–0.10) lets the wage fall with unemployment. `U_REF` is the unemployment at
+which `w = w_bar`, measured once at the anchor scenario and frozen; `w_min` is a
+subsistence floor. The wage share is a **measured outcome**, structurally bounded
+above by the `sigma`-dependent profit-max wage share (`1 - pi0` only at
+`sigma = 1`).
 
 **Internal financing via retained earnings:**
 
@@ -112,6 +121,9 @@ Read directly from `src/model.py`. Employment is set **before** households form
 demand (expected income depends on employment); investment settlement precedes
 household settlement.
 
+0. **wage determination** (brief 07) - set `w_t` from the wage curve on *last*
+   period's unemployment, before the labour market, to avoid the `w <-> U`
+   simultaneity within a period (`eta = 0` short-circuits to `w_bar`);
 1. **labour market** - firms plan employment, fire the excess into an unemployed
    pool, fill vacancies by random matching → employment;
 2. households form consumption demand (income = wage if employed, else 0; plus
@@ -191,6 +203,44 @@ reduced to a point estimate:
 * **with the anchor** (Temple 2012): moving the normalisation anchor from
   `rho = 0.40` to `rho = 0.50` shifts `sigma*(rho = 0.5)` from 0.84 to 0.64.
 
+### 4. Wage flexibility does not overturn the wage-led result (the wage curve)
+
+A critic can attribute the wage-led result to the *fixed* wage: it suppresses the
+offsetting channel `U up -> w down -> labour cheaper -> substitution toward labour
+slows`. Brief 07 turns that channel on with a wage curve (`eta` its elasticity)
+and re-estimates `sigma*(eta)` on the support viable at **every** `eta` (so it is
+comparable across `eta`). The counter-channel is already in the model and
+Kaleckian: `w down -> wage bill down -> demand down` (the paradox of costs).
+`eta = 0` reproduces the brief-05 `sigma*` **byte-for-byte** (nesting check PASS).
+
+`sigma*(eta)` on `Y`, `c0 = 1.0` (support `rho` 0.35–0.65, fully viable at every
+`eta`; means over 20 seeds, bootstrap CI over 2000 seed-resamples):
+
+| `eta` | `sigma*` (Y) | 95% CI          | P(`sigma*` > 0.60) | mean `U` |
+| ----- | ------------ | --------------- | ------------------ | -------- |
+| 0.00  | 0.654        | [0.616, 0.691]  | 99.8 %             | 0.528    |
+| 0.05  | 0.666        | [0.634, 0.692]  | 99.9 %             | 0.543    |
+| 0.10  | 0.725        | [0.697, 0.745]  | 100 %              | 0.565    |
+| 0.15  | 0.740        | [0.682, 0.793]  | 100 %              | 0.579    |
+
+* **`sigma*` *rises* with `eta`**, moving *further above* the empirical range
+  `sigma` 0.40–0.60. Turning on the substitution channel does **not** overturn the
+  wage-led outcome - it **reinforces** it: the Kaleckian demand channel dominates.
+* **Wage flexibility does not auto-correct unemployment** - mean `U` *rises*
+  (0.53 → 0.58) as `eta` grows. The paradox of costs, reported not recalibrated.
+
+![sigma*(eta): does wage flexibility move the sign frontier?](results/ces_b07_sigma_star_eta.png)
+
+**Secondary regime `c0 = 2.0`: wage flexibility *destabilises* it.** The high-`sigma`
+(1.25, 1.50), low-`rho` corner tips into collapse (`Y -> 0`, `U -> 1`) under wage
+flexibility, spreading with `eta` (`sigma = 1.25`: 43 % of seeds collapse at
+`eta = 0.15`). The strict common viable support shrinks from `rho` 0.40–0.65 to
+0.50–0.65; on that support `sigma*` is erratic - **undefined** at `eta = 0.10` (the
+sign never turns: wage-led at every `sigma` tested) and 0.32 at `eta = 0.15`. The
+wage floor `w_min = 0.45` **never** stably binds anywhere, so this is genuine
+viability collapse, not a floor artefact. Reported as a finding, not recalibrated.
+Outputs: `results/ces_b07_*.csv` (regenerated by `scripts/run_brief07.py`).
+
 ---
 
 ## Interpretive frame (read this before the results)
@@ -226,23 +276,26 @@ reduced to a point estimate:
 
 ```text
 src/
-├── agents.py        Firm (normalised CES, fixed wage, internal financing), Household, Capitalist
-├── model.py         MacroModel: labour market, period sequence, settlement, metrics
+├── agents.py        Firm (normalised CES, wage-curve wage, internal financing), Household, Capitalist
+├── model.py         MacroModel: labour market, wage curve (U_REF, wage_from_curve), period sequence, metrics
 └── experiment.py    Monte-Carlo runner, rho sweep, (sigma, rho) sign frontier, brief-05 robustness stack
 scripts/
-└── run_brief05.py   Regenerates the brief-05 stage A/B/C outputs into results/ (reproducible)
+├── run_brief04.py   Regenerates the brief-04 (sigma, rho) grid + sign frontier into results/ (reproducible)
+├── run_brief05.py   Regenerates the brief-05 stage A/B/C outputs into results/ (reproducible)
+└── run_brief07.py   Regenerates the brief-07 wage-curve sweep (sigma x rho x eta x c0) into results/ (reproducible)
 notebooks/
 └── 01_Endogenous_Investment.ipynb   rho sweep at sigma=1 + sigma sweep with the sign frontier
 results/
+├── ces_b07_*.csv    brief-07 wage-curve sweep + sigma*(eta); produced by scripts/run_brief07.py
 ├── ces_b05_*.csv    brief-05 robustness stack (20 seeds); produced by scripts/run_brief05.py
 └── ces_*.csv        brief-04 (sigma, rho) grid, derivatives and sign frontier
 tests/
 ├── conftest.py
-└── test_model.py    SFC + buffer==0, distribution, labour accounting, CES nesting, robustness stack
+└── test_model.py    SFC + buffer==0, distribution, labour accounting, CES nesting, robustness stack, wage curve
 performance/
 └── engine.cpp       STALE: additive Phase-1 model, NOT the current core (do not use)
 requirements.txt
-retention_sweep.png, ces_sign_frontier.png
+retention_sweep.png, ces_sign_frontier.png, results/ces_b07_sigma_star_eta.png
 ```
 
 ---
@@ -258,7 +311,10 @@ jupyter nbconvert --to notebook --execute --inplace notebooks/01_Endogenous_Inve
 # regenerate the brief-05 robustness outputs (results/ces_b05_*.csv); threads are pinned
 python scripts/run_brief05.py
 
-# run the checks (SFC, buffer==0, distribution, labour accounting, CES nesting, bootstrap)
+# regenerate the brief-07 wage-curve sweep (results/ces_b07_*.csv); two phases, threads pinned
+python scripts/run_brief07.py
+
+# run the checks (SFC, buffer==0, distribution, labour accounting, CES nesting, wage curve, bootstrap)
 python -m pytest tests/ -q
 ```
 
@@ -295,6 +351,10 @@ aggregate second implementation inherited from the additive Phase-1 model. It ha
   Economics and Statistics 82(1), 62–82. - <https://ideas.repec.org/a/bla/obuest/v82y2020i1p62-82.html>
 * Slacalek, J. (2009). *What Drives Personal Consumption? The Role of Housing and
   Financial Wealth.* The B.E. Journal of Macroeconomics 9(1). - <https://ideas.repec.org/a/bpj/bejmac/v9y2009i1n37.html>
+* Blanchflower, D. G. & Oswald, A. J. (1994). *The Wage Curve.* MIT Press. -
+  wage-curve elasticity ~-0.10 (the level relation used in brief 07).
+* Nijkamp, P. & Poot, J. (2005). *The Last Word on the Wage Curve?* Journal of
+  Economic Surveys 19(3), 421–450. - meta-analysis, corrected elasticity ~-0.07.
 
 Mesa: Agent-Based Modeling in Python - <https://mesa.readthedocs.io/>
 

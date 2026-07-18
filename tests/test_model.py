@@ -29,6 +29,8 @@ from model import (
     MacroModel,
     ANCHOR_K0,
     ANCHOR_L0,
+    U_REF,
+    wage_from_curve,
     compute_gini,
     compute_output_gap,
     compute_output_gap_profitmax,
@@ -98,18 +100,21 @@ def _steady(retention_ratio=REF_RHO, seed=0, steps=STEPS, tail=50, **kw):
 # Stock-flow consistency
 # ----------------------------------------------------------------------
 
-@pytest.mark.parametrize("rho", [0.35, 0.40])
-def test_money_is_conserved(rho):
-    model = MacroModel(retention_ratio=rho, seed=7)
+# eta is folded into the parametrization (brief 07 §7.4): the wage curve redistributes
+# between wages and profits but must not touch the money circuit, so SFC has to hold at
+# eta > 0 too.  eta = 0 keeps the original coverage.
+@pytest.mark.parametrize("rho,eta", [(0.35, 0.0), (0.40, 0.0), (0.40, 0.10)])
+def test_money_is_conserved(rho, eta):
+    model = MacroModel(retention_ratio=rho, seed=7, eta=eta)
     initial = total_money(model)
     for _ in range(600):
         model.step()
         assert total_money(model) == pytest.approx(initial, abs=1e-7)
 
 
-@pytest.mark.parametrize("rho", [0.35, 0.40])
-def test_buffer_returns_to_zero(rho):
-    model = MacroModel(retention_ratio=rho, seed=2)
+@pytest.mark.parametrize("rho,eta", [(0.35, 0.0), (0.40, 0.0), (0.40, 0.10)])
+def test_buffer_returns_to_zero(rho, eta):
+    model = MacroModel(retention_ratio=rho, seed=2, eta=eta)
     for _ in range(300):
         model.step()
         for f in _firms(model):
@@ -949,3 +954,117 @@ def test_slopes_by_sigma_uses_only_the_common_support():
     out = slopes_by_sigma(cells, support=[0.40, 0.50])
     assert out["dY_drho"].iloc[0] == pytest.approx(100.0)
     assert int(out["n_points"].iloc[0]) == 2
+
+
+# ----------------------------------------------------------------------
+# Wage curve (brief 07)
+# ----------------------------------------------------------------------
+
+W_BAR = 0.9
+_WC = dict(U_ref=U_REF, U_min=0.01, w_min=0.45)
+
+
+def test_wage_curve_equals_w_bar_at_u_ref():
+    """At U = U_ref the wage is exactly w_bar — the normalisation point (brief 07 §2)."""
+    assert wage_from_curve(W_BAR, U_REF, 0.10, **_WC) == pytest.approx(W_BAR, rel=1e-12)
+
+
+def test_wage_curve_strictly_decreasing_in_u_for_positive_eta():
+    us = [0.05, 0.10, 0.20, 0.30, 0.40]
+    ws = [wage_from_curve(W_BAR, u, 0.10, **_WC) for u in us]
+    assert all(b < a for a, b in zip(ws, ws[1:]))
+
+
+def test_wage_curve_u_min_guard_caps_wage_at_zero_unemployment():
+    """U = 0 must not send w -> inf: the U_min guard caps it (brief 07 §2)."""
+    w = wage_from_curve(W_BAR, 0.0, 0.10, **_WC)
+    assert math.isfinite(w)
+    assert w == pytest.approx(W_BAR * (0.01 / U_REF) ** (-0.10), rel=1e-12)
+
+
+def test_wage_curve_floor_binds_at_high_u():
+    """A high U with high eta drives the raw wage below w_min; the floor catches it."""
+    w = wage_from_curve(W_BAR, 0.95, 1.0, U_ref=U_REF, U_min=0.01, w_min=0.45)
+    assert w == 0.45
+
+
+def test_wage_curve_is_w_bar_for_any_u_when_eta_zero():
+    """eta = 0 returns w_bar for every U — the nested fixed-wage case (brief 07 §2)."""
+    for u in (0.0, 0.05, U_REF, 0.5, 0.99):
+        assert wage_from_curve(W_BAR, u, 0.0, **_WC) == W_BAR
+
+
+def test_eta_zero_nests_the_fixed_wage_model_bit_for_bit():
+    """eta = 0 reproduces the pre-brief-07 trajectory exactly and holds w == w_bar for
+    the whole run — protects the explicit eta == 0 branch in step() (brief 07 §7.2)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=1.0, eta=0.0)
+    for _ in range(2000):
+        m.step()
+    df = m.datacollector.get_model_vars_dataframe()
+    assert (df["Wage_Rate"] == W_BAR).all()
+    assert (df["Wage_Floor_Binding"] == 0.0).all()
+    # Same steady-state Output as the committed labour-market pin.
+    assert float(df.tail(50).mean()["Output"]) == pytest.approx(132.0262597647814, abs=1e-9)
+
+
+def test_eta_default_is_zero():
+    """The constructor default must be eta = 0.0, so the model's default behaviour is
+    unchanged by brief 07."""
+    def final(seed, **kw):
+        m = MacroModel(retention_ratio=REF_RHO, seed=seed, **kw)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert final(0) == final(0, eta=0.0)
+
+
+def test_wage_uses_lagged_unemployment_not_current():
+    """w_t is set from U_{t-1} (start-of-step employed flags), before the labour market
+    changes employment within the step (brief 07 §7.3)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10)
+    # Impose a known pre-step unemployment by firing half the workforce.
+    for h in _households(m)[:50]:
+        if h.employed:
+            h.employer.workers.remove(h)
+            h.employed = False
+            h.employer = None
+    u_prev = 1.0 - sum(len(f.workers) for f in _firms(m)) / m.num_households
+    expected = wage_from_curve(W_BAR, u_prev, 0.10, U_ref=U_REF, U_min=m.U_min, w_min=m.wage_floor)
+
+    m.step()
+    assert m.wage_rate == pytest.approx(expected, rel=1e-12)
+
+    # And it did NOT use the post-step unemployment (the labour market rehired).
+    u_now = m.datacollector.get_model_vars_dataframe()["Unemployment_Rate"].iloc[-1]
+    if abs(u_now - u_prev) > 1e-9:
+        w_if_current = wage_from_curve(
+            W_BAR, u_now, 0.10, U_ref=U_REF, U_min=m.U_min, w_min=m.wage_floor
+        )
+        assert m.wage_rate != pytest.approx(w_if_current, rel=1e-12)
+
+
+@pytest.mark.parametrize("eta", [0.05, 0.10, 0.15])
+def test_determinism_with_wage_curve(eta):
+    """Same seed => same trajectory, even with the wage curve on (brief 07 §7.5)."""
+    def final(seed):
+        m = MacroModel(retention_ratio=REF_RHO, seed=seed, sigma=0.5, eta=eta)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert final(3) == final(3)
+    assert final(1) != final(2)
+
+
+def test_wage_curve_opens_the_substitution_channel():
+    """High U (> U_ref) with eta > 0 lowers the wage, which RAISES profit-max labour at
+    the same (K, A): the capital-labour substitution channel the critic invokes and the
+    brief tests for the existence of (brief 07 §7.6)."""
+    K, A, sigma = 40.0, 1.0, 0.5          # sigma < 1 => finite L_profitmax
+    U_high = 0.45                          # above U_ref => wage below w_bar
+    w_eta0 = wage_from_curve(W_BAR, U_high, 0.0, U_ref=U_REF, U_min=0.01, w_min=0.45)
+    w_eta = wage_from_curve(W_BAR, U_high, 0.10, U_ref=U_REF, U_min=0.01, w_min=0.45)
+    assert w_eta < w_eta0
+
+    L_eta0 = ces_labour_profitmax(K, A, w_eta0, K0, L0, PI0, sigma)
+    L_eta = ces_labour_profitmax(K, A, w_eta, K0, L0, PI0, sigma)
+    assert L_eta > L_eta0

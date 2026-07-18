@@ -33,7 +33,11 @@
 | `wealth_effect` (λ) | **0.05** | **BUONO — ancorato** | Slacalek (2009): ≈5 cent, media su 16 paesi. Corretto da 0.08 (fuori range) → 0.05 centra la media cross-country |
 | `c0` | **2.0** | **NON ancorabile — e attivamente sospetto** | cerotto compensativo; la sua giustificazione originaria è **falsificata** (vedi voce) |
 | `c1` | ~0.9 | **Struttura sì, livello no** | forma da Teglio; MPC lavoratori |
-| `w_bar` (salario) | 0.9 | **Da dichiarare (punto 11)** | parametro distributivo; nessuna fonte ancora |
+| `w_bar` (salario / punto di normalizzazione) | 0.9 | **Declassato a normalizzazione (brief 07)** | non più il parametro distributivo libero: è il salario a `U = U_REF` e il livello a ogni `U` quando `eta=0`. Il parametro con contenuto empirico ora è `eta` |
+| `eta` (η, elasticità wage curve) | **sweep**, default 0.0 | **Buono — ancorato (Blanchflower–Oswald)** | ≈0.10 (Blanchflower & Oswald 1994); ≈0.07 meta-analisi (Nijkamp & Poot 2005); range sweep 0–0.15. `eta=0` = modello fisso annidato |
+| `U_REF` | 0.2604666667 | **Scelta di modellazione — misurata** | punto di normalizzazione della wage curve; misurato una volta (σ=1, ρ=0.40, seed {0,1,2}, tail-50), congelato in `model.U_REF`. **NON è una stima del NAIRU** |
+| `U_min` | 1/N = 0.01 | **Convenzione dichiarata** | sotto la risoluzione della forza lavoro U non è osservabile; guardia contro w→∞ a U=0 |
+| `w_min` (wage_floor) | 0.45 = 0.5·w̄ | **Target di design — non ancorabile** | floor di sussistenza contro la spirale deflattiva a η alto; le celle dove morde stabilmente sono mappate |
 | `N` (forza lavoro) | 100 | **Scelta di modellazione** | scala del modello |
 | `beta` (acceleratore) | 0.5 | **Debole** | esiste letteratura sull'acceleratore, ma nessun numero canonico |
 | `investment_floor` | 0.1 | **Scelta di modellazione** | guardrail, nessun referente empirico |
@@ -281,6 +285,72 @@ profitti, I/Y, utilizzo — vedi sotto.
 
 ---
 
+## Blocco salariale — wage curve (brief 07, roadmap punto 9)
+
+> Introdotto dal brief 07. Endogenizza il **livello** del salario con una wage curve
+> di Blanchflower–Oswald; il blocco prezzi (numerario = 1) resta fuori scope
+> (punto 9-bis). `eta=0` annida il modello a salario fisso bit-for-bit.
+
+### `eta` (η) = sweep, default 0.0 — elasticità della wage curve
+- **Ruolo:** salario del periodo, fissato prima del mercato del lavoro sulla
+  disoccupazione osservata del periodo precedente:
+  `w_t = max(w_min, w_bar·(max(U_{t-1}, U_min)/U_REF)^(-η))`. È il parametro **nuovo
+  con contenuto empirico** del brief 07.
+- **Perché wage curve e non Phillips:** la Phillips (`Δw = f(U)`) determina la
+  *variazione* del salario ⇒ senza inflazione di trend produce deriva perpetua per
+  ogni `U ≠ U*`, incompatibile con la statica comparata su steady state. La wage curve
+  determina il *livello* e ha steady state ben definito per ogni U.
+- **Empirico:** **Blanchflower & Oswald (1994)**, *The Wage Curve* (MIT Press):
+  elasticità del salario rispetto alla disoccupazione locale ≈ **−0.10**, notevolmente
+  stabile fra paesi. **Nijkamp & Poot (2005)**, meta-analisi su 208 stime da 17 paesi:
+  elasticità "corretta" ≈ **−0.07**. Range sweep: **0–0.15**, che copre entrambi i
+  valori empirici e uno stress mite.
+- **Verdetto: BUONO — ancorato.** η ha una fonte citabile e un valore centrale
+  (0.07–0.10). Resta uno **sweep**, non un punto: il default 0.0 esiste solo per
+  annidare il modello precedente (criterio di identità), non perché sia difendibile.
+
+### `w_bar` (w̄) = 0.9 — punto di normalizzazione (ex salario fisso)
+- **Declassamento (brief 07):** con la wage curve, `w_bar` **cessa di essere il
+  parametro distributivo libero** e diventa (con `U_REF`) il punto di normalizzazione:
+  è il salario a `U = U_REF`, e il livello del salario a ogni U quando `eta=0`.
+- **Empirico:** nessuna fonte diretta per il livello (è una scala distributiva del
+  modello, come lo era prima); il contenuto empirico si sposta su `eta`.
+- **Verdetto:** scelta di modellazione dichiarata; non è il grado di libertà
+  distributivo — quello è ora `eta` (livello relativo del salario) via la curva.
+
+### `U_REF` = 0.2604666667 — disoccupazione di normalizzazione
+- **Ruolo:** denominatore della wage curve; a `U = U_REF` il salario è `w_bar`.
+- **Come è stato ottenuto:** **misurato una volta** sul modello **attuale**
+  (pre-wage-curve), stessa disciplina degli `ANCHOR_*`: `retention_ratio=0.40`, σ=1,
+  seed {0,1,2}, 2000 step, media delle **ultime 50** osservazioni di
+  `Unemployment_Rate` (convenzione `df.tail(50)`, quella che riproduce
+  `ANCHOR_L0·10 = 73.95333333` esatto), altri parametri ai default (`c0=2.0`,
+  `wage_rate=0.9`, `initial_capital=40`, N=100, 10 imprese). Medie per seed:
+  0.2570, 0.2680, 0.2564; media = 0.2604666667. Congelato in `model.U_REF`, **uguale
+  per ogni η**.
+- **Perché misurato e non scelto:** se `U_REF` fosse arbitrario, il livello salariale
+  di steady state sarebbe un grado di libertà nascosto della calibrazione. Ancorandolo
+  allo scenario degli `ANCHOR_*`, a η=0 il modello con wage curve passa per lo stesso
+  punto del modello attuale.
+- **Verdetto:** **scelta di modellazione, misurata.** NON è una stima del NAIRU: è solo
+  il punto di normalizzazione della curva sul salario pre-modifica.
+
+### `U_min` = 1/N = 0.01 — soglia di osservabilità di U
+- **Ruolo:** `max(U_{t-1}, U_min)` nella wage curve; sotto la risoluzione della forza
+  lavoro (1 lavoratore su 100) la disoccupazione non è osservabile, e il guard evita
+  `w → ∞` a piena occupazione (transiente iniziale a t=0 con U=0).
+- **Verdetto:** **convenzione dichiarata**, non una stima.
+
+### `w_min` (wage_floor) = 0.45 = 0.5·w̄ — floor di sussistenza
+- **Ruolo:** `max(w_min, …)` nella wage curve; guardrail contro la spirale deflattiva
+  a η alto.
+- **Empirico:** nessun referente empirico diretto — è un target di design.
+- **Verdetto:** **target di design, non ancorabile.** Le celle in cui il floor morde
+  stabilmente vanno **mappate e riportate** (come le celle collassate del brief 05),
+  non nascoste — vedi `results/ces_b07_support_map.csv`.
+
+---
+
 ## `c0` — esito dello stress test (brief 05 §2) — **il cerotto non regge, ma non per la ragione attesa**
 
 Misurato: griglia σ×ρ×`c0`, 20 seed, 2000 step, media ultime 50 (Stadio A, 3.080 run);
@@ -524,3 +594,12 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
 - De Loecker, J., Eeckhout, J. & Unger, G. (2020). The Rise of Market Power.
   *Quarterly Journal of Economics*.
 - Cottrell, A. (2019). The Cobb–Douglas Production Function. Lecture notes.
+
+### Wage curve (brief 07)
+- **Blanchflower, D. G. & Oswald, A. J. (1994). *The Wage Curve*. MIT Press.** —
+  fonte primaria dell'elasticità salario-disoccupazione ≈ −0.10 (relazione di
+  *livello*, non di variazione: salario locale funzione decrescente della
+  disoccupazione locale).
+- **Nijkamp, P. & Poot, J. (2005). The Last Word on the Wage Curve? *Journal of
+  Economic Surveys* 19(3), 421–450.** — meta-analisi su 208 stime da 17 paesi;
+  elasticità "corretta" ≈ −0.07.
