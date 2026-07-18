@@ -380,7 +380,22 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   disoccupazione media sale con η (0.53→0.58). **c0=2.0 (secondario):
   destabilizzato** — l'angolo alto-σ/basso-ρ collassa con η (σ=1.25: 43% dei seed a
   η=0.15), σ* erratico/indefinito; il floor `w_min` **non morde mai** (collasso di
-  viability, non artefatto del floor). **359 test verdi.** Driver
+  viability, non artefatto del floor).
+  - **Meccanismo del collasso c0=2.0 (VERIFICATO** su una traiettoria tracciata
+    σ=1.5/ρ=0.40/η=0.10 — 6/6 seed collassano — e su uno sweep in σ a c0=2.0**):**
+    la wage curve destabilizza **solo l'angolo ad alto σ** (σ≳0.8; collasso a
+    σ≥1.25). Il salario **oscilla**: sale sopra `w̄` quando `U→0` (guard `U_min`:
+    `w→~1.25`) e scende sotto quando `U` è alta; poiché a σ crescente `L_profitmax`
+    è sempre più sensibile al salario, questo alimenta un'**oscillazione
+    dell'occupazione** che **erode il capitale a ogni ciclo** (l'investimento non
+    copre il deprezzamento) finché, a ρ bassa, l'economia collassa a `U=1`. Nella
+    regione empirica σ≈0.5 lo stesso meccanismo lascia `w≈w̄`, **nessuna
+    oscillazione, e il capitale cresce** (K 354→460). **L'ipotesi "a `U<U_REF` il
+    salario sale sopra `w̄`" è confermata come *gamba* dell'oscillazione, ma il
+    driver del collasso è l'erosione di capitale, non una spirale monotona al
+    rialzo.** (Nota: l'ampiezza dell'oscillazione dipende dal guard `U_min`, una
+    convenzione — candidato per un'analisi di sensibilità futura.)
+  - **359 test verdi.** Driver
   `scripts/run_brief07.py` (due fasi, soglie di halt esplicite); CSV
   `results/ces_b07_*.csv`; figura `results/ces_b07_sigma_star_eta.png`. Design §6bis
   del brief; note parametri (η, U_REF, U_min, w_min, declassamento w̄) in
@@ -433,7 +448,10 @@ finito — non si stabilisce la robustezza su una tappa intermedia nota.
 
 **Debito residuo:** verificare I/Y con una serie BEA primaria (ora è ordine di
 grandezza); **fissare l'unità temporale del periodo** (δ, K/Y, I/Y sono
-implicitamente annualizzati).
+implicitamente annualizzati); **notebook: aggiungere una sezione "wage curve"
+(σ*(η), c0=2.0) al prossimo consolidamento** — il brief 07 ha lasciato la figura
+σ*(η) in `results/` e referenziata dal README, ma il notebook copre ancora solo
+brief 04/05.
 
 ---
 
