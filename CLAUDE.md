@@ -469,12 +469,19 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 - `src/experiment.py` — runner Monte-Carlo, sweep ρ, griglia (σ, ρ) e sign
   frontier (brief 04), stack di robustezza brief 05 (`run_grid_panel`,
   `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …)
+- `scripts/run_brief04.py` — driver **riproducibile** dello sweep (σ, ρ) e della
+  sign frontier del brief 04; rigenera 5 dei 6 `results/ces_*.csv` (thread BLAS
+  pinnati). **Non** rigenera `ces_decomposition.csv` (vedi sotto).
 - `scripts/run_brief05.py` — driver **riproducibile** degli stage A/B/C del brief
   05; rigenera `results/ces_b05_*.csv` (thread BLAS pinnati per determinismo)
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati: `ces_*.csv` (brief 04) e
-  `ces_b05_*.csv` (brief 05). Rigenerabili dal driver / notebook
+- `results/` — output misurati committati. `ces_b05_*.csv` (brief 05) → rigenerati
+  da `run_brief05.py`. `ces_sigma_rho_grid.csv`, `ces_derivatives*.csv`,
+  `ces_sign_frontier*.csv` (brief 04, 5 file) → rigenerati da `run_brief04.py`.
+  **`ces_decomposition.csv` è ARCHIVIATO: generatore non committato, non
+  riproducibile** (analisi ad hoc di spiazzamento del lavoro; i suoi numeri non
+  sono citati in alcun documento). Da ricostruire con spec dichiarata se servirà.
 - `tests/test_model.py`, `tests/conftest.py` — SFC, determinismo, contabilità del
   lavoro, nesting CES, pin di regressione (tolleranza), stack di robustezza
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,

@@ -1,4 +1,4 @@
 rho,sigma_star,sigma_lo,sigma_hi,dY_drho_lo,dY_drho_hi,method
-0.4,0.6787999668,0.6,0.8,25.606851,-39.385184,linear interpolation between adjacent sigma cells
-0.5,0.7786974702,0.6,0.8,32.572915,-3.883018,linear interpolation between adjacent sigma cells
-0.6,0.9321487825,0.8,1,31.619148,-16.234714,linear interpolation between adjacent sigma cells
+0.4,0.6787999679982885,0.6,0.8,25.60685169404082,-39.38518407581385,linear interpolation between adjacent sigma cells
+0.5,0.778697469065175,0.6,0.8,32.57291491507673,-3.88301821646266,linear interpolation between adjacent sigma cells
+0.6,0.9321487817547445,0.8,1.0,31.619147642888528,-16.23471407726058,linear interpolation between adjacent sigma cells
