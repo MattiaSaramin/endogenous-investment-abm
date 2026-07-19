@@ -250,6 +250,46 @@ same curve leaves `w ~ w_bar`, no oscillation, and capital *grows*. The collapse
 capital erosion at high `sigma`, not a monotone upward wage spiral. Reported as a
 finding, not recalibrated. Outputs: `results/ces_b07_*.csv` (via `scripts/run_brief07.py`).
 
+### 5. Adaptive expectations do not move the frontier or the collapse (brief 08)
+
+The headline results are comparative statics on the steady state, where `Ye = D` for
+any expectation gain. Brief 08 generalises the firm's demand expectation from static
+(`Ye_t = D_{t-1}`) to adaptive, `Ye_t = Ye_{t-1} + lambda_e*(D_{t-1} - Ye_{t-1})`,
+and asks whether a slower expectation (a damper) changes *which* steady state is
+selected, or shrinks the `c0 = 2.0` collapse. `lambda_e = 1` reproduces the committed
+brief-05/07 panels **byte-for-byte** (4 nesting checks, `max_abs_dev = 0.0`).
+
+`sigma*(eta; lambda_e)` on `Y`, `c0 = 1.0` (across-config common support `rho`
+0.35–0.65; 20 seeds, bootstrap CI). The gain is **not** a lever: every point sits
+within its neighbours' CIs.
+
+| `eta` | `lambda_e` | `sigma*` (Y) | 95% CI          | P(`sigma*` > 0.60) |
+| ----- | ---------- | ------------ | --------------- | ------------------ |
+| 0.00  | 1.00       | 0.654        | [0.616, 0.691]  | 99.8 %             |
+| 0.00  | 0.50       | 0.686        | [0.637, 0.721]  | 99.9 %             |
+| 0.00  | 0.25       | 0.674        | [0.639, 0.709]  | 99.9 %             |
+| 0.10  | 1.00       | 0.725        | [0.697, 0.745]  | 100 %              |
+| 0.10  | 0.50       | 0.713        | [0.667, 0.752]  | 100 %              |
+| 0.10  | 0.25       | 0.721        | [0.684, 0.754]  | 100 %              |
+
+* **`sigma*` is `lambda_e`-invariant within CI.** The empirical `sigma` 0.40–0.60
+  stays *below* `sigma*` for every gain, so the wage-led result and its brief-07 rise
+  with `eta` are both **robust to the expectation gain**. No basin-selection finding.
+
+![sigma*(lambda_e): does the expectation gain move the sign frontier?](results/ces_b08_sigma_star_lambda.png)
+
+**The stabilisation hypothesis is *not* confirmed (`c0 = 2.0`).** The falsifiable
+guess was that a slower expectation damps the brief-07 wage-employment oscillation and
+shrinks the collapse region. It does **not**: the collapse is `lambda_e`-invariant to
+within grid/seed noise (cells with any collapse at `eta = 0.10`: 16/15/14 for
+`lambda_e = 1/0.5/0.25`, but fully-collapsed cells flat at 6; non-monotone at
+`eta = 0.15`), and the reference collapsing cell (`sigma = 1.5, rho = 0.40,
+eta = 0.10`) collapses to `K = 0, U = 1` at **every** `lambda_e`. The `c0 = 2.0`
+collapse is driven by the wage→`U`→capital-erosion channel, which `lambda_e` does not
+touch: damping the *demand* expectation cannot stabilise an instability that does not
+originate in demand. Reported as a finding. Outputs: `results/ces_b08_*.csv` (via
+`scripts/run_brief08.py`).
+
 ---
 
 ## Interpretive frame (read this before the results)
@@ -291,20 +331,22 @@ src/
 scripts/
 ├── run_brief04.py   Regenerates the brief-04 (sigma, rho) grid + sign frontier into results/ (reproducible)
 ├── run_brief05.py   Regenerates the brief-05 stage A/B/C outputs into results/ (reproducible)
-└── run_brief07.py   Regenerates the brief-07 wage-curve sweep (sigma x rho x eta x c0) into results/ (reproducible)
+├── run_brief07.py   Regenerates the brief-07 wage-curve sweep (sigma x rho x eta x c0) into results/ (reproducible)
+└── run_brief08.py   Regenerates the brief-08 adaptive-expectations sweep (sigma x rho x eta x lambda_e x c0) (reproducible)
 notebooks/
 └── 01_Endogenous_Investment.ipynb   rho sweep at sigma=1 + sigma sweep with the sign frontier
 results/
+├── ces_b08_*.csv    brief-08 adaptive-expectations sweep + sigma*(eta;lambda_e) + collapse map; produced by scripts/run_brief08.py
 ├── ces_b07_*.csv    brief-07 wage-curve sweep + sigma*(eta); produced by scripts/run_brief07.py
 ├── ces_b05_*.csv    brief-05 robustness stack (20 seeds); produced by scripts/run_brief05.py
 └── ces_*.csv        brief-04 (sigma, rho) grid, derivatives and sign frontier
 tests/
 ├── conftest.py
-└── test_model.py    SFC + buffer==0, distribution, labour accounting, CES nesting, robustness stack, wage curve
+└── test_model.py    SFC + buffer==0, distribution, labour accounting, CES nesting, robustness stack, wage curve, adaptive expectations
 performance/
 └── engine.cpp       STALE: additive Phase-1 model, NOT the current core (do not use)
 requirements.txt
-retention_sweep.png, ces_sign_frontier.png, results/ces_b07_sigma_star_eta.png
+retention_sweep.png, ces_sign_frontier.png, results/ces_b07_sigma_star_eta.png, results/ces_b08_sigma_star_lambda.png
 ```
 
 ---
@@ -323,7 +365,10 @@ python scripts/run_brief05.py
 # regenerate the brief-07 wage-curve sweep (results/ces_b07_*.csv); two phases, threads pinned
 python scripts/run_brief07.py
 
-# run the checks (SFC, buffer==0, distribution, labour accounting, CES nesting, wage curve, bootstrap)
+# regenerate the brief-08 adaptive-expectations sweep (results/ces_b08_*.csv); two phases, threads pinned
+python scripts/run_brief08.py
+
+# run the checks (SFC, buffer==0, distribution, labour accounting, CES nesting, wage curve, adaptive expectations, bootstrap)
 python -m pytest tests/ -q
 ```
 

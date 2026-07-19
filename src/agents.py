@@ -259,6 +259,23 @@ def ces_mpl(K, L, A, K0, L0, pi0, sigma):
     return (1.0 - pi0) * (Y0 / L0) * (((Y / Y0) / (L / L0)) ** (1.0 - r))
 
 
+def adaptive_expectation(prev, faced, gain):
+    """Adaptive-expectations update ``Ye_t = Ye_{t-1} + gain*(D_{t-1} - Ye_{t-1})`` (brief 08).
+
+    ``gain`` is the expectation gain ``lambda_e``.  ``gain = 1`` is short-circuited to
+    ``return faced`` — the pre-brief-08 static-expectations model, ``Ye_t = D_{t-1}``.
+    The branch is not cosmetic: ``prev + 1.0*(faced - prev)`` is NOT ``faced`` bit-for-bit
+    in IEEE-754 (the subtraction then addition loses low bits), so the explicit branch is
+    what makes ``lambda_e = 1`` reproduce the committed panels byte-for-byte — the same
+    discipline as the sigma = 1 branch in :func:`ces_capacity` and the eta = 0 branch in
+    ``model.step``.  ``gain = 0`` freezes expectations at ``prev`` (a degenerate case,
+    admitted for unit tests, excluded from the sweeps).
+    """
+    if gain == 1.0:
+        return faced
+    return prev + gain * (faced - prev)
+
+
 def ces_wage_share_profitmax(A, w, K0, L0, pi0, sigma):
     """Wage share *at the profit-max point*: ``(1-pi0) * z**(1-sigma)``.
 
@@ -344,7 +361,10 @@ class Firm(mesa.Agent):
     def plan_employment(self):
         """Desired headcount = floor(min(labour-for-demand, profit-max labour, N)).
 
-        ``Y_e`` is last period's realised demand (static expectations).  ``floor``
+        ``Y_e`` (``expected_demand``) is the adaptive expectation formed at the end of
+        last period (brief 08): a partial adjustment towards realised demand with gain
+        ``expectation_gain``, which collapses to last period's realised demand when the
+        gain is 1 (the static-expectations default).  ``floor``
         (not round) so a firm never overshoots the profit-max point.  The firm never
         hires where the marginal product of labour is below the wage, which keeps
         gross profit positive.
@@ -464,8 +484,14 @@ class Firm(mesa.Agent):
             )
         self.utilization_last_period = self.utilization
 
-        # Static expectation for next period.
-        self.expected_demand = self.faced_demand
+        # Adaptive expectation for next period (brief 08): partial adjustment towards
+        # the demand just realised.  ``expectation_gain = 1`` recovers the static
+        # ``Ye = faced_demand`` bit-for-bit (see :func:`adaptive_expectation`); it uses
+        # the demand of the period now closing, never the (as-yet-unknown) next one, so
+        # the one-period information lag is structural.
+        self.expected_demand = adaptive_expectation(
+            self.expected_demand, self.faced_demand, m.expectation_gain
+        )
 
     # ------------------------------------------------------------------
     # Accounting / distribution

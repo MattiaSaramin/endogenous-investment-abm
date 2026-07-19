@@ -43,6 +43,7 @@
 | `investment_floor` | 0.1 | **Scelta di modellazione** | guardrail, nessun referente empirico |
 | `initial_capital` | 40.0 | **Scelta di modellazione — NON toccare negli sweep** | seleziona il bacino: equilibri multipli e soglia di viability |
 | `target_utilization` | 0.90 | **Debole — sopra l'empirico** | utilizzo reale ~0.80 |
+| `expectation_gain` (λ_e) | **sweep**, default 1.0 | **Debole — sweep, non stima** | gain delle aspettative adattive sulla domanda (brief 08); nessuna stima puntuale affidabile per un ABM (aspettative adattive, Nerlove 1958; constant-gain learning, Evans & Honkapohja 2001). `λ_e=1` = aspettative statiche annidate bit-for-bit. **Esito misurato: σ\* e regione di collasso λ_e-invarianti entro CI/rumore** |
 
 Benchmark di validazione (non parametri, ma target): quota salari, K/Y, quota
 profitti, I/Y, utilizzo — vedi sotto.
@@ -351,6 +352,63 @@ profitti, I/Y, utilizzo — vedi sotto.
 
 ---
 
+## Blocco aspettative — aspettative adattive (brief 08, roadmap punto 10)
+
+> Introdotto dal brief 08. Generalizza l'aspettativa di domanda dell'impresa da
+> **statica** (`Ye_t = D_{t-1}`) ad **adattiva** con gain `λ_e` (codice:
+> `expectation_gain`). `λ_e=1` annida il modello statico **bit-for-bit** (branch
+> esplicito; i 4 byte-check λ_e=1 vs `ces_b05`/`ces_b07` danno dev = 0.0). Nessuna
+> aspettativa su salari, prezzi o investimento (fuori scope: l'acceleratore usa
+> `utilization_last_period`, un segnale realizzato, non un'aspettativa).
+
+### `expectation_gain` (λ_e) = sweep, default 1.0 — gain delle aspettative adattive
+- **Ruolo:** aggiornamento a parziale aggiustamento dell'aspettativa di domanda,
+  `Ye_t = Ye_{t-1} + λ_e·(D_{t-1} − Ye_{t-1})`, letta da `plan_employment` via
+  `ces_labour_for_demand`. `λ_e=1` ⇒ `Ye_t = D_{t-1}` (statiche, default e branch
+  esplicito per l'identità bit-for-bit); `λ_e<1` smorza la reazione all'ultima
+  osservazione; `λ_e=0` congela (degenere, ammesso solo nei test unitari, escluso
+  dagli sweep). Vincolo del costruttore: `0 ≤ λ_e ≤ 1`.
+- **Perché sweep e non scelta:** in steady state `Ye = D` per qualunque gain, quindi
+  i livelli di steady state sono attesi **λ_e-invarianti**; il gain conta solo sul
+  transiente e sull'eventuale **selezione del bacino**. **Non esiste una stima
+  empirica puntuale affidabile** di un gain di aspettative per un ABM di questo tipo:
+  la letteratura di riferimento dà la *forma*, non un livello.
+  - **Nerlove (1958)**, aspettative adattive: introduce l'aggiornamento a parziale
+    aggiustamento `Ye_t = Ye_{t-1} + γ·(D_{t-1} − Ye_{t-1})`; il "coefficient of
+    expectation" γ è stimato ad hoc per serie/mercato, **non** è una costante
+    universale.
+  - **Evans & Honkapohja (2001)**, *Learning and Expectations in Macroeconomics*:
+    il **constant-gain learning** è il caso adattivo con gain costante `λ_e`. Nella
+    letteratura di apprendimento adattivo i gain costanti usati sono tipicamente
+    piccoli, ma sono **scelte di robustezza dell'analisi**, non stime strutturali, e
+    riferite a stime econometriche degli *agenti*, non a un'aspettativa di domanda
+    d'impresa. Nessun mapping diretto a un valore per questo modello.
+- **Esito misurato (brief 08, 20 seed, 2000 step, `results/ces_b08_*`):**
+  - **E1 (c0=1.0) — invarianza dell'headline.** σ\*(η; λ_e) sul supporto comune
+    across-config (tutti e 7 i ρ) è **λ_e-invariante entro CI**. Su Y: a η=0,
+    σ\* = 0.654 [0.616, 0.691] (λ_e=1), 0.686 [0.637, 0.721] (0.5),
+    0.674 [0.639, 0.709] (0.25) — CI ampiamente sovrapposte; a η=0.10,
+    0.725 [0.697, 0.745] / 0.713 [0.667, 0.752] / 0.721 [0.684, 0.754]. L'empirico σ
+    0.40–0.60 resta **sotto** σ\* per ogni λ_e (P(σ\*>0.60) ≈ 1): il wage-led — e la
+    sua crescita in η (brief 07) — è **robusto al gain**. Nessun finding di selezione
+    del bacino.
+  - **E2 (c0=2.0) — ipotesi di stabilizzazione.** La regione di collasso è
+    **λ_e-invariante entro il rumore di griglia/seed** (celle con qualche collasso:
+    η=0.10 → 16/15/14 a λ_e=1/0.5/0.25, ma celle a collasso pieno piatte a 6;
+    η=0.15 non monotono: 16/15/17). La cella di riferimento (σ=1.5, ρ=0.40, η=0.10)
+    **collassa a `K=0`, `U=1` a ogni λ_e**. L'ipotesi ("aspettative più lente
+    restringono il collasso") è **NON confermata**: il collasso c0=2.0 è guidato dal
+    canale salario→U→erosione di capitale (wage curve, meccanismo brief 07), che
+    `λ_e` non tocca. Smorzare l'aspettativa di **domanda** non stabilizza
+    un'instabilità che non nasce dalla domanda.
+- **Verdetto:** **sweep, non stima.** `λ_e=1` (statiche) è il default per l'identità
+  col modello precedente, non perché difendibile. Il risultato headline del progetto
+  (σ\*, wage-led) è **robusto a λ_e**: brief 08 è un rafforzamento della robustezza,
+  non una nuova leva di regime. Verifica λ_e-invarianza contro `ces_b08_sigma_star.csv`
+  e la mappa `ces_b08_collapse_map.csv`.
+
+---
+
 ## `c0` — esito dello stress test (brief 05 §2) — **il cerotto non regge, ma non per la ragione attesa**
 
 Misurato: griglia σ×ρ×`c0`, 20 seed, 2000 step, media ultime 50 (Stadio A, 3.080 run);
@@ -603,3 +661,13 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
 - **Nijkamp, P. & Poot, J. (2005). The Last Word on the Wage Curve? *Journal of
   Economic Surveys* 19(3), 421–450.** — meta-analisi su 208 stime da 17 paesi;
   elasticità "corretta" ≈ −0.07.
+
+### Aspettative adattive (brief 08)
+- **Nerlove, M. (1958). Adaptive Expectations and Cobweb Phenomena. *Quarterly
+  Journal of Economics* 72(2), 227–240.** — forma delle aspettative adattive a
+  parziale aggiustamento; il coefficiente di aspettativa è stimato per serie, non
+  universale.
+- **Evans, G. W. & Honkapohja, S. (2001). *Learning and Expectations in
+  Macroeconomics*. Princeton University Press.** — constant-gain learning; il gain
+  costante come caso adattivo. Nessuna stima strutturale di un gain di domanda
+  d'impresa: `λ_e` è uno sweep.

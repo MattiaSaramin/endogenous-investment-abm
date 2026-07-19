@@ -20,7 +20,9 @@ expected income depends on employment status) — step 0 added by brief 07:
        plus dividends for capitalists)
     3. firms plan investment (profit flow, accelerator on last utilisation)
     4. firms register demand (consumption + investment)
-    5. firms produce: Y = min(demand, Y*(K, L)); ration; set u
+    5. firms produce: Y = min(demand, Y*(K, L)); ration; set u; update the demand
+       expectation Ye <- Ye + lambda_e*(faced - Ye) (brief 08; lambda_e = 1 -> Ye = faced,
+       the static case).  No new step: the update stays inside production, as before.
     6. firm accounting: wage_bill = w_t*L, retained (= I_planned), residual dividends
     7. investment settlement: pay I_delivered; K(t+1) = (1-delta)K + I_delivered;
        buffer returns to zero
@@ -195,6 +197,16 @@ def compute_wealth_gini(model):
 
 def compute_output(model):
     return sum(f.production for f in _firms(model))
+
+
+def compute_expected_demand(model):
+    """Aggregate firm demand expectation ``sum(f.expected_demand)`` (brief 08 diagnostic).
+
+    A convergence diagnostic for the adaptive-expectations block: in steady state ``Ye = D``
+    for any gain, so this tracks Output.  Deviations from Output during the transient are
+    the expectations lagging realised demand, which is the whole point of the gain.
+    """
+    return sum(f.expected_demand for f in _firms(model))
 
 
 def compute_employment(model):
@@ -448,6 +460,15 @@ class MacroModel(mesa.Model):
         and reported, not hidden.
     retention_ratio, beta, target_utilization, investment_floor : float
         Internal-financing investment rule (unchanged from the core).
+    expectation_gain : float
+        Gain ``lambda_e`` on the adaptive demand-expectation update (brief 08),
+        ``Ye_t = Ye_{t-1} + lambda_e*(D_{t-1} - Ye_{t-1})``.  ``1.0`` (default) is static
+        expectations, ``Ye_t = D_{t-1}``, and reproduces the pre-brief-08 model bit-for-bit;
+        ``lambda_e < 1`` damps the firm's reaction to the last observation.  Must lie in
+        ``[0, 1]``; ``lambda_e = 0`` (frozen expectations) is degenerate and only used in
+        unit tests, never swept.  No reliable point estimate exists for an ABM of this kind
+        (adaptive expectations, Nerlove 1958; constant-gain learning, Evans & Honkapohja
+        2001), so it is swept, not chosen (see parameter_notes.md).
     c0, c1, capitalist_mpc, wealth_effect : float
         Consumption function terms.  ``c0`` and ``wealth_effect`` are demand levers
         (chosen values, not empirical estimates).
@@ -489,6 +510,9 @@ class MacroModel(mesa.Model):
         target_utilization=0.90,
         investment_floor=0.10,
 
+        # Expectations (brief 08): expectation_gain = 1 nests the static-expectations model
+        expectation_gain=1.0,
+
         # Consumption
         c0=2.0,
         c1=0.9,
@@ -505,6 +529,8 @@ class MacroModel(mesa.Model):
             raise ValueError("sigma must be > 0")
         if K0 <= 0.0 or L0 <= 0.0:
             raise ValueError("the normalisation anchor (K0, L0) must be positive")
+        if not (0.0 <= expectation_gain <= 1.0):
+            raise ValueError("expectation_gain (lambda_e) must be in [0, 1]")
 
         # --- parameters -------------------------------------------------
         self.num_firms = num_firms
@@ -533,6 +559,10 @@ class MacroModel(mesa.Model):
         self.beta = beta
         self.target_utilization = target_utilization
         self.investment_floor = investment_floor
+
+        # Adaptive expectations (brief 08): the gain on the demand-expectation update in
+        # Firm.step_production.  1.0 (default) is static expectations (Ye = last demand).
+        self.expectation_gain = expectation_gain
 
         self.c0 = c0
         self.c1 = c1
@@ -584,6 +614,7 @@ class MacroModel(mesa.Model):
         self.datacollector = mesa.DataCollector(
             model_reporters={
                 "Output": compute_output,
+                "Expected_Demand": compute_expected_demand,
                 "Potential_Output": compute_potential_output,
                 # Two gaps, deliberately: gap_N is unused heads (headline), gap_pm is
                 # unused capacity.  See compute_output_gap (brief 05 §5.3).

@@ -44,8 +44,10 @@ from experiment import (
     ols_slope,
     quadratic_curvature,
     run_grid_panel,
+    run_grid_panels,
     sigma_star_interp,
     slopes_by_sigma,
+    _PANEL_METRICS,
     _gradient_weights,
 )
 from agents import (
@@ -53,6 +55,7 @@ from agents import (
     Household,
     Capitalist,
     R_EPS,
+    adaptive_expectation,
     ces_capacity,
     ces_capital_ceiling,
     ces_labour_for_demand,
@@ -102,19 +105,27 @@ def _steady(retention_ratio=REF_RHO, seed=0, steps=STEPS, tail=50, **kw):
 
 # eta is folded into the parametrization (brief 07 §7.4): the wage curve redistributes
 # between wages and profits but must not touch the money circuit, so SFC has to hold at
-# eta > 0 too.  eta = 0 keeps the original coverage.
-@pytest.mark.parametrize("rho,eta", [(0.35, 0.0), (0.40, 0.0), (0.40, 0.10)])
-def test_money_is_conserved(rho, eta):
-    model = MacroModel(retention_ratio=rho, seed=7, eta=eta)
+# eta > 0 too.  eta = 0 keeps the original coverage.  lambda_e (expectation_gain) is folded
+# in the same way (brief 08 §6.4): a slower expectation only changes the labour plan, never
+# the settlement, so conservation and the zero buffer must survive lambda_e < 1 too.
+@pytest.mark.parametrize("rho,eta,lambda_e", [
+    (0.35, 0.0, 1.0), (0.40, 0.0, 1.0), (0.40, 0.10, 1.0),
+    (0.40, 0.0, 0.25), (0.40, 0.10, 0.5),
+])
+def test_money_is_conserved(rho, eta, lambda_e):
+    model = MacroModel(retention_ratio=rho, seed=7, eta=eta, expectation_gain=lambda_e)
     initial = total_money(model)
     for _ in range(600):
         model.step()
         assert total_money(model) == pytest.approx(initial, abs=1e-7)
 
 
-@pytest.mark.parametrize("rho,eta", [(0.35, 0.0), (0.40, 0.0), (0.40, 0.10)])
-def test_buffer_returns_to_zero(rho, eta):
-    model = MacroModel(retention_ratio=rho, seed=2, eta=eta)
+@pytest.mark.parametrize("rho,eta,lambda_e", [
+    (0.35, 0.0, 1.0), (0.40, 0.0, 1.0), (0.40, 0.10, 1.0),
+    (0.40, 0.0, 0.25), (0.40, 0.10, 0.5),
+])
+def test_buffer_returns_to_zero(rho, eta, lambda_e):
+    model = MacroModel(retention_ratio=rho, seed=2, eta=eta, expectation_gain=lambda_e)
     for _ in range(300):
         model.step()
         for f in _firms(model):
@@ -1068,3 +1079,151 @@ def test_wage_curve_opens_the_substitution_channel():
     L_eta0 = ces_labour_profitmax(K, A, w_eta0, K0, L0, PI0, sigma)
     L_eta = ces_labour_profitmax(K, A, w_eta, K0, L0, PI0, sigma)
     assert L_eta > L_eta0
+
+
+# ======================================================================
+# Brief 08 — adaptive expectations on demand
+# ======================================================================
+
+def test_adaptive_expectation_converges_geometrically_to_constant_demand():
+    """With D held constant and lambda_e < 1, the expectation error shrinks by the exact
+    factor (1 - lambda_e) each step (brief 08 §6.1)."""
+    D = 100.0
+    for gain in (0.25, 0.5, 0.75):
+        Ye = 40.0
+        prev_err = abs(Ye - D)
+        for _ in range(200):
+            Ye = adaptive_expectation(Ye, D, gain)
+            err = abs(Ye - D)
+            # The geometric law holds until the gap reaches the float noise floor near D
+            # (ulp(100) ~ 1.4e-14), below which it cannot keep halving; assert above it.
+            if prev_err > 1e-7:
+                assert err == pytest.approx(prev_err * (1.0 - gain), rel=1e-9)
+            prev_err = err
+        assert Ye == pytest.approx(D, abs=1e-9)   # 200 steps converges even at gain 0.25
+
+
+def test_adaptive_expectation_gain_zero_is_frozen():
+    """lambda_e = 0 never updates: the expectation stays put (degenerate, brief 08 §2)."""
+    Ye = 40.0
+    for _ in range(10):
+        Ye = adaptive_expectation(Ye, 100.0, 0.0)
+        assert Ye == 40.0
+
+
+def test_adaptive_expectation_gain_one_is_exactly_static():
+    """lambda_e = 1 returns D exactly — the byte-identity branch (brief 08 §2).
+
+    ``prev + 1.0*(faced - prev)`` is NOT ``faced`` bit-for-bit for these values in IEEE-754;
+    the explicit branch is what guarantees the equality the committed-panel byte-check needs.
+    """
+    witnesses = [(a / 7.0, b / 7.0) for a in range(1, 12) for b in range(1, 12)]
+    assert all(adaptive_expectation(p, f, 1.0) == f for p, f in witnesses)
+    # The branch is load-bearing: for some of these pairs the arithmetic form prev +
+    # 1.0*(faced - prev) loses the low bit and is NOT equal to faced bit-for-bit.
+    assert any((p + 1.0 * (f - p)) != f for p, f in witnesses)
+
+
+def test_expectation_gain_one_nests_the_static_model_bit_for_bit():
+    """expectation_gain = 1.0 reproduces the default (static) trajectory exactly, on a
+    short run with the wage curve on (brief 08 §6.2) — protects the explicit branch."""
+    def outputs(**kw):
+        m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10, **kw)
+        out = []
+        for _ in range(200):
+            m.step()
+            out.append(sum(f.production for f in _firms(m)))
+        return out
+    assert outputs() == outputs(expectation_gain=1.0)
+
+
+def test_expectation_gain_default_is_one():
+    """The constructor default is lambda_e = 1.0, so the model's default behaviour is
+    unchanged by brief 08 (brief 08 §5)."""
+    def final(seed, **kw):
+        m = MacroModel(retention_ratio=REF_RHO, seed=seed, **kw)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert final(0) == final(0, expectation_gain=1.0)
+
+
+def test_expectation_updates_from_the_closed_period_not_the_next():
+    """Ye_t is a function of (Ye_{t-1}, D_t) where D_t is the demand of the period that
+    just closed — it cannot depend on next period's demand (brief 08 §6.3)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.0, expectation_gain=0.5)
+    for _ in range(20):
+        m.step()
+    f = _firms(m)[0]
+    ye_before = f.expected_demand
+    m.step()
+    # After the step, expected_demand must equal the adaptive update of the PRE-step
+    # expectation towards THIS step's realised (faced) demand.
+    assert f.expected_demand == pytest.approx(
+        adaptive_expectation(ye_before, f.faced_demand, 0.5), rel=1e-12
+    )
+
+
+@pytest.mark.parametrize("gain", [0.25, 0.5])
+def test_determinism_with_adaptive_expectations(gain):
+    """Same seed => same trajectory with lambda_e < 1 (brief 08 §6.5)."""
+    def final(seed):
+        m = MacroModel(retention_ratio=REF_RHO, seed=seed, sigma=0.5, eta=0.10,
+                       expectation_gain=gain)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert final(3) == final(3)
+    assert final(1) != final(2)
+
+
+@pytest.mark.parametrize("bad", [-0.1, 1.0 + 1e-9, 2.0])
+def test_expectation_gain_out_of_range_raises(bad):
+    """lambda_e must lie in [0, 1] (brief 08 §6.6)."""
+    with pytest.raises(ValueError):
+        MacroModel(seed=0, expectation_gain=bad)
+
+
+def test_expectation_gain_bounds_are_admissible():
+    """Both endpoints are valid: 1.0 (default/static) and 0.0 (frozen, degenerate)."""
+    MacroModel(seed=0, expectation_gain=0.0)
+    MacroModel(seed=0, expectation_gain=1.0)
+
+
+def test_expected_demand_reporter_is_a_sane_convergence_diagnostic():
+    """In steady state the demand expectation tracks realised (faced) demand, which weakly
+    exceeds rationed output, so Expected_Demand sits at Output's order and just above it
+    (brief 08 §3 diagnostic).  Checked for a damped gain and the static default."""
+    for gain in (0.25, 1.0):
+        s = _steady(sigma=1.0, eta=0.0, expectation_gain=gain, steps=1500)
+        ed, out = float(s["Expected_Demand"]), float(s["Output"])
+        assert math.isfinite(ed) and ed > 0.0
+        assert ed == pytest.approx(out, rel=0.10)
+
+
+def test_run_grid_panels_single_pool_matches_per_config_path():
+    """The single-pool driver (brief 08 §4) must return, per config, exactly what a
+    separate run_grid_panel call produces — same seeds, same cells, no reordering."""
+    cfgs = [
+        dict(c0=1.0, eta=0.0, expectation_gain=1.0),
+        dict(c0=1.0, eta=0.10, expectation_gain=0.5),
+    ]
+    panels = run_grid_panels(
+        cfgs, sigmas=[0.5, 1.0], rhos=[0.40, 0.50], seeds=2, steps=300, workers=1
+    )
+    for cfg, got in zip(cfgs, panels):
+        ref = run_grid_panel(
+            sigmas=[0.5, 1.0], rhos=[0.40, 0.50], seeds=2, steps=300, workers=1, **cfg
+        )
+        pd.testing.assert_frame_equal(got, ref)
+
+
+def test_run_grid_panels_metrics_override_adds_expected_demand():
+    """The metrics override collects Expected_Demand without disturbing _PANEL_METRICS."""
+    panels = run_grid_panels(
+        [dict(c0=1.0, expectation_gain=0.5)],
+        sigmas=[1.0], rhos=[0.40], seeds=1, steps=200, workers=1,
+        metrics=_PANEL_METRICS + ["Expected_Demand"],
+    )
+    assert "Expected_Demand" in panels[0].columns
+    assert "Expected_Demand" not in _PANEL_METRICS      # the shared list is untouched

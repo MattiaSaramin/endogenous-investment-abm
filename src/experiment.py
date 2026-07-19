@@ -375,6 +375,79 @@ def run_grid_panel(
     return pd.DataFrame(rows).sort_values(["sigma", "rho", "seed"], ignore_index=True)
 
 
+def _panel_job_tagged(job):
+    """Run one (tag, sigma, rho, seed) cell and return ``(tag, steady-state row)``.
+
+    Module-level and picklable, like :func:`_panel_job`, but carries a ``tag`` that
+    identifies which configuration (which ``params`` dict) the cell belongs to, so many
+    panels can share ONE process pool (see :func:`run_grid_panels`).  ``metrics`` travels
+    in the job so a caller can collect extra reporters (e.g. ``Expected_Demand``) without
+    touching the shared ``_PANEL_METRICS`` used by the brief-04/05/07 paths.
+    """
+    tag, sigma, rho, seed, steps, tail, params, metrics = job
+    df = run_single(rho, steps=steps, seed=seed, sigma=sigma, **params)
+    steady = df[df.index >= steps - tail].mean()
+
+    row = {"sigma": sigma, "rho": rho, "seed": seed}
+    row.update({m: float(steady[m]) for m in metrics})
+    return tag, row
+
+
+def run_grid_panels(
+    configs,
+    sigmas=SIGMA_SWEEP_B05,
+    rhos=RHO_SWEEP_B05,
+    seeds=20,
+    steps=DEFAULT_STEPS,
+    tail=50,
+    workers=None,
+    metrics=None,
+):
+    """Run several (sigma, rho) panels that differ only in ``params``, in ONE pool.
+
+    ``configs`` is a list of ``params`` dicts, each forwarded to :class:`MacroModel` as
+    ``**params`` (e.g. ``{"c0": 1.0, "eta": 0.0, "expectation_gain": 0.25}``).  Returns a
+    list of per-seed panels, one per config, **in the same order** as ``configs``.
+
+    WHY ONE POOL (the single-pool correction, brief 08 §4).  Calling :func:`run_grid_panel`
+    once per config spawns one ``ProcessPoolExecutor`` per config; on Windows every worker
+    is a fresh interpreter that re-imports numpy/pandas/mesa, so N configs pay N import
+    storms and briefly oversubscribe the cores at each teardown/spawn.  Pooling every
+    config's cells into a single job list pays that cost once.  Determinism is unchanged:
+    each cell is seeded and shares no state, so the pooling and the ordering cannot move a
+    result (the regrouping re-sorts by (sigma, rho, seed) within each config).
+
+    ``metrics`` overrides the collected reporters (default :data:`_PANEL_METRICS`); pass
+    ``_PANEL_METRICS + ["Expected_Demand"]`` for the brief-08 convergence diagnostic
+    without perturbing the shared list the other briefs' byte-checks rely on.
+    """
+    metrics = list(_PANEL_METRICS) if metrics is None else list(metrics)
+    jobs = [
+        (tag, sigma, rho, seed, steps, tail, params, metrics)
+        for tag, params in enumerate(configs)
+        for sigma in sigmas
+        for rho in rhos
+        for seed in range(seeds)
+    ]
+
+    if workers == 1:
+        results = [_panel_job_tagged(j) for j in jobs]
+    else:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            results = list(pool.map(_panel_job_tagged, jobs, chunksize=1))
+
+    buckets = {tag: [] for tag in range(len(configs))}
+    for tag, row in results:
+        buckets[tag].append(row)
+    return [
+        pd.DataFrame(buckets[tag]).sort_values(
+            ["sigma", "rho", "seed"], ignore_index=True
+        )
+        for tag in range(len(configs))
+    ]
+
+
 def cells_from_panel(panel, collapse_y=COLLAPSE_Y):
     """Collapse a per-seed panel to one row per (sigma, rho) cell.
 

@@ -400,13 +400,38 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   `results/ces_b07_*.csv`; figura `results/ces_b07_sigma_star_eta.png`. Design §6bis
   del brief; note parametri (η, U_REF, U_min, w_min, declassamento w̄) in
   `parameter_notes.md`.
+- **Brief 08 — aspettative adattive sulla domanda (punto 10, parte DOMANDA)**:
+  l'aspettativa d'impresa passa da statica (`Ye_t = D_{t-1}`) ad adattiva
+  `Ye_t = Ye_{t-1} + λ_e·(D_{t-1} − Ye_{t-1})`, gain `λ_e` (codice:
+  `expectation_gain`, default 1.0). `λ_e=1` annida il modello statico **bit-for-bit**
+  (4 byte-check λ_e=1 vs `ces_b05`/`ces_b07`, **dev = 0.0**, PASS su tutti — sentinella
+  anti-drift). Update interno a `step_production` (nessuno step nuovo); helper
+  `adaptive_expectation` col branch esplicito λ_e=1; infrastruttura di pooling
+  **single-pool** (`run_grid_panels`, 2 spawn di pool anziché 24). **Esito headline
+  (E1, c0=1.0): σ\*(η; λ_e) λ_e-INVARIANTE entro CI** — a η=0 σ\*=0.654/0.686/0.674 a
+  λ_e=1/0.5/0.25 (CI sovrapposte), a η=0.10 0.725/0.713/0.721; l'empirico σ 0.40–0.60
+  resta **sotto** σ\* per ogni λ_e: **il wage-led è robusto al gain**, nessun finding
+  di selezione del bacino. **E2 (c0=2.0): ipotesi di stabilizzazione NON CONFERMATA** —
+  la regione di collasso è λ_e-invariante entro il rumore (celle a collasso pieno
+  piatte; η=0.15 non monotono) e la cella di riferimento (σ=1.5, ρ=0.40, η=0.10)
+  **collassa a K=0/U=1 a ogni λ_e**. Il collasso c0=2.0 è guidato dal canale
+  salario→U→erosione di capitale (wage curve), che `λ_e` non tocca: smorzare
+  l'aspettativa di **domanda** non stabilizza un'instabilità che non nasce dalla
+  domanda. **378 test verdi.** Driver `scripts/run_brief08.py` (due fasi, gate E1 su
+  perdita di supporto vs λ_e=1); CSV `results/ces_b08_*.csv`; figure
+  `results/ces_b08_sigma_star_lambda.png`, `ces_b08_collapse_map.png`,
+  `ces_b08_trace.png`. Note parametro (`λ_e`, Nerlove 1958, Evans & Honkapohja 2001)
+  in `parameter_notes.md`. **Fuori scope:** aspettative su salari/prezzi/investimento
+  (l'acceleratore usa `utilization_last_period`, un segnale realizzato).
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** 8) produttività eterogenea tra imprese; **9) prezzi endogeni
-(parte salario FATTA col brief 07; resta il PREZZO — vedi sotto)**; 10) aspettative
-adattive su domanda e investimento
-(al punto 11 l'aspettativa è **statica**: domanda del periodo precedente);
+(parte salario FATTA col brief 07; resta il PREZZO — vedi sotto)**; **10) aspettative
+adattive — parte DOMANDA FATTA col brief 08** (σ\* λ_e-invariante; ipotesi di
+stabilizzazione c0=2.0 non confermata); **resta l'aspettativa sull'INVESTIMENTO**
+(oggi l'acceleratore usa `utilization_last_period`, un segnale realizzato, non
+un'aspettativa — punto 10-bis);
 12) entrata/uscita/fallimento imprese; 13) cambiamento tecnologico (crescita di
 A); 14) banche e credito (estende la matrice SFC: depositi, prestiti);
 15) politica monetaria e fiscale — il **governo con sussidio a bilancio in
@@ -448,10 +473,13 @@ finito — non si stabilisce la robustezza su una tappa intermedia nota.
 
 **Debito residuo:** verificare I/Y con una serie BEA primaria (ora è ordine di
 grandezza); **fissare l'unità temporale del periodo** (δ, K/Y, I/Y sono
-implicitamente annualizzati); **notebook: aggiungere una sezione "wage curve"
-(σ*(η), c0=2.0) al prossimo consolidamento** — il brief 07 ha lasciato la figura
-σ*(η) in `results/` e referenziata dal README, ma il notebook copre ancora solo
-brief 04/05.
+implicitamente annualizzati); **notebook: aggiungere le sezioni "wage curve"
+(σ*(η), brief 07) e "aspettative adattive" (σ*(η;λ_e) + mappa di collasso,
+brief 08) al prossimo consolidamento** — i brief 07 e 08 hanno lasciato le figure
+(`ces_b07_sigma_star_eta.png`, `ces_b08_sigma_star_lambda.png`,
+`ces_b08_collapse_map.png`, `ces_b08_trace.png`) in `results/` e referenziate dal
+README, ma il notebook copre ancora solo brief 04/05. **Il brief 08 non aggrava né
+salda questo debito** (i risultati λ_e sono nel README; notebook al consolidamento).
 
 ---
 
@@ -502,15 +530,19 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 ## 11. Struttura del codice
 
 - `src/agents.py` — Firm (CES normalizzata, salario dalla wage curve, finanziamento
-  interno), Household, Capitalist; helper CES (`ces_capacity`, `ces_labour_*`,
-  `ces_mpl`, …)
+  interno, aspettativa adattiva di domanda), Household, Capitalist; helper CES
+  (`ces_capacity`, `ces_labour_*`, `ces_mpl`, …) e `adaptive_expectation` (brief 08,
+  branch esplicito λ_e=1)
 - `src/model.py` — MacroModel: mercato del lavoro, sequenza del periodo (step 0 =
-  wage curve, brief 07), settlement, metriche; ancore di normalizzazione `ANCHOR_*`,
-  costante `U_REF` e helper `wage_from_curve` (brief 07)
+  wage curve, brief 07; update aspettativa adattiva dentro lo step di produzione,
+  brief 08), settlement, metriche (incl. `Expected_Demand`, brief 08); ancore di
+  normalizzazione `ANCHOR_*`, costante `U_REF` e helper `wage_from_curve` (brief 07);
+  parametro `expectation_gain` (λ_e, default 1.0, validato ∈[0,1])
 - `src/experiment.py` — runner Monte-Carlo, sweep ρ, griglia (σ, ρ) e sign
   frontier (brief 04), stack di robustezza brief 05 (`run_grid_panel`,
-  `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …); `eta` passa
-  al modello via `**params`, come `c0` (brief 07)
+  `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …); `eta` e
+  `expectation_gain` passano al modello via `**params`, come `c0`; `run_grid_panels`
+  (brief 08: **single-pool**, più config in un solo pool, `metrics` override)
 - `scripts/run_brief04.py` — driver **riproducibile** dello sweep (σ, ρ) e della
   sign frontier del brief 04; rigenera 5 dei 6 `results/ces_*.csv` (thread BLAS
   pinnati). **Non** rigenera `ces_decomposition.csv` (vedi sotto).
@@ -520,9 +552,16 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   brief 07 (wage curve); due fasi (recon 3-seed con soglie di halt esplicite →
   panel 20-seed), check di annidamento byte-identico η=0 vs `ces_b05_stage_a_panel`,
   σ*(η) sul supporto comune-across-η; rigenera `results/ces_b07_*.csv`
+- `scripts/run_brief08.py` — driver **riproducibile** dello sweep σ×ρ×η×λ_e×c0 del
+  brief 08 (aspettative adattive); due fasi in **single-pool** (recon 3-seed con gate
+  E1 su perdita di supporto vs λ_e=1 → panel 20-seed), 4 byte-check λ_e=1 vs
+  `ces_b05`/`ces_b07` (artifact-su-disco), σ*(η;λ_e) sul supporto comune-across-config,
+  mappa di collasso E2 vs b07 e trace della cella di riferimento; rigenera
+  `results/ces_b08_*.csv` + 3 figure
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati. `ces_b07_*.csv` (brief 07) → rigenerati
+- `results/` — output misurati committati. `ces_b08_*.csv` (brief 08) → rigenerati
+  da `run_brief08.py`. `ces_b07_*.csv` (brief 07) → rigenerati
   da `run_brief07.py`. `ces_b05_*.csv` (brief 05) → rigenerati
   da `run_brief05.py`. `ces_sigma_rho_grid.csv`, `ces_derivatives*.csv`,
   `ces_sign_frontier*.csv` (brief 04, 5 file) → rigenerati da `run_brief04.py`.
@@ -531,7 +570,9 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   sono citati in alcun documento). Da ricostruire con spec dichiarata se servirà.
 - `tests/test_model.py`, `tests/conftest.py` — SFC, determinismo, contabilità del
   lavoro, nesting CES, pin di regressione (tolleranza), stack di robustezza,
-  wage curve (brief 07: annidamento η=0, lag U_{t-1}, canale di sostituzione)
+  wage curve (brief 07: annidamento η=0, lag U_{t-1}, canale di sostituzione),
+  aspettative adattive (brief 08: convergenza geometrica, annidamento λ_e=1, lag,
+  SFC/determinismo a λ_e<1, single-pool)
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di
