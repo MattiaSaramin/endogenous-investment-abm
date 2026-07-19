@@ -354,6 +354,84 @@ it aggravates it. Reported as a finding, not recalibrated. Outputs: `results/ces
 ![E1 fiscal dose-response: U, Y, K vs rr](results/ces_b09_dose_response.png)
 ![E3 collapse map: does the demand floor shrink it? (it enlarges it)](results/ces_b09_collapse_map.png)
 
+### 7. Why the firms are homogeneous - a structural assumption, tested (brief 10)
+
+All ten firms share one productivity `A`. That is an **assumption**, and roadmap point 8
+proposed relaxing it. Brief 10 does not implement it; it **measures what would happen if
+it did**, and the measurement is the reason the point is closed rather than built. One
+experimental dial, `productivity_spread`, fans the firm productivities out
+mean-preservingly (`A_i = 1 + spread*(2i-(n-1))/(n-1)`), changing nothing else - no
+selection, no demand reallocation, no entry/exit. `spread = 0` reproduces the committed
+brief-05/07/09 panels **byte-for-byte** (3 nesting checks, `max_abs_dev = 0.0`).
+
+The result is a **cliff, not a gradient**. Below the threshold the economy is healthy and
+no firm dies; one grid step above it, *every* firm is dead:
+
+| spread | S1 `anchor` U / Y | S2 `headline` U / Y | S3 `rr=0.5` U / Y | dead firms (S2) |
+| ------ | ----------------- | ------------------- | ----------------- | --------------- |
+| 0.000  | 0.258 / 132.1     | 0.566 / 82.1        | 0.427 / 108.7     | 0               |
+| 0.050  | 0.250 / 133.0     | 0.563 / 82.7        | 0.421 / 109.5     | 0               |
+| 0.100  | 0.229 / 134.7     | 0.554 / 83.2        | 0.410 / 109.9     | 0               |
+| 0.125  | **1.000 / 0.0**   | 0.543 / 84.2        | 0.676 / 58.9      | 0               |
+| 0.150  | 1.000 / 0.0       | **1.000 / 0.0**     | **1.000 / 0.0**   | **10**          |
+| 0.200  | 1.000 / 0.0       | 1.000 / 0.0         | 1.000 / 0.0       | 10              |
+
+"Collapsed" is literal: `Y = 0`, `U = 1`, all ten firms dead, aggregate capital decaying
+geometrically to `3.5e-34` by step 2000. The threshold sits between `spread` 0.10 and
+0.125 for the `anchor` scenario and between 0.125 and 0.15 for the `headline` one.
+
+**The mean-field claim, made precise.** Below the threshold no firm dies, but "identical
+to the homogeneous model" holds less far than "healthy" does: `Y` stays inside the
+`spread = 0` inter-seed band only up to `spread = 0.05` (`anchor`, `rr=0.5`) or 0.125
+(`headline`). At `spread = 0.10` the `anchor` aggregates have moved *detectably* at 20
+seeds - and moved **upward** (`Y` 132.1 → 134.7, `U` 0.258 → 0.229): mean-preserving
+dispersion is mildly **expansionary** right up until it is fatal. So the defensible
+statement is *the firm side is quasi-representative in its aggregates up to about ±5 %
+dispersion, and viable but no longer identical up to the cliff* - not "heterogeneity does
+not matter".
+
+**The domino.** Traced on `headline`, `spread = 0.20`, seed 0: the low-`A` firm serves the
+same network demand with more labour, earns less profit, invests below `delta*K` and
+decapitalises first (`K` 38 → ~0 by step 250). Its spending shares stay pointed at it
+(demand destroyed) and its laid-off workers lose their income (a demand externality), so
+the high-`A` firms follow - `K` of the strongest firm reaches zero by step 500, `U` hits 1.
+**This is what the missing machinery would have done:** with entry/exit and demand
+rerouting, that demand would have moved to a surviving firm instead of vanishing.
+
+**E2 - does the brief-09 benefit cushion it? Falsified: it makes things *worse*.** The
+hypothesis was that keeping income flowing to the laid-off would raise the viability
+threshold. Measured, it **lowers** it. At `spread = 0.125` the `headline` scenario has
+**0 of 20** seeds with any dead firm; the same scenario at `rr = 0.5` has **18 of 20**,
+with **7 of 20** fully collapsed (a genuine mixed basin). The full-collapse threshold is
+unchanged at 0.15. *Mechanism, verified rather than guessed* (seed 8, `spread = 0.125`):
+the benefit lowers unemployment (early-run `U` 0.544 → 0.445), the wage curve reads that
+and **raises the wage** (`w_t` 0.836 → 0.853), and the low-`A` firm - whose marginal
+product is scaled down by its `A` - is the first squeezed below `I = delta*K`. At `rr = 0`
+that firm sits in a stable steady state (`K ~ 28`, 6 workers, profit 3.73 at step 1200);
+at `rr = 0.5` it decapitalises monotonically to `1.8e-6` by step 800 and sheds every
+worker. The demand cushion is real but dominated by the same wage → `U` channel that drove
+briefs 07 and 09.
+
+**Comparison with the data, and its limit.** Within-industry TFP dispersion is large -
+Syverson (2004) reports a 90/10 ratio around 2:1 in US manufacturing (see also Bartelsman
+& Doms 2000). The collapse threshold here is a max/min productivity ratio of about
+**1.22-1.29**, far below that. **The units are not the same** and no quantitative mapping
+is claimed: a linear fan half-width is not a 90/10 log-TFP ratio, and the model's `A`
+enters a normalised CES fitted to nothing. The qualitative reading is all that is
+supported, and it is enough: **empirically realistic firm heterogeneity is well outside
+this model's viable range**, because the model has no reallocation channel to absorb it.
+Building point 8 without point 12 (entry/exit and demand rerouting) would produce a model
+that dies rather than a model with heterogeneous firms. Point 8 is therefore closed with
+the firm side declared **quasi-representative, as a tested assumption**; reallocation is
+declared future work. Outputs: `results/ces_b10_*.csv` (via `scripts/run_brief10.py`).
+
+*Limit, declared:* the probe establishes that a threshold exists and where it lies for a
+**linear** fan. It says nothing about the shape of the dispersion distribution - a
+lognormal `A` with the same variance need not have the same threshold.
+
+![Aggregates vs dispersion: the cliff](results/ces_b10_aggregates_spread.png)
+![The domino: the weak firm decapitalises first, then the cascade](results/ces_b10_domino_trace.png)
+
 ---
 
 ## Interpretive frame (read this before the results)
@@ -376,10 +454,17 @@ it aggravates it. Reported as a finding, not recalibrated. Outputs: `results/ces
   `initial_capital` selects the basin, so it is held fixed across every grid and
   reported; cells that collapse (e.g. `rho = 0.35` at `c0 = 2.0`) are an
   **outcome**, not an error.
-* **The model is close to mean-field.** The 95 % confidence band on each cell's
-  mean output is ~0.6–0.9 % of the mean (median over viable cells); the raw
-  per-seed min–max spread is wider (~5–8 %). Heterogeneity and the network move
-  the mean only slightly.
+* **The model is close to mean-field *in its aggregates*, and this is now measured,
+  not asserted.** The 95 % confidence band on each cell's mean output is ~0.6–0.9 %
+  of the mean (median over viable cells); the raw per-seed min–max spread is wider
+  (~5–8 %). Brief 10 tested the firm-side half of the claim directly: dispersing
+  firm productivity leaves the aggregates alone up to ~±5 % and viable up to a
+  sharp cliff at ~±12 %, past which the economy dies outright (§7). Two caveats
+  that follow from it: the firm side is quasi-representative in its **aggregates,
+  not in its cross-section** — even with identical `A`, random consumption links
+  make firms diverge in capital (`TopK_Share` settles at 0.35–0.38, not the equal-split
+  0.30) — and the narrowness of the viable range is itself a **limitation of the
+  model**, caused by the absence of any reallocation channel.
 * **`c0` and `wealth_effect` note.** `wealth_effect = 0.05` is anchored (Slacalek
   2009). `c0 = 2.0` is a demand-scale lever with a falsified original
   justification and is *not* an empirical estimate; the headline is reported at
@@ -399,10 +484,12 @@ scripts/
 ├── run_brief05.py   Regenerates the brief-05 stage A/B/C outputs into results/ (reproducible)
 ├── run_brief07.py   Regenerates the brief-07 wage-curve sweep (sigma x rho x eta x c0) into results/ (reproducible)
 ├── run_brief08.py   Regenerates the brief-08 adaptive-expectations sweep (sigma x rho x eta x lambda_e x c0) (reproducible)
-└── run_brief09.py   Regenerates the brief-09 government sweep (dose-response + sigma*(eta;rr) + collapse map) (reproducible)
+├── run_brief09.py   Regenerates the brief-09 government sweep (dose-response + sigma*(eta;rr) + collapse map) (reproducible)
+└── run_brief10.py   Regenerates the brief-10 firm-heterogeneity viability probe (aggregates vs spread + domino trace) (reproducible)
 notebooks/
 └── 01_Endogenous_Investment.ipynb   rho sweep at sigma=1 + sigma sweep with the sign frontier
 results/
+├── ces_b10_*.csv    brief-10 heterogeneity probe: aggregates vs spread, viability thresholds, domino trace; produced by scripts/run_brief10.py
 ├── ces_b09_*.csv    brief-09 government sweep: dose-response, sigma*(eta;rr), collapse map + trace; produced by scripts/run_brief09.py
 ├── ces_b08_*.csv    brief-08 adaptive-expectations sweep + sigma*(eta;lambda_e) + collapse map; produced by scripts/run_brief08.py
 ├── ces_b07_*.csv    brief-07 wage-curve sweep + sigma*(eta); produced by scripts/run_brief07.py
@@ -410,11 +497,11 @@ results/
 └── ces_*.csv        brief-04 (sigma, rho) grid, derivatives and sign frontier
 tests/
 ├── conftest.py
-└── test_model.py    SFC + buffer==0, distribution, labour accounting, CES nesting, robustness stack, wage curve, adaptive expectations, government
+└── test_model.py    SFC + buffer==0, distribution, labour accounting, CES nesting, robustness stack, wage curve, adaptive expectations, government, heterogeneity probe
 performance/
 └── engine.cpp       STALE: additive Phase-1 model, NOT the current core (do not use)
 requirements.txt
-retention_sweep.png, ces_sign_frontier.png, results/ces_b07_sigma_star_eta.png, results/ces_b08_sigma_star_lambda.png, results/ces_b09_dose_response.png
+retention_sweep.png, ces_sign_frontier.png, results/ces_b07_sigma_star_eta.png, results/ces_b08_sigma_star_lambda.png, results/ces_b09_dose_response.png, results/ces_b10_aggregates_spread.png
 ```
 
 ---
@@ -439,7 +526,10 @@ python scripts/run_brief08.py
 # regenerate the brief-09 government sweep (results/ces_b09_*.csv); two phases, threads pinned (~1.5-2h)
 python scripts/run_brief09.py
 
-# run the checks (SFC, buffer==0, distribution, labour accounting, CES nesting, wage curve, adaptive expectations, government, bootstrap)
+# regenerate the brief-10 heterogeneity probe (results/ces_b10_*.csv); single phase, threads pinned (~10 min)
+python scripts/run_brief10.py
+
+# run the checks (SFC, buffer==0, distribution, labour accounting, CES nesting, wage curve, adaptive expectations, government, heterogeneity, bootstrap)
 python -m pytest tests/ -q
 ```
 

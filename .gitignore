@@ -18,3 +18,6 @@ performance/engine
 # OS
 .DS_Store
 Thumbs.db
+
+# Smoke-mode driver output: plumbing checks, never a scientific result
+results/smoke/

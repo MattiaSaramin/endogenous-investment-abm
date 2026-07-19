@@ -35,6 +35,13 @@ expected income depends on employment status) — step 0 added by brief 07:
        whole step and reproduces the pre-brief-09 model bit-for-bit.
     9. household settlement (credit income, pay for delivered goods)
 
+Firms are **homogeneous** (one common A) unless ``productivity_spread > 0``, which fans
+their productivities out mean-preservingly (brief 10).  That dial is a *probe of the
+homogeneity assumption*, not an implementation of firm heterogeneity: it adds dispersion
+without any of the machinery — selection, demand reallocation, entry/exit — that a real
+heterogeneous-firm model needs.  It touches no flow, no step and no settlement, so the
+period sequence and the SFC invariant below are unchanged at any spread.
+
 Conserved quantity (checked in ``tests/``): at a period boundary the buffer is
 zero, so ``sum(household wealth + income) + sum(firm money_buffer)`` is constant.
 The unemployed receive either nothing (default) or a benefit funded one-for-one by the
@@ -146,6 +153,58 @@ ANCHOR_L0_RHO050 = 6.320261437908497
 # This is a modelling choice, NOT an estimate of the NAIRU: it is only the point at
 # which the wage curve is normalised to the pre-modification wage.
 U_REF = 0.2604666666666667
+
+
+# ============================================================
+# Firm productivity dispersion — an EXPERIMENTAL DIAL (brief 10 probe)
+# ============================================================
+#
+# The firm side is homogeneous (every firm has the same A).  Brief 10 does not make
+# heterogeneity a feature (roadmap point 8 is DECIDED AGAINST — no selection, no
+# reallocation, no entry/exit); it adds the minimum needed to *test* the homogeneity
+# assumption and measure where it breaks.  ``productivity_spread = 0`` (the default)
+# is the model as it was, bit-for-bit.
+#
+# CONVENTION, declared not hidden: the normalisation anchor (``ANCHOR_*``: K0, L0) and
+# ``U_REF`` stay FROZEN and COMMON to all firms.  A_i scales the individual firm's Y0
+# through ``_Y0(A_i, K0, L0, pi0)``, so the fan is mean-preserving in **A**, not in Y0
+# (Y0 is linear in A here, so with this anchor it happens to be mean-preserving in Y0
+# too — but that is a property of the CES normalisation, not something imposed).
+# Aggregate benchmarks that need one economy-wide A (``Potential_Output``,
+# ``Wage_Share_Profitmax``) keep using ``model.productivity``, i.e. the fan's MEAN: a
+# reporting convention for a diagnostic, with no effect on the dynamics.
+
+#: A firm with capital below this counts as "dead" in the ``Dead_Firms`` diagnostic.
+#: A declared convention for *reporting only* — nothing in the dynamics reads it, and a
+#: firm below it is not removed, frozen, or treated specially in any way.
+DEAD_FIRM_K = 0.5
+
+#: ``TopK_Share`` reports the capital share of the largest this-many firms.
+TOPK_N = 3
+
+
+def productivity_fan(base, n, spread):
+    """Mean-preserving linear fan of firm productivities (brief 10).
+
+        A_i = base * (1 + spread * (2i - (n-1)) / (n-1)),    i = 0 .. n-1
+
+    so A runs linearly from ``base*(1-spread)`` to ``base*(1+spread)`` and averages to
+    ``base``.  ``spread = 0`` is short-circuited to return ``base`` for every firm —
+    the explicit branch (like the ``eta = 0`` and ``lambda_e = 1`` branches elsewhere)
+    is what guarantees the nested model is reproduced bit-for-bit, without relying on
+    ``1 + 0.0*x`` rounding back to exactly 1.
+
+    The numerator ``2i - (n-1)`` is an integer, so the offsets of firm ``i`` and firm
+    ``n-1-i`` are exact negatives of each other and the fan is symmetric by construction.
+    Exact mean preservation in floating point is *verified* (tests/test_model.py), not
+    assumed: it holds to 1e-15 or better, and exactly for the n = 10 grid swept here.
+    """
+    if n <= 0:
+        return []
+    if spread == 0.0 or n == 1:
+        return [base] * n
+    denom = float(n - 1)
+    return [base * (1.0 + spread * ((2 * i - (n - 1)) / denom)) for i in range(n)]
 
 
 def wage_from_curve(w_bar, U_prev, eta, U_ref, U_min, w_min):
@@ -458,6 +517,43 @@ def compute_tax_at_cap(model):
     return 1.0 if model.max_tax > 0.0 and model.tax_rate >= model.max_tax else 0.0
 
 
+# --- heterogeneity diagnostics (brief 10) ---------------------------------
+
+def compute_dead_firms(model):
+    """Number of firms whose capital has fallen below ``DEAD_FIRM_K`` (brief 10).
+
+    A pure REPORTING diagnostic: the model has no exit, so a "dead" firm keeps its
+    customers, its demand share and its (empty) payroll — which is precisely the
+    mechanism the probe is measuring, since demand routed to a firm that cannot produce
+    is demand destroyed.  The threshold is a declared convention, not an estimate.
+    """
+    return float(sum(1 for f in _firms(model) if f.capital < DEAD_FIRM_K))
+
+
+def compute_topk_share(model):
+    """Share of aggregate capital held by the largest ``TOPK_N`` firms (brief 10).
+
+    Concentration diagnostic for the dispersion probe.  It rises as the fan lets high-A
+    firms out-accumulate low-A ones, and towards 1.0 as the weak firms die.  0.0 when
+    there is no capital left at all (a fully collapsed economy has no distribution to
+    report).
+
+    ITS BASELINE IS NOT ``TOPK_N/num_firms``.  That is only its value at t = 0, where
+    every firm starts with ``initial_capital``.  Even with A perfectly homogeneous the
+    firms do NOT stay identical: consumption links are drawn at random, so firms face
+    different demand, earn different profits and accumulate different capital.  Measured
+    at the brief-10 scenarios (rho = 0.40, tail-50, seeds 0-2) the homogeneous baseline
+    settles at 0.35-0.38, not 0.30.  So the firm side is quasi-representative in its
+    AGGREGATES, not in its cross-section, and any reading of this reporter under
+    dispersion must be against the measured spread = 0 baseline, never against 0.3.
+    """
+    caps = sorted((f.capital for f in _firms(model)), reverse=True)
+    total = sum(caps)
+    if total <= 0.0:
+        return 0.0
+    return sum(caps[:TOPK_N]) / total
+
+
 # ============================================================
 # Model
 # ============================================================
@@ -487,6 +583,16 @@ class MacroModel(mesa.Model):
         Depreciation, A, and K(0) per firm.  ``initial_capital`` is held fixed across
         any sigma/rho grid: the model has multiple equilibria and a viability
         threshold near rho = 0.30, so K(0) selects the basin.
+    productivity_spread : float
+        Half-width of a mean-preserving linear fan of firm productivities around
+        ``productivity`` (brief 10 probe): firm ``i`` gets
+        ``A_i = productivity*(1 + spread*(2i-(n-1))/(n-1))``.  ``0.0`` (default) makes
+        every firm identical and reproduces the homogeneous model bit-for-bit.  This is
+        an EXPERIMENTAL DIAL, not a calibrated parameter and not an implementation of
+        roadmap point 8: there is no selection, reallocation, rewiring or entry/exit, so
+        a firm the fan makes unproductive simply accumulates less capital while keeping
+        its demand share.  Its purpose is to *measure* the viability threshold of the
+        homogeneity assumption (see parameter_notes.md).  Must lie in ``[0, 1)``.
     wage_rate : float
         The wage-curve *normalisation point* ``w_bar`` per employed worker (brief 07):
         the wage paid at ``U = U_REF``, and the value the wage holds at every U when
@@ -555,6 +661,9 @@ class MacroModel(mesa.Model):
         productivity=1.0,
         initial_capital=40.0,
 
+        # Firm heterogeneity probe (brief 10): spread = 0 nests the homogeneous model
+        productivity_spread=0.0,
+
         # Distribution
         wage_rate=0.9,
 
@@ -597,6 +706,11 @@ class MacroModel(mesa.Model):
             raise ValueError("benefit_replacement_rate must be >= 0")
         if not (0.0 <= max_tax <= 1.0):
             raise ValueError("max_tax must be in [0, 1]")
+        # [0, 1): at spread = 1 the weakest firm has A = 0 (it can never produce), which
+        # is an exit event the model has no machinery for — excluded rather than silently
+        # producing a permanently dead firm.
+        if not (0.0 <= productivity_spread < 1.0):
+            raise ValueError("productivity_spread must be in [0, 1)")
 
         # --- parameters -------------------------------------------------
         self.num_firms = num_firms
@@ -609,7 +723,10 @@ class MacroModel(mesa.Model):
         #: Base-point capacity — derived, not a free parameter (brief 04 §2.3).
         self.Y0 = _Y0(productivity, K0, L0, pi0)
         self.delta = delta
+        #: The economy-wide A — with a spread this is the MEAN of the firm fan, and the
+        #: value the aggregate benchmarks (Potential_Output, Wage_Share_Profitmax) use.
         self.productivity = productivity
+        self.productivity_spread = productivity_spread
 
         # Wage: ``w_bar`` is the normalisation point of the wage curve (the old fixed
         # wage); ``wage_rate`` is the *current* wage, set each period by the curve on
@@ -650,9 +767,15 @@ class MacroModel(mesa.Model):
         self.gov_transfers = 0.0
 
         # --- build firms ------------------------------------------------
+        # Each firm carries its OWN A_i from the fan (brief 10).  At the default
+        # spread = 0 every A_i is ``productivity`` itself, so this is the previous
+        # construction unchanged and the RNG is untouched either way.
+        self.productivity_by_firm = productivity_fan(
+            productivity, num_firms, productivity_spread
+        )
         firms = [
-            Firm(self, productivity=productivity, initial_capital=initial_capital)
-            for _ in range(num_firms)
+            Firm(self, productivity=A_i, initial_capital=initial_capital)
+            for A_i in self.productivity_by_firm
         ]
 
         # --- build households -------------------------------------------
@@ -678,10 +801,13 @@ class MacroModel(mesa.Model):
             for firm in linked:
                 firm.customers.append(household)
 
-        # Initial expectations so the first-period labour market is not a shock.
+        # Initial expectations so the first-period labour market is not a shock.  Each
+        # firm expects what IT could produce, i.e. with its own A_i (brief 10): seeding a
+        # low-A firm with the average firm's capacity would hand it an expectation it can
+        # never meet and confound the probe with a start-of-run shock.
         for f in firms:
             f.expected_demand = ces_capacity(
-                initial_capital, len(f.workers), productivity, K0, L0, pi0, sigma
+                initial_capital, len(f.workers), f.productivity, K0, L0, pi0, sigma
             )
             f.utilization_last_period = target_utilization
 
@@ -722,6 +848,10 @@ class MacroModel(mesa.Model):
                 "Benefit_Per_Head": compute_benefit_per_head,
                 "Gov_Transfers": compute_gov_transfers,
                 "Tax_At_Cap": compute_tax_at_cap,
+                # Heterogeneity probe (brief 10): pure diagnostics.  Dead_Firms is 0 and
+                # TopK_Share is TOPK_N/num_firms while the firms stay homogeneous.
+                "Dead_Firms": compute_dead_firms,
+                "TopK_Share": compute_topk_share,
             }
         )
         self.datacollector.collect(self)

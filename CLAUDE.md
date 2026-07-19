@@ -456,9 +456,52 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   spesa in beni/servizi, occupazione pubblica, debito, tassazione progressiva, salario di
   riserva.
 
+- **Brief 10 — probe di viability dell'eterogeneità di impresa (punto 8: DECISIONE
+  PRESA, feature NON implementata)**: dial sperimentale `productivity_spread` (default
+  0.0, validato ∈[0,1)) che ventaglia le produttività d'impresa in modo mean-preserving
+  (`A_i = A·(1 + spread·(2i−(n−1))/(n−1))`, media esatta in float, ogni impresa con la
+  propria A_i **anche nell'aspettativa iniziale**). Nessuna modifica a flussi, sequenza,
+  SFC. `spread=0` annida bit-for-bit (**byte-check vs `ces_b05`/`ces_b07`/`ces_b09`:
+  3/3 PASS, dev=0.0**). Reporter `Dead_Firms` (K<0.5) e `TopK_Share` (quota di K delle
+  prime 3), pure diagnostiche. **Esito: è una SCOGLIERA, non un gradiente** — sotto soglia
+  nessuna impresa muore, uno step di griglia sopra **tutte e 10 sono morte** (Y=0, U=1,
+  K→3.5e-34 allo step 2000). Soglia fra spread **0.10 e 0.125** (anchor c0=2.0/σ=1/η=0) e
+  fra **0.125 e 0.15** (headline c0=1.0/σ=0.5/η=0.10). **Claim mean-field resa precisa:**
+  Y resta dentro la banda inter-seed di spread=0 solo fino a **0.05** (anchor) / 0.125
+  (headline); a 0.10 gli aggregati anchor si muovono in modo rilevabile e **verso l'alto**
+  (Y 132.1→134.7, U 0.258→0.229) — la dispersione è **lievemente espansiva** fin quando
+  non è fatale. Enunciato difendibile: *quasi-rappresentativo negli **aggregati** fino a
+  ~±5%, viabile fino alla scogliera*. **Domino tracciato** (headline, spread=0.20, seed 0):
+  l'impresa a bassa A si decapitalizza per prima (K 38→~0 allo step 250), le quote di spesa
+  restano puntate su di lei (domanda distrutta) e i suoi licenziati perdono reddito
+  (esternalità di domanda) → cadono anche le imprese ad alta A (K della più forte a 0 allo
+  step 500, U→1). **E2 (sussidio brief 09 come cuscinetto): FALSIFICATO, peggiora** — a
+  spread=0.125 headline ha 0/20 seed con imprese morte, a rr=0.5 ne ha **18/20** (7/20 in
+  collasso pieno, bacino misto); soglia di collasso pieno invariata a 0.15. **Meccanismo
+  verificato** (seed 8): il sussidio abbassa U (0.544→0.445), la wage curve **alza w_t**
+  (0.836→0.853) e l'impresa a bassa A è la prima spinta sotto `I=δK` (a rr=0 steady state
+  stabile K≈28/L=6; a rr=0.5 decapitalizzazione monotona a 1.8e-6 allo step 800). Stesso
+  canale salario→U dei brief 07 e 09. **Confronto empirico qualitativo:** dispersione TFP
+  intra-settore 90/10 ≈2:1 (Syverson 2004; Bartelsman & Doms 2000) vs soglia max/min
+  ≈1.22–1.29 → **l'eterogeneità realistica è ben fuori dal range viabile**, perché manca
+  il canale di riallocazione. **Unità diverse: nessuna mappatura quantitativa pretesa.**
+  **Reperto collaterale (dai test):** anche a spread=0 le imprese **non** restano identiche
+  — i link di consumo sono casuali, quindi `TopK_Share` parte da 0.30 a t=0 e si assesta a
+  **0.35–0.38**: quasi-rappresentatività negli **aggregati, non nella sezione trasversale**.
+  **438 test verdi** (397 invariati + 41 nuovi). Driver `scripts/run_brief10.py` (fase
+  unica — il collasso È il deliverable, non c'è nulla da gattare; due pool raggruppati per
+  σ); CSV `results/ces_b10_*.csv`; figure `ces_b10_aggregates_spread.png`,
+  `ces_b10_domino_trace.png`. Note parametro in `parameter_notes.md`. **Fuori scope:**
+  implementare il punto 8 come feature (selezione, riallocazione, rewiring, entry/exit) —
+  tagliato, future work punto 12; distribuzioni di A diverse dal ventaglio lineare (il
+  probe stabilisce esistenza e posizione della soglia, non la sua forma distribuzionale —
+  limite dichiarato).
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
-**Successivi:** 8) produttività eterogenea tra imprese; **9) prezzi endogeni
+**Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
+decisione presa, lato imprese dichiarato quasi-rappresentativo con evidenza misurata,
+feature non implementata, riallocazione = future work (punto 12)**; **9) prezzi endogeni
 (parte salario FATTA col brief 07; resta il PREZZO — vedi sotto)**; **10) aspettative
 adattive — parte DOMANDA FATTA col brief 08** (σ\* λ_e-invariante; ipotesi di
 stabilizzazione c0=2.0 non confermata); **resta l'aspettativa sull'INVESTIMENTO**
@@ -568,7 +611,8 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   interno, aspettativa adattiva di domanda), Household, Capitalist; helper CES
   (`ces_capacity`, `ces_labour_*`, `ces_mpl`, …) e `adaptive_expectation` (brief 08,
   branch esplicito λ_e=1). Nessuna modifica funzionale al brief 09: solo docstring
-  aggiornati dove i disoccupati "earn nothing" (ora salvo il sussidio brief 09)
+  aggiornati dove i disoccupati "earn nothing" (ora salvo il sussidio brief 09). Nessuna modifica al brief 10: la `A` d'impresa era già un attributo
+  di `Firm`, il ventaglio la popola dal modello
 - `src/model.py` — MacroModel: mercato del lavoro, sequenza del periodo (step 0 =
   wage curve, brief 07; update aspettativa adattiva dentro lo step di produzione,
   brief 08; **step 8 = governo, brief 09**), settlement, metriche (incl.
@@ -577,13 +621,16 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   `wage_from_curve` (brief 07); parametro `expectation_gain` (λ_e, default 1.0,
   validato ∈[0,1]); metodo `government()` e parametri `benefit_replacement_rate`
   (rr, default 0.0, validato ≥0, branch esplicito rr=0) e `max_tax` (0.6, validato
-  ∈[0,1]) (brief 09)
+  ∈[0,1]) (brief 09); helper `productivity_fan` (ventaglio mean-preserving, branch
+  esplicito spread=0), parametro `productivity_spread` (default 0.0, validato ∈[0,1)),
+  costanti `DEAD_FIRM_K`/`TOPK_N` e reporter `Dead_Firms`/`TopK_Share` (brief 10)
 - `src/experiment.py` — runner Monte-Carlo, sweep ρ, griglia (σ, ρ) e sign
   frontier (brief 04), stack di robustezza brief 05 (`run_grid_panel`,
   `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …); `eta`,
   `expectation_gain` e `benefit_replacement_rate` passano al modello via `**params`,
   come `c0` (nessuna modifica di firma al brief 09); `run_grid_panels`
-  (brief 08: **single-pool**, più config in un solo pool, `metrics` override)
+  (brief 08: **single-pool**, più config in un solo pool, `metrics` override); `productivity_spread`
+  passa via `**params` come gli altri (nessuna modifica di firma al brief 10)
 - `scripts/run_brief04.py` — driver **riproducibile** dello sweep (σ, ρ) e della
   sign frontier del brief 04; rigenera 5 dei 6 `results/ces_*.csv` (thread BLAS
   pinnati). **Non** rigenera `ces_decomposition.csv` (vedi sotto).
@@ -607,9 +654,17 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   `frac_periods_at_cap`) + trace della cella di riferimento (con `Tax_At_Cap`). 4
   byte-check rr=0 vs `ces_b05`/`ces_b07` (artifact-su-disco, dev=0.0); rigenera
   `results/ces_b09_*.csv` + 4 figure
+- `scripts/run_brief10.py` — driver **riproducibile** del brief 10 (probe di
+  eterogeneità); 3 scenari (S1 anchor, S2 headline, S3 = S2 + rr=0.5) × 7 spread × 20 seed
+  a ρ=0.40, **fase unica** (il collasso è il deliverable, niente da gattare), due pool
+  raggruppati per σ (`run_grid_panels` prende una sola lista `sigmas`). Byte-check spread=0
+  vs `ces_b05`/`ces_b07`/`ces_b09` (artifact-su-disco, 3/3 dev=0.0); soglie di viability a
+  convenzione dichiarata (`THRESHOLD_FRAC`=0.5) e trace del domino con K dell'impresa più
+  debole e più forte; rigenera `results/ces_b10_*.csv` + 2 figure
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati. `ces_b09_*.csv` (brief 09) → rigenerati
+- `results/` — output misurati committati. `ces_b10_*.csv` (brief 10) → rigenerati
+  da `run_brief10.py`. `ces_b09_*.csv` (brief 09) → rigenerati
   da `run_brief09.py`. `ces_b08_*.csv` (brief 08) → rigenerati
   da `run_brief08.py`. `ces_b07_*.csv` (brief 07) → rigenerati
   da `run_brief07.py`. `ces_b05_*.csv` (brief 05) → rigenerati
@@ -624,7 +679,10 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   aspettative adattive (brief 08: convergenza geometrica, annidamento λ_e=1, lag,
   SFC/determinismo a λ_e<1, single-pool), governo (brief 09: bilancio in pareggio
   esatto incl. cap, annidamento rr=0, base su `max(0,·)` con reddito negativo,
-  SFC/determinismo a rr>0, lag del sussidio, crowding-in direzionale). **397 test.**
+  SFC/determinismo a rr>0, lag del sussidio, crowding-in direzionale), eterogeneità
+  (brief 10: ventaglio e mean-preservation, annidamento spread=0, validazione del range,
+  SFC/determinismo a spread>0, reporter, collasso direzionale, e il pin del fatto che a
+  spread=0 le imprese divergono comunque per via della rete). **438 test.**
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di

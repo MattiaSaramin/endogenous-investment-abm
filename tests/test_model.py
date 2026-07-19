@@ -30,10 +30,15 @@ from model import (
     ANCHOR_K0,
     ANCHOR_L0,
     U_REF,
+    DEAD_FIRM_K,
+    TOPK_N,
+    productivity_fan,
     wage_from_curve,
     compute_gini,
     compute_output_gap,
     compute_output_gap_profitmax,
+    compute_dead_firms,
+    compute_topk_share,
     _households,
     _firms,
 )
@@ -1430,3 +1435,198 @@ def test_government_crowds_in_capital_and_lowers_unemployment():
     U5, K5 = steady(0.5)
     assert U5 < U0 - 0.05        # unemployment clearly down
     assert K5 > K0 + 20.0        # capital clearly up (crowding-in)
+
+
+# ======================================================================
+# Brief 10 — firm-heterogeneity viability probe (productivity_spread)
+# ======================================================================
+#
+# The dial exists to TEST the homogeneity assumption, not to implement heterogeneity:
+# there is no selection, no demand reallocation, no entry/exit.  So the tests below pin
+# (a) that the fan is what it claims to be, (b) that spread = 0 changes nothing, and
+# (c) that dispersion leaves the money circuit alone — A_i touches technology only.
+
+@pytest.mark.parametrize("spread", [0.05, 0.10, 0.125, 0.15, 0.175, 0.20])
+def test_productivity_fan_matches_the_formula_and_preserves_the_mean(spread):
+    """A_i = 1 + spread*(2i-(n-1))/(n-1), mean exactly 1, endpoints 1 -/+ spread (§5.1)."""
+    n = 10
+    fan = productivity_fan(1.0, n, spread)
+    assert fan == [1.0 + spread * ((2 * i - (n - 1)) / (n - 1)) for i in range(n)]
+    assert sum(fan) / n == pytest.approx(1.0, abs=1e-15)
+    assert fan[0] == pytest.approx(1.0 - spread, abs=1e-15)
+    assert fan[-1] == pytest.approx(1.0 + spread, abs=1e-15)
+    # Symmetric by construction: the offsets of firm i and firm n-1-i are exact negatives.
+    for i in range(n):
+        assert fan[i] + fan[n - 1 - i] == pytest.approx(2.0, abs=1e-15)
+
+
+@pytest.mark.parametrize("n", [2, 5, 7, 10, 13])
+@pytest.mark.parametrize("spread", [0.10, 0.20, 0.5])
+def test_productivity_fan_preserves_the_mean_for_odd_and_even_n(n, spread):
+    """Mean preservation is not an artefact of n = 10 or of the swept spreads (§5.1)."""
+    fan = productivity_fan(1.0, n, spread)
+    assert sum(fan) / n == pytest.approx(1.0, abs=1e-15)
+
+
+def test_productivity_fan_is_flat_and_exact_at_zero_spread():
+    """spread = 0 => A_i is the base value EXACTLY (the bit-identity branch, §2)."""
+    assert productivity_fan(1.0, 10, 0.0) == [1.0] * 10
+    assert productivity_fan(0.7, 4, 0.0) == [0.7] * 4
+    # Degenerate sizes: a single firm has nothing to disperse across.
+    assert productivity_fan(1.0, 1, 0.3) == [1.0]
+    assert productivity_fan(1.0, 0, 0.3) == []
+
+
+def test_firms_receive_their_own_productivity_and_the_model_keeps_the_mean():
+    """Every firm carries its own A_i; ``model.productivity`` stays the fan's mean (§2)."""
+    m = MacroModel(seed=0, productivity_spread=0.20)
+    firm_A = sorted(f.productivity for f in _firms(m))
+    assert firm_A == pytest.approx(sorted(m.productivity_by_firm), abs=0.0)
+    assert min(firm_A) == pytest.approx(0.80, abs=1e-15)
+    assert max(firm_A) == pytest.approx(1.20, abs=1e-15)
+    assert sum(firm_A) / len(firm_A) == pytest.approx(m.productivity, abs=1e-15)
+
+
+def test_initial_expectation_uses_each_firms_own_productivity():
+    """A low-A firm must not start with the average firm's capacity as its expectation
+    (that would be a start-of-run shock confounded with the probe, §2)."""
+    m = MacroModel(seed=0, productivity_spread=0.20)
+    firms = sorted(_firms(m), key=lambda f: f.productivity)
+    expected = [
+        ces_capacity(40.0, len(f.workers), f.productivity, m.K0, m.L0, m.pi0, m.sigma)
+        for f in firms
+    ]
+    assert [f.expected_demand for f in firms] == pytest.approx(expected, abs=0.0)
+    # Strictly increasing in A at equal headcount (round-robin gives every firm 10).
+    assert len({len(f.workers) for f in firms}) == 1
+    assert all(a < b for a, b in zip(expected, expected[1:]))
+
+
+def test_spread_default_is_zero():
+    m = MacroModel(seed=0)
+    assert m.productivity_spread == 0.0
+    assert m.productivity_by_firm == [1.0] * m.num_firms
+
+
+def test_spread_zero_nests_the_homogeneous_model_bit_for_bit():
+    """productivity_spread = 0 reproduces the default trajectory exactly (§4)."""
+    def outputs(**kw):
+        m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10, **kw)
+        out = []
+        for _ in range(200):
+            m.step()
+            out.append(sum(f.production for f in _firms(m)))
+        return out
+    assert outputs() == outputs(productivity_spread=0.0)
+
+
+@pytest.mark.parametrize("bad", [-0.1, -1.0, 1.0, 1.5])
+def test_productivity_spread_out_of_range_raises(bad):
+    """[0, 1): at spread = 1 the weakest firm has A = 0 and can never produce (§5.3)."""
+    with pytest.raises(ValueError):
+        MacroModel(seed=0, productivity_spread=bad)
+
+
+def test_productivity_spread_bounds_are_admissible():
+    MacroModel(seed=0, productivity_spread=0.0)
+    MacroModel(seed=0, productivity_spread=1.0 - 1e-9)
+
+
+@pytest.mark.parametrize("spread,sigma,eta", [
+    (0.10, 1.0, 0.0), (0.20, 1.0, 0.0), (0.20, 0.5, 0.10),
+])
+def test_money_is_conserved_with_dispersed_productivity(spread, sigma, eta):
+    """A_i is a technology parameter: it must not touch the money circuit.  Conservation
+    and the zero buffer hold at spread > 0 — including while firms are dying (§4)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=7, sigma=sigma, eta=eta,
+                   productivity_spread=spread)
+    initial = total_money(m)
+    for _ in range(400):
+        m.step()
+        assert total_money(m) == pytest.approx(initial, abs=1e-7)
+        for f in _firms(m):
+            assert f.money_buffer == pytest.approx(0.0, abs=1e-9)
+
+
+@pytest.mark.parametrize("spread", [0.10, 0.20])
+def test_determinism_with_dispersed_productivity(spread):
+    """Same seed => same trajectory with the fan on (§4)."""
+    def final(seed):
+        m = MacroModel(retention_ratio=REF_RHO, seed=seed, sigma=0.5, eta=0.10,
+                       productivity_spread=spread)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert final(3) == final(3)
+    assert final(1) != final(2)
+
+
+def test_no_firm_dies_under_homogeneity():
+    """With A homogeneous no firm ever decapitalises below the threshold, so ``Dead_Firms``
+    is silent in the nested case and every death outside it is attributable to the fan."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0)
+    for _ in range(400):
+        m.step()
+    assert (m.datacollector.get_model_vars_dataframe()["Dead_Firms"] == 0.0).all()
+
+
+def test_topk_share_starts_at_the_equal_split_then_drifts_up_under_homogeneity():
+    """The homogeneous baseline of ``TopK_Share`` is TOPK_N/num_firms only at t = 0.
+
+    Firms with identical A still diverge in capital, because consumption links are drawn
+    at random and firms therefore face different demand.  This is a MEASURED property of
+    the model, not an artefact: the firm side is quasi-representative in its aggregates,
+    not in its cross-section.  Pinning it here stops the brief-10 reading of the reporter
+    from being taken against a 0.3 baseline that the model never sits at.
+    """
+    m = MacroModel(retention_ratio=REF_RHO, seed=0)
+    df0 = m.datacollector.get_model_vars_dataframe()
+    assert df0["TopK_Share"].iloc[0] == pytest.approx(TOPK_N / m.num_firms, abs=1e-12)
+    for _ in range(400):
+        m.step()
+    tail = m.datacollector.get_model_vars_dataframe().tail(50)["TopK_Share"].mean()
+    assert tail > TOPK_N / m.num_firms          # network heterogeneity concentrates it
+    assert tail < 0.5                            # but nowhere near the dispersed regime
+
+
+def test_dead_firm_reporter_counts_firms_below_the_threshold():
+    """``Dead_Firms`` is exactly the count below ``DEAD_FIRM_K``, and the threshold has no
+    effect on the dynamics — a dead firm keeps its customers and its demand share (§2)."""
+    m = MacroModel(seed=0)
+    firms = _firms(m)
+    for f in firms[:4]:
+        f.capital = DEAD_FIRM_K / 2.0
+    firms[4].capital = DEAD_FIRM_K            # the threshold is strict (<), so not dead
+    df_before = len(firms[0].customers)
+    assert compute_dead_firms(m) == 4.0
+    m.step()
+    assert len(firms[0].customers) == df_before      # no exit, no rewiring
+
+
+def test_topk_share_is_one_when_only_the_top_firms_hold_capital():
+    m = MacroModel(seed=0)
+    firms = _firms(m)
+    for f in firms[TOPK_N:]:
+        f.capital = 0.0
+    assert compute_topk_share(m) == pytest.approx(1.0, abs=1e-12)
+    for f in firms:
+        f.capital = 0.0
+    assert compute_topk_share(m) == 0.0       # no capital left: nothing to apportion
+
+
+def test_dispersion_above_the_threshold_kills_firms_and_the_economy():
+    """DIRECTIONAL (§5.5): at spread = 0.20 in the headline scenario the economy collapses
+    — firms die and unemployment goes to ~1 — while the same scenario at spread = 0 stays
+    alive.  This is the probe's whole point: with no reallocation channel, dispersion above
+    the threshold is fatal.  Short run, wide tolerance; only the direction is asserted."""
+    def steady(spread):
+        m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10, c0=1.0,
+                       productivity_spread=spread)
+        for _ in range(800):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe().tail(50).mean()
+    alive, dispersed = steady(0.0), steady(0.20)
+    assert alive["Dead_Firms"] == 0.0
+    assert alive["Unemployment_Rate"] < 0.9
+    assert dispersed["Dead_Firms"] > 0.0
+    assert dispersed["Unemployment_Rate"] > 0.9

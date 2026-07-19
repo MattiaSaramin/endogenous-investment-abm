@@ -1,0 +1,4 @@
+scenario,ref,byte_equal,max_abs_dev,n_rows,n_shared_cols,note
+S1_anchor,ces_b05_stage_a_panel.csv,True,0.0,20,26,PASS
+S2_headline,ces_b07_stage_a_panel.csv,True,0.0,20,29,PASS
+S3_benefit,ces_b09_stage_a_panel.csv,True,0.0,20,32,PASS

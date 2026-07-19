@@ -508,6 +508,102 @@ profitti, I/Y, utilizzo — vedi sotto.
 
 ---
 
+## Blocco eterogeneità — probe di viability (brief 10, roadmap punto 8)
+
+> Introdotto dal brief 10. **Non** implementa il punto 8 come feature: aggiunge il
+> minimo necessario a **testare** l'assunzione di omogeneità del lato imprese e a
+> misurare dove si rompe. `spread=0` (default) annida il modello omogeneo
+> **bit-for-bit** (byte-check vs `ces_b05`/`ces_b07`/`ces_b09`: **3/3 PASS, dev = 0.0**).
+> Fuori scope: selezione, riallocazione della domanda, rewiring della rete,
+> entry/exit (= punto 12, dichiarato future work).
+
+### `productivity_spread` = dial sperimentale, default 0.0 — dispersione della TFP d'impresa
+- **Ruolo:** ventaglio lineare mean-preserving alla costruzione,
+  `A_i = A·(1 + spread·(2i−(n−1))/(n−1))`, i = 0..n−1, quindi A da `A(1−spread)` a
+  `A(1+spread)` con media esattamente `A` (verificato in floating point, non assunto:
+  esatto sulla griglia n=10 usata, ≤1e-15 su n dispari/pari testati). Ogni impresa
+  riceve la propria A_i, **anche nell'aspettativa iniziale di domanda** (seminare
+  un'impresa a bassa A con la capacità dell'impresa media sarebbe uno shock di inizio
+  run confuso col probe). Validato ∈ **[0, 1)**: a spread=1 l'impresa più debole ha
+  A=0 e non può mai produrre — è un evento di uscita che il modello non sa gestire.
+- **Convenzione dichiarata:** gli `ANCHOR_*` (K0, L0) e `U_REF` restano **congelati e
+  comuni** a tutte le imprese; A_i scala la Y0 della normalizzazione CES della singola
+  impresa. I benchmark aggregati (`Potential_Output`, `Wage_Share_Profitmax`) usano la
+  **media** del ventaglio (`model.productivity`): convenzione di reporting per una
+  diagnostica, nessun effetto sulla dinamica.
+- **NON è un parametro calibrato** e non ha un valore "giusto": è un **dial
+  sperimentale** il cui unico scopo è localizzare la soglia. Non entra in nessuna
+  calibrazione e resta a 0 in ogni altro risultato del repo.
+- **Empirico — confronto qualitativo, NON mappatura quantitativa.** La dispersione
+  della TFP **intra-settore** è ampia: **Syverson (2004)** riporta un rapporto **90/10
+  ≈ 2:1** nel manifatturiero USA (a 4 cifre SIC); vedi anche **Bartelsman & Doms
+  (2000)** per la rassegna. La soglia di collasso misurata qui corrisponde a un
+  rapporto max/min di **≈1.22–1.29**, molto **sotto** il dato. **Le unità non
+  coincidono e nessuna mappatura è pretesa:** la semi-ampiezza di un ventaglio lineare
+  non è un rapporto 90/10 di log-TFP, e la `A` del modello entra in una CES
+  normalizzata non stimata su dati. Regge solo la lettura qualitativa — ed è
+  sufficiente.
+- **Esito misurato (brief 10, 20 seed, 2000 step, tail 50, `results/ces_b10_*`):**
+  - **È una scogliera, non un gradiente.** Sotto soglia nessuna impresa muore e
+    l'economia è sana; **uno step di griglia sopra, tutte e 10 le imprese sono morte**,
+    `Y=0`, `U=1`, K che decade geometricamente a `3.5e-34` allo step 2000. Soglia fra
+    spread 0.10 e 0.125 (scenario **anchor**, c0=2.0/σ=1/η=0) e fra 0.125 e 0.15
+    (**headline**, c0=1.0/σ=0.5/η=0.10).
+  - **La claim mean-field, resa precisa.** Sotto soglia nessuna impresa muore, ma
+    "identico all'omogeneo" vale **meno lontano** di "sano": Y resta dentro la banda
+    inter-seed di `spread=0` solo fino a spread **0.05** (anchor, rr=0.5) o 0.125
+    (headline). A spread=0.10 gli aggregati anchor si sono mossi in modo **rilevabile**
+    a 20 seed — e **verso l'alto** (Y 132.1→134.7, U 0.258→0.229): la dispersione
+    mean-preserving è **lievemente espansiva** fin quando non è fatale. Enunciato
+    difendibile: *lato imprese quasi-rappresentativo negli **aggregati** fino a ~±5%,
+    viabile ma non più identico fino alla scogliera*. **Non** "l'eterogeneità non
+    conta".
+  - **Il domino (tracciato, headline, spread=0.20, seed 0).** L'impresa a bassa A serve
+    la stessa domanda di rete con più lavoro → profitto più basso → `I < δK` → si
+    decapitalizza per prima (K 38→~0 allo step 250). Le quote di spesa restano puntate
+    su di lei (**domanda distrutta**) e i suoi licenziati perdono il reddito
+    (**esternalità di domanda**), quindi cadono anche le imprese ad alta A: K della più
+    forte a zero allo step 500, U a 1. **È esattamente ciò che il macchinario mancante
+    avrebbe evitato:** con entry/exit e rerouting quella domanda sarebbe migrata a
+    un'impresa viva.
+  - **E2 — il sussidio brief 09 attutisce? FALSIFICATO: peggiora.** Ipotesi: mantenere
+    reddito ai licenziati alza la soglia. Misurato, la **abbassa**. A spread=0.125
+    l'headline ha **0/20** seed con imprese morte; lo stesso scenario a **rr=0.5** ne ha
+    **18/20**, con **7/20** in collasso pieno (bacino misto genuino). La soglia di
+    collasso pieno resta 0.15. **Meccanismo verificato, non ipotizzato** (seed 8,
+    spread=0.125): il sussidio abbassa U (inizio run 0.544→0.445), la wage curve legge
+    e **alza il salario** (`w_t` 0.836→0.853), e l'impresa a bassa A — il cui prodotto
+    marginale è scalato dalla sua A — è la prima spinta sotto `I=δK`. A rr=0 quella
+    impresa è in steady state stabile (K≈28, 6 lavoratori, profitto 3.73 allo step
+    1200); a rr=0.5 si decapitalizza monotonicamente a `1.8e-6` allo step 800 e perde
+    ogni lavoratore. Il cuscinetto di domanda esiste ma è **dominato dal medesimo canale
+    salario→U** dei brief 07 e 09.
+- **Reperto collaterale (dai test, non dal brief):** anche a **spread=0** le imprese
+  **non** restano identiche. I link di consumo sono estratti a caso, quindi le imprese
+  fronteggiano domanda diversa, profitti diversi e accumulano capitale diverso:
+  `TopK_Share` (quota di K delle prime 3 su 10) parte da 0.30 esatto a t=0 e si assesta
+  a **0.35–0.38** a regime. Il lato imprese è quasi-rappresentativo negli **aggregati,
+  non nella sezione trasversale** — e la baseline di `TopK_Share` va letta contro il
+  valore misurato a spread=0, mai contro 0.3.
+- **Verdetto:** **dial sperimentale, non parametro da ancorare.** Default 0.0 per
+  l'identità col modello omogeneo. La decisione sul punto 8 è **presa e documentata**:
+  lato imprese dichiarato **quasi-rappresentativo con evidenza misurata**, feature non
+  implementata, riallocazione (punto 12) dichiarata future work. **Limite dichiarato:**
+  il probe stabilisce che una soglia esiste e dove sta per un ventaglio **lineare**;
+  non dice nulla sulla forma distribuzionale (una A lognormale a pari varianza può
+  avere soglia diversa). Verifica contro `ces_b10_summary.csv`,
+  `ces_b10_thresholds.csv`, `ces_b10_trace.csv`, `ces_b10_nesting_check.csv`.
+
+### `DEAD_FIRM_K` = 0.5, `TOPK_N` = 3 — convenzioni di reporting (brief 10)
+- **Ruolo:** `Dead_Firms` conta le imprese con `K < DEAD_FIRM_K`; `TopK_Share` è la
+  quota di capitale aggregato delle prime `TOPK_N` imprese. **Nessun effetto sulla
+  dinamica:** il modello non ha uscita, quindi un'impresa "morta" conserva clienti,
+  quota di domanda e libro paga (vuoto) — che è precisamente il meccanismo misurato.
+- **Verdetto:** **convenzioni dichiarate**, non stime. Candidate per la sensitivity
+  analysis (punto 5), non per l'ancoraggio.
+
+---
+
 ## `c0` — esito dello stress test (brief 05 §2) — **il cerotto non regge, ma non per la ragione attesa**
 
 Misurato: griglia σ×ρ×`c0`, 20 seed, 2000 step, media ultime 50 (Stadio A, 3.080 run);
@@ -780,3 +876,17 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
 - **OECD, Benefits and Wages database** (Tax-Benefit models, web calculator) — regole
   tax-benefit per età-lavorativa; base dei net/gross replacement rate.
   <https://www.oecd.org/social/benefits-and-wages/data>
+
+### Eterogeneità di impresa / dispersione della TFP (brief 10)
+- **Syverson, C. (2004). Product Substitutability and Productivity Dispersion.
+  *Review of Economics and Statistics* 86(2), 534–550.** — dispersione della TFP
+  **intra-settore** nel manifatturiero USA (industrie SIC a 4 cifre): rapporto
+  **90/10 ≈ 2:1**. Referente empirico del confronto qualitativo del brief 10.
+- **Bartelsman, E. J. & Doms, M. (2000). Understanding Productivity: Lessons from
+  Longitudinal Microdata. *Journal of Economic Literature* 38(3), 569–594.** —
+  rassegna della dispersione e della persistenza della produttività a livello di
+  stabilimento; conferma l'ordine di grandezza.
+- **Nota sull'uso:** entrambe servono **solo** a collocare qualitativamente la soglia
+  misurata (max/min ≈1.22–1.29) rispetto al dato (90/10 ≈2:1). **Nessuna mappatura
+  quantitativa** fra `productivity_spread` e una dispersione di TFP stimata: unità e
+  costrutti diversi (vedi la voce del parametro).
