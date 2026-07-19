@@ -497,6 +497,41 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   probe stabilisce esistenza e posizione della soglia, non la sua forma distribuzionale —
   limite dichiarato).
 
+- **Brief 11 — chiusura dei debiti di ancoraggio (documentazione + un solo script)**:
+  nessuna modifica a `src/`, nessun parametro cambiato, nessuna simulazione nuova (**438
+  test invariati e verdi**). Chiude i tre debiti dichiarati prima della SA globale.
+  **D1 — unità temporale: 1 periodo = 1 anno, dichiarato** (coerente con δ annuale e con
+  l'elasticità Blanchflower–Oswald stimata su dati annuali; λ_e e rr sono quindi annuali).
+  I 2000 step sono un **dispositivo di convergenza**, non una serie storica: tutti i
+  risultati sono statica comparata su steady state. **D2 — ancoraggio flows-first del
+  blocco capitale, con comparatore unico dichiarato** (capitale privato **non
+  residenziale**, cioè d'impresa, su entrambi i lati). I/Y ancorato a **0.138–0.141**
+  (PNFI/PIL, FRED `A008RE1Q156NBEA`, Q1 2025–Q1 2026); **misurato** sul modello (script
+  §11) **0.158** (anchor) e **0.182** (headline) a ρ=0.40 — sopra l'ancora di 2 e 4 punti,
+  con `ρ≈0.36` che la centra allo scenario **anchor** e l'headline che **non** la raggiunge
+  dentro il supporto sweepato. **δ=0.05 declassato a CONVENZIONE dichiarata** (il δ
+  implicito BEA è ≈0.090, gonfiato dall'IPP al 20–30%; le strutture sole stanno a 2–3%):
+  **non ricalibrare a fine progetto**, cambierebbe ogni numero canonico senza comprare
+  ancoraggio. **K/Y del modello (3.17 anchor / 3.64 headline) è un ESITO MECCANICO di
+  g=0**: la chiusura contabile è `I/K = δ + g`, i dati la rispettano con g≈0.022 (K/Y
+  business = 1.23), il modello ha g=0 (punto 13 tagliato) ⇒ `I = δK` ⇒ `K/Y = (I/Y)/δ`
+  segue — verificato, `I/K` misurato = 0.0500. **Il modello non può matchare insieme I/Y e
+  K/Y business senza crescita: limite strutturale dichiarato.** **Correzione registrata:**
+  il vecchio §"sistema congiunto" **mescolava comparatori** (I/Y business con K/Y
+  whole-economy da PWT/manuali) e da lì derivava δ come "ancorato" — errore dichiarato
+  esplicitamente nelle note (regola §5: vale anche per la documentazione); cade anche
+  l'identità `I/Y = ρα` (era del core Cobb-Douglas senza mercato del lavoro: **citare il
+  misurato, mai la formula**). **D3 — `c0` dichiarato NON ancorabile per decisione:**
+  è consumo autonomo in unità del modello, e le unità del modello non hanno tasso di
+  cambio con i dati (numerario = 1); la sensitivity è il doppio regime `c0`∈{1.0, 2.0} già
+  riportato in ogni brief, più la SA globale. **Non chiude** la tensione della
+  disoccupazione fuori scala (di design, non di ancoraggio). Script
+  `scripts/compute_anchoring_ratios.py` (legge i panel committati, **nessuna
+  simulazione**, deterministico per costruzione, non coperto da pytest — dichiarato);
+  CSV `results/ces_b11_anchoring_ratios.csv`. **Nota di provenienza:** le tre serie FRED
+  sono citate con ID e data ma la ri-verifica automatica non è stata possibile (FRED
+  risponde 403 a fetch programmatici) — dichiarato nelle note.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
@@ -530,11 +565,17 @@ pubblico e tassazione progressiva (future work dichiarato in `brief_09_governmen
 **Ricerca bibliografica (continua, primo blocco FATTO → `parameter_notes.md`):**
 ogni parametro deve avere una fonte o essere dichiarato come scelta di
 modellazione. Stato attuale:
-- **Ancorati:** α (1/3), quote fattoriali, K/Y, I/Y, **δ (0.05)** e
-  **`retention_ratio` (0.40)** — questi due **congiuntamente**: dati i target
-  `K/Y≈2.6` e `I/Y≈0.13`, l'identità `I = δK` impone `δ ≈ 0.05` e `ρ` fissa I/Y.
-  **Non sono ancorabili in isolamento; non ricalibrarli "verso il centro della
-  letteratura"** (vedi `parameter_notes.md`, §"Il sistema congiunto").
+- **Ancorati:** α (1/3), quote fattoriali, **I/Y** (ancora BEA `A008RE1Q156NBEA`
+  = 0.138–0.141, brief 11) e **`retention_ratio` (0.40)** — ρ fissa I/Y, quindi si
+  ancora lì e non al payout.
+  > **⚠️ Corretto dal brief 11.** Questa riga diceva che δ (0.05) e ρ erano ancorati
+  > **congiuntamente**, perché "dati `K/Y≈2.6` e `I/Y≈0.13`, `I=δK` impone δ≈0.05".
+  > **Quella derivazione mescolava comparatori** (I/Y business con K/Y whole-economy)
+  > ed è stata ritirata. Ora: **δ = 0.05 è una CONVENZIONE dichiarata** (BEA implica
+  > ≈0.090 con IPP; strutture 2–3%), e **K/Y non è un'ancora ma un esito meccanico di
+  > g=0**. Resta vero il monito operativo — **non ricalibrare δ "verso il centro della
+  > letteratura"** — ma perché invaliderebbe ogni numero canonico, non perché 0.05 sia
+  > implicato. Vedi `parameter_notes.md`, §"Il sistema congiunto" (riscritto).
 - **Scelte di regime dichiarate (non stime):** `c0`, `wealth_effect`,
   `target_utilization`, e l'utilizzo realizzato 0.99 (l'empirico è ~0.80).
   Ancoraggio **rimandato al punto 11**, dove λ può scendere a ~0.05.
@@ -547,9 +588,12 @@ modellazione. Stato attuale:
 **Punto 5 (analisi di sensibilità globale): RIMANDATO PER DECISIONE** al modello
 finito — non si stabilisce la robustezza su una tappa intermedia nota.
 
-**Debito residuo:** verificare I/Y con una serie BEA primaria (ora è ordine di
-grandezza); **fissare l'unità temporale del periodo** (δ, K/Y, I/Y sono
-implicitamente annualizzati); **notebook: aggiungere le sezioni "wage curve"
+**Debito residuo:** ~~verificare I/Y con una serie BEA primaria~~ e ~~fissare
+l'unità temporale del periodo~~ — **entrambi CHIUSI dal brief 11** (I/Y verificato
+contro `A008RE1Q156NBEA`, con esito: il modello sta **sopra** l'ancora, non "match
+incoraggiante"; periodo = 1 anno dichiarato). Aperto: la **sensitivity di `U_min`**
+(convenzione della wage curve, brief 07 — dentro la SA globale, punto 5); e
+**notebook: aggiungere le sezioni "wage curve"
 (σ*(η), brief 07) e "aspettative adattive" (σ*(η;λ_e) + mappa di collasso,
 brief 08) al prossimo consolidamento** — i brief 07 e 08 hanno lasciato le figure
 (`ces_b07_sigma_star_eta.png`, `ces_b08_sigma_star_lambda.png`,
@@ -661,9 +705,19 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   vs `ces_b05`/`ces_b07`/`ces_b09` (artifact-su-disco, 3/3 dev=0.0); soglie di viability a
   convenzione dichiarata (`THRESHOLD_FRAC`=0.5) e trace del domino con K dell'impresa più
   debole e più forte; rigenera `results/ces_b10_*.csv` + 2 figure
+- `scripts/compute_anchoring_ratios.py` — **brief 11**, l'unico codice nuovo del brief
+  e **non un driver di simulazione**: legge i panel già committati
+  (`ces_b05_stage_a_panel.csv` → cella anchor, `ces_b07_stage_a_panel.csv` → cella
+  headline), riduce a I/Y, K/Y e I/K per scenario e ρ (convenzione dichiarata: media
+  **sui seed** del rapporto **per-seed**, non rapporto delle medie) e scrive
+  `results/ces_b11_anchoring_ratios.csv`. Nessuna simulazione, nessun RNG, nessun
+  parallelismo ⇒ **deterministico per costruzione**; **non coperto da pytest**
+  (dichiarato: non c'è comportamento del modello da pinnare). Emette anche `I/K`, che
+  è la verifica della chiusura `I = δK` a g=0 (misurato 0.0500 = δ)
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati. `ces_b10_*.csv` (brief 10) → rigenerati
+- `results/` — output misurati committati. `ces_b11_anchoring_ratios.csv` (brief 11) →
+  rigenerato da `compute_anchoring_ratios.py`. `ces_b10_*.csv` (brief 10) → rigenerati
   da `run_brief10.py`. `ces_b09_*.csv` (brief 09) → rigenerati
   da `run_brief09.py`. `ces_b08_*.csv` (brief 08) → rigenerati
   da `run_brief08.py`. `ces_b07_*.csv` (brief 07) → rigenerati
@@ -682,7 +736,8 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   SFC/determinismo a rr>0, lag del sussidio, crowding-in direzionale), eterogeneità
   (brief 10: ventaglio e mean-preservation, annidamento spread=0, validazione del range,
   SFC/determinismo a spread>0, reporter, collasso direzionale, e il pin del fatto che a
-  spread=0 le imprese divergono comunque per via della rete). **438 test.**
+  spread=0 le imprese divergono comunque per via della rete). **438 test.** *(Brief 11
+  non aggiunge test: non tocca `src/`.)*
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di

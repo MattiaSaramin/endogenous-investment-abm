@@ -28,10 +28,10 @@
 | `Y0` | derivato | **Non libero** | `A·K0^π0·L0^(1−π0)`, calcolato — mai misurato |
 | `alpha` | 1/3 | **Buono** | standard growth accounting; ma quota del capitale in aumento nel XXI sec. → ora `pi0` |
 | `markup` | ~~0.5 (derivato)~~ | **RIMOSSO al punto 11** | sostituito dal salario fisso `w̄`; sezione sotto marcata STALE |
-| `delta` | 0.05 | **Buono (congiunto)** | implicato da K/Y e I/Y; non ancorabile in isolamento |
-| `retention_ratio` | 0.40 | **Buono (via I/Y)** | ρ fissa il tasso di investimento, non è un payout |
+| `delta` | 0.05 | **CONVENZIONE dichiarata (brief 11)** | ex "Buono (congiunto)". Il δ implicito nei dati BEA è ≈**0.090** (include IPP); le sole strutture stanno a 2–3%. 0.05 è una via di mezzo convenzionale, **non una stima** e **non da ricalibrare** |
+| `retention_ratio` | 0.40 | **Buono (via I/Y), con caveat brief 11** | ρ fissa il tasso di investimento, non è un payout. I/Y **misurato** (non analitico) = 0.158 / 0.182 a ρ=0.40, sopra l'ancora BEA 0.138–0.141; ρ≈0.35 la centra allo scenario anchor |
 | `wealth_effect` (λ) | **0.05** | **BUONO — ancorato** | Slacalek (2009): ≈5 cent, media su 16 paesi. Corretto da 0.08 (fuori range) → 0.05 centra la media cross-country |
-| `c0` | **2.0** | **NON ancorabile — e attivamente sospetto** | cerotto compensativo; la sua giustificazione originaria è **falsificata** (vedi voce) |
+| `c0` | **2.0** | **NON ancorabile — DECISO (brief 11), e attivamente sospetto** | cerotto compensativo; la sua giustificazione originaria è **falsificata** (vedi voce). Il tentativo di ancoraggio è **chiuso per decisione**: nessun referente empirico esiste; la sensitivity è il doppio regime `c0`∈{1.0, 2.0} + la SA globale (punto 5) |
 | `c1` | ~0.9 | **Struttura sì, livello no** | forma da Teglio; MPC lavoratori |
 | `w_bar` (salario / punto di normalizzazione) | 0.9 | **Declassato a normalizzazione (brief 07)** | non più il parametro distributivo libero: è il salario a `U = U_REF` e il livello a ogni `U` quando `eta=0`. Il parametro con contenuto empirico ora è `eta` |
 | `eta` (η, elasticità wage curve) | **sweep**, default 0.0 | **Buono — ancorato (Blanchflower–Oswald)** | ≈0.10 (Blanchflower & Oswald 1994); ≈0.07 meta-analisi (Nijkamp & Poot 2005); range sweep 0–0.15. `eta=0` = modello fisso annidato |
@@ -49,6 +49,38 @@
 
 Benchmark di validazione (non parametri, ma target): quota salari, K/Y, quota
 profitti, I/Y, utilizzo — vedi sotto.
+
+---
+
+## Unità temporale — 1 periodo = 1 anno (dichiarato, brief 11)
+
+> Debito aperto dal primo blocco bibliografico ("δ, K/Y, I/Y sono annualizzati
+> implicitamente — chiarire l'unità"). **Chiuso qui per decisione dichiarata.**
+
+**Un periodo del modello = un anno.** Non è una stima: è una **convenzione di
+interpretazione**, scelta perché è l'unica coerente con i parametri già ancorati.
+
+- **δ = 0.05** è un tasso di deprezzamento **annuale** (le calibrazioni che lo
+  bracket-ano — Mankiw ~0.04, Angeletos 0.08, RBC ~0.10 — sono tutte annuali; le
+  loro controparti trimestrali stanno a ~0.025).
+- **La wage curve** legge `U_{t-1}`, e l'elasticità di Blanchflower–Oswald (≈−0.10)
+  è stimata su **dati annuali** di panel regionali. Un periodo trimestrale
+  implicherebbe un aggiustamento salariale 4× più rapido di quello stimato.
+- **`expectation_gain` (λ_e)** è quindi un gain **annuale**, e
+  **`benefit_replacement_rate` (rr)** un replacement rate **annuale** — coerente
+  con la NRR OECD, che è definita su base annuale.
+- **I/Y e K/Y** si confrontano perciò con rapporti annuali (flusso annuo su PIL
+  annuo; stock di fine anno su PIL annuo), che è il perimetro delle serie BEA
+  citate sotto.
+
+**Conseguenza sulla lettura dei 2000 step — dichiarata, perché è la lettura
+sbagliata più facile da fare.** I 2000 step **non sono 2000 anni di storia
+simulata**: sono un **dispositivo di convergenza**. Tutti i risultati del progetto
+sono **statica comparata su steady state** (media delle ultime 50 osservazioni),
+cioè confronti fra economie a regime con parametri diversi — mai una serie storica
+da sovrapporre a dati temporali. Il modello non ha crescita di trend (punto 13
+tagliato), quindi non c'è nulla di "lungo periodo" da datare: la lunghezza del run
+serve solo a garantire che il transiente sia esaurito.
 
 ---
 
@@ -163,18 +195,35 @@ profitti, I/Y, utilizzo — vedi sotto.
   method; equipaggiamento deprezza più veloce delle strutture. Calibrazioni macro
   tipiche: 0.04–0.10 annuo. Manuali (es. problema Mankiw) usano ~0.04; Angeletos
   (2007) usa 0.08; RBC spesso ~0.10 annuo (0.025 trimestrale).
-- **Fonti:** BEA, *Fixed Assets* e "BEA Depreciation Rates"; BLS (2022),
-  "Alternative Capital Asset Depreciation Rates"; Angeletos (2007).
-- **Verdetto: BUONO — e non è ancorabile in isolamento** (vedi §"Il sistema
-  congiunto"). δ non è un parametro libero: dati i target `K/Y ≈ 2.6` e
-  `I/Y ≈ 0.13`, l'identità di steady state `I = δK` impone
-  `δ = (I/Y)/(K/Y) ≈ 0.05`. Il valore attuale è **esattamente** quello che rende
-  i due benchmark reciprocamente coerenti in assenza di crescita di trend (il
-  modello non ne ha). Confronto: Mankiw usa δ≈0.04 con K/Y≈2.5; Angeletos (2007)
-  usa 0.08 (ma con altri target). **Non alzare δ "verso il centro della fascia
-  di letteratura": sfonderebbe il target di I/Y.** Nota: se il "periodo" del
-  modello non è un anno, l'interpretazione di δ (e di K/Y, I/Y) cambia —
-  chiarire l'unità temporale.
+- **Dato primario (brief 11).** Il δ **implicito** nei dati BEA per il perimetro del
+  modello (capitale privato non residenziale) è
+  `deprezzamento / net stock ≈ 3.194,1 / 35.300 ≈ **0.090**` — deprezzamento 2024
+  a costo corrente $3.194,1 mld [`M1NTOTL1ES000`] su uno stock netto medio ≈$35,3
+  mila mld [`K1NTOTL1ES000`, fine 2024: $35.899,9 mld]. **Quasi il doppio di 0.05.**
+- **Perché il dato aggregato è alto, e perché non va inseguito:** il δ implicito
+  aggrega asset con vite utilissime diversissime. L'**IPP** (software, R&D) deprezza
+  al **20–30%** annuo e pesa sempre di più sullo stock; le **strutture** stanno al
+  **2–3%**. Un singolo δ per un modello a capitale unico deve stare **in mezzo**, e
+  quale valore in mezzo dipende dal mix che si immagina — che è una scelta, non una
+  misura. Banda empirica per componente: **0.02–0.09**.
+- **Fonti:** BEA, *Fixed Assets Accounts* (Standard Fixed Assets Tables, aggiornamento
+  annuale settembre 2025, dati fino al 2024); serie FRED `M1NTOTL1ES000` (deprezzamento
+  a costo corrente, privato non residenziale) e `K1NTOTL1ES000` (net stock a costo
+  corrente, privato non residenziale); BLS (2022), "Alternative Capital Asset
+  Depreciation Rates"; Angeletos (2007).
+- **Verdetto (RIVISTO dal brief 11): CONVENZIONE DICHIARATA, non una stima.**
+  La versione precedente di questa voce lo dichiarava "BUONO (congiunto)", implicato
+  dai target `K/Y≈2.6` e `I/Y≈0.13` via `δ=(I/Y)/(K/Y)`. **Quella derivazione era
+  viziata** — mescolava comparatori (vedi §"Il sistema congiunto", corretto). δ=0.05
+  resta il valore del modello, ma la sua giustificazione ora è: *sta dentro la banda
+  0.02–0.09 dei componenti, sotto l'aggregato 0.090 perché il modello non ha IPP,
+  sopra le strutture pure perché non è solo edilizia.* Convenzione difendibile,
+  **non misurata**.
+- **NON ricalibrare a fine progetto.** δ entra in ogni numero canonico del repo
+  (K/Y, il livello di K a ogni ρ, l'intera griglia σ×ρ): cambiarlo ora invaliderebbe
+  tutti i risultati misurati per un guadagno di ancoraggio nullo — resterebbe una
+  convenzione, solo diversa. Da trattare in sensitivity analysis (punto 5), non con
+  l'ancoraggio.
 
 ### `retention_ratio` (ρ) = 0.40 — quota di profitto trattenuta/investita
 - **Ruolo:** finanziamento interno; `I = clip(ρ·profit·util_effect, floor,
@@ -233,6 +282,24 @@ profitti, I/Y, utilizzo — vedi sotto.
   giustificazione falsificata. **Esito misurato (brief 05 §2): vedi la sezione
   "c0 — esito dello stress test" più sotto**, che riporta quanto del risultato
   headline dipende da questo valore.
+- **Chiusura del debito (brief 11) — decisione, non scoperta.** Il tentativo di
+  ancorare `c0` è **chiuso senza ancoraggio**: `c0` è **consumo autonomo per famiglia
+  in unità del modello**, e le unità del modello non hanno un tasso di cambio con i
+  dati (nessun prezzo, nessuna scala monetaria esterna: il numerario è 1 per
+  costruzione, punto 9-bis). Non esiste una grandezza empirica di cui `c0` sia una
+  stima — quindi **cercarle una fonte sarebbe ancoraggio cosmetico**, cioè
+  esattamente il fallimento che questo file esiste per prevenire (i "numeri
+  fantasma", `CLAUDE.md` §4).
+  - **La sensitivity è già istituzionalizzata:** ogni brief dal 05 in poi riporta
+    **entrambi i regimi** `c0` ∈ {1.0, 2.0} — headline e anchor — con i risultati
+    separati. Questo *è* il trattamento corretto di un parametro di scala: mostrarne
+    la dipendenza, non fingere una stima puntuale.
+  - **La SA globale (punto 5) lo sweeperà formalmente**, insieme alle altre
+    convenzioni (`investment_floor`, `beta`, `max_tax`, `U_min`, `DEAD_FIRM_K`).
+  - **Resta il debito che questo NON chiude:** la disoccupazione è fuori scala a ogni
+    `c0` testato (voce 3bis in "Tensioni aperte"). È una tensione di **design** del
+    punto 11, non un problema di ancoraggio di `c0`, e dichiarare `c0` non-ancorabile
+    non la risolve né la nasconde.
 
 ### `wealth_effect` (λ) = 0.05 — MPC sulla ricchezza
 > ✅ **Corretto da 0.08 a 0.05 e ora ANCORATO.** Il codice gira 0.05; questo file
@@ -647,39 +714,115 @@ la registra.**
 
 ---
 
-## Il sistema congiunto (α, ρ, δ, K/Y, I/Y) — leggere prima di ricalibrare
+## Il sistema congiunto (α, ρ, δ, K/Y, I/Y) — RISCRITTO dal brief 11
 
-**Questi parametri NON sono ancorabili in isolamento.** A steady state il modello
-impone due sole relazioni indipendenti (dato α):
+> ⚠️ **Questa sezione conteneva un errore, ed è la ragione per cui è stata
+> riscritta.** La regola §5 del progetto ("ogni numero è misurato o dichiarato
+> target") vale anche per queste note: quando sono sbagliate, si correggono
+> **dichiarando l'errore**, non riscrivendo la storia. La versione precedente è
+> citata sotto per intero.
 
-```
-I/Y = ρ·α                    (l'investimento è la ritenzione, a util_effect≈1)
-K/Y = ρ·α/δ                  (steady state: I = δK, nessuna crescita di trend)
-  ⇒ I/Y = δ · (K/Y)          (identità)
-```
+### L'errore: comparatori mescolati
 
-Quindi: **ρ fissa I/Y; δ fissa K/Y dato I/Y.** Due gradi di libertà, non quattro.
-Non si può scegliere δ "guardando la letteratura su δ" senza spostare I/Y o K/Y.
+La versione precedente affermava che la calibrazione "centra entrambi i benchmark
+simultaneamente":
 
-**La calibrazione attuale centra entrambi i benchmark simultaneamente:**
-
-| | modello (α=1/3, ρ=0.40, δ=0.05) | empirico | esito |
+| | modello (α=1/3, ρ=0.40, δ=0.05) | empirico | esito rivendicato |
 |---|---|---|---|
-| I/Y | 0.133 | ~0.13–0.14 (inv. fisso non res./PIL) | ✓ |
-| K/Y | 2.67 analitico / 2.58 misurato | ~2.5–3 | ✓ |
+| I/Y | 0.133 | ~0.13–0.14 (inv. fisso **non residenziale d'impresa**/PIL) | ✓ |
+| K/Y | 2.67 analitico / 2.58 misurato | ~2.5–3 (**manuali/PWT**) | ✓ |
 
-E δ ≈ 0.05 **è implicato** dai due target: `δ = (I/Y)/(K/Y) = 0.133/2.6 ≈ 0.05`.
+**I due confronti non usavano lo stesso perimetro di capitale.** L'ancora di I/Y è
+investimento **business non residenziale** (niente abitazioni, niente capitale
+pubblico). L'ancora di K/Y "~2.5–3" viene dalle calibrazioni da manuale e dai dati
+PWT, che sono **whole-economy**: includono lo stock **residenziale** (enorme: le
+abitazioni sono circa metà del capitale fisso USA) e spesso il capitale pubblico.
+Un rapporto costruito su un numeratore business e uno su un denominatore
+whole-economy **non sono commensurabili**, e il "match simultaneo" era in parte un
+artefatto di questa asimmetria. Peggio: dalla coppia mal accoppiata si derivava
+`δ = (I/Y)/(K/Y) ≈ 0.05` e si dichiarava δ **ancorato** — un valore ottenuto da una
+divisione fra grandezze di perimetri diversi.
 
-**Errore da non ripetere (commesso e corretto in fase di ricerca):** si era
-proposto di alzare δ verso 0.06–0.07 "perché più centrale nella letteratura di
-calibrazione", compensando con ρ→0.47–0.55 per tenere K/Y in banda. Sbagliato:
-avrebbe portato **I/Y a 0.157–0.183**, sfondando il target di investimento.
-δ=0.05 non è "fascia bassa da correggere": è il valore congiuntamente coerente.
-Per confronto, Mankiw usa δ≈0.04 con K/Y≈2.5 — *più basso* del valore attuale.
+**Il K del modello è capitale d'impresa** (le imprese lo comprano, lo usano nella
+CES, lo deprezzano). Il comparatore corretto è quindi **business, su entrambi i
+lati**, ed è quello che si usa da qui in avanti.
 
-**Conseguenza per la scrittura:** il match congiunto di K/Y *e* I/Y è un
-risultato di calibrazione genuino e va rivendicato come tale — ma va detto che è
-un sistema a due gradi di libertà, non due validazioni indipendenti.
+### Il comparatore dichiarato (brief 11)
+
+**Capitale fisso privato non residenziale USA**, su entrambi i lati del rapporto.
+
+| grandezza | valore dati | fonte |
+|---|---|---|
+| I/Y | **0.138–0.141** (Q1 2025 – Q1 2026) | PNFI/PIL, BEA NIPA Tab. 1.1.10, FRED `A008RE1Q156NBEA` |
+| K/Y | **1.23** (fine 2024: $35.899,9 mld / PIL 2024 ≈ $29.180 mld) | FRED `K1NTOTL1ES000`; BEA NIPA Tab. 1.1.5 |
+| δ implicito | **≈0.090** ($3.194,1 mld su stock medio ≈$35.300 mld) | FRED `M1NTOTL1ES000` / `K1NTOTL1ES000` |
+| I/K | **≈0.112** | derivato dalle righe sopra |
+
+### La relazione contabile giusta: `I/K = δ + g`
+
+A steady state con crescita `g`, la legge del moto `K_{t+1} = (1−δ)K_t + I` dà
+`I/K = δ + g`. **I dati la rispettano:** `0.112 ≈ 0.090 + g` ⇒ `g ≈ 0.022`, cioè
+la crescita di trend assorbe **circa un quinto** dell'investimento lordo (il resto
+rimpiazza il deprezzamento).
+
+**Il modello ha `g = 0`** (nessuna crescita di A — punto 13, tagliato). Quindi:
+
+```
+g = 0   ⇒   I = δK   ⇒   K/Y = (I/Y)/δ        [meccanico, non calibrato]
+```
+
+**Verificato sul modello, non assunto:** `I/K` misurato = **0.0500** (anchor) e
+**0.0501** (headline) = δ, a tre cifre, su tutta la griglia ρ
+(`results/ces_b11_anchoring_ratios.csv`).
+
+### Il limite strutturale che ne segue — dichiarato, non calibrato via
+
+**Senza crescita, il modello non può matchare I/Y e K/Y business insieme.** Dati
+`I/Y ≈ 0.14` e `δ = 0.05`, K/Y **deve** venire `0.14/0.05 = 2.8`; il dato business è
+**1.23**. Per ottenere 1.23 con I/Y in banda servirebbe `δ ≈ 0.11` — cioè circa
+`δ_dati + g`, che è esattamente ciò che la contabilità impone quando si comprime un
+mondo con crescita in un modello senza. **Non è un difetto di calibrazione: è la
+firma di `g = 0`.** Nessuna scelta di (ρ, δ) lo aggira.
+
+### I rapporti del modello — misurati (brief 11)
+
+Da `scripts/compute_anchoring_ratios.py` sui panel committati (20 seed, 2000 step,
+media ultime 50; media sui seed del rapporto per-seed) →
+`results/ces_b11_anchoring_ratios.csv`:
+
+| scenario | ρ | I/Y | K/Y | I/K |
+|---|---|---|---|---|
+| anchor (`c0`=2.0, σ=1, η=0) | 0.35 | 0.135 | 2.70 | 0.0499 |
+| anchor | **0.40** | **0.158** | **3.17** | 0.0500 |
+| headline (`c0`=1.0, σ=0.5, η=0.10) | 0.35 | 0.161 | 3.20 | 0.0502 |
+| headline | **0.40** | **0.182** | **3.64** | 0.0501 |
+
+**Verdetto su I/Y — debito CHIUSO, con esito onesto.** Alla ρ di riferimento
+(0.40) il modello sta **sopra** l'ancora BEA di 2 punti (anchor: 0.158 vs
+0.138–0.141) o **4 punti** (headline: 0.182). Il match **dipende da ρ** ed è
+**dentro il range dello sweep**: allo scenario anchor `ρ ≈ 0.36` centra la banda
+(a ρ=0.35 l'I/Y misurato è 0.135, appena sotto). Allo scenario **headline**
+nemmeno il ρ più basso della griglia basta (0.161 a ρ=0.35): centrarlo
+richiederebbe `ρ ≈ 0.30`, **fuori** dal supporto sweepato e vicino alla soglia di
+viability (~0.30). Da riportare così: *l'ancora è raggiungibile nel range di ρ
+esplorato allo scenario anchor, non allo scenario headline.*
+
+**Nota su `I/Y = ρ·α`: non vale più.** L'identità analitica della vecchia sezione
+(0.133 a ρ=0.40) apparteneva al core **Cobb-Douglas senza mercato del lavoro**, dove
+la quota di profitto era pinnata ad α per costruzione. Sul core attuale la quota di
+profitto è un **esito** e `util_effect ≠ 1`, quindi I/Y **misurato** (0.158/0.182)
+sta sopra `ρα`. **Citare il misurato, mai la formula.**
+
+### Cosa resta vero della vecchia sezione
+
+Che questi parametri **non sono ancorabili in isolamento**: `ρ` fissa I/Y e, dato
+δ e `g=0`, K/Y segue. Restano **due gradi di libertà, non quattro**, e un match su
+K/Y *e* I/Y non sarebbe comunque **due validazioni indipendenti**. Resta valido
+anche il monito operativo — **non alzare δ "verso il centro della letteratura"** —
+ma ora per una ragione diversa e più onesta: non perché 0.05 sia il valore
+congiuntamente implicato (non lo è), ma perché δ è una **convenzione** (vedi la voce
+`delta`) e muoverla invaliderebbe ogni numero canonico del repo senza comprare
+ancoraggio.
 
 ---
 
@@ -708,16 +851,23 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
   empiricamente la quota salari USA è ~0.60–0.68 (compensation share).
   Fonte: Cottrell (2019); Gollin (2002).
 
-### K/Y — 2.58 (target 2.5–3)
-- Nel modello: `K/Y = ρα/δ`. Empiricamente il rapporto capitale-prodotto
-  *produttivo* è ~2.5–3 (manuali: ~2.5; misure variano col perimetro di
-  capitale). Fonte: calibrazione standard (Mankiw). **Match buono**, ma dipende
-  da δ (fascia bassa) e ρ.
+### ~~K/Y — 2.58 (target 2.5–3)~~ — **SUPERSEDED (brief 11)**
+> ⚠️ Sia il numero del modello (2.58, core Cobb-Douglas senza mercato del lavoro) sia
+> l'ancora (2.5–3, **whole-economy**) sono superati. **Misurato sul core attuale:
+> K/Y = 3.17 (anchor) / 3.64 (headline) a ρ=0.40**; comparatore corretto
+> (business non residenziale) = **1.23**. Il modello sta **sopra** il dato, ed è un
+> **esito meccanico di `g=0`**, non un fallimento di calibrazione: con `I=δK`,
+> `K/Y = (I/Y)/δ` segue. Vedi §"Il sistema congiunto", riscritto.
 
-### I/Y — 0.133
-- Nel modello: `I/Y = ρα`. Da confrontare con l'investimento fisso non
-  residenziale/PIL USA (~0.13–0.14) — **coincidenza incoraggiante, DA VERIFICARE**
-  con dato primario (BEA NIPA); attenzione a gross vs net e al perimetro.
+### ~~I/Y — 0.133~~ — **VERIFICATO e SUPERSEDED (brief 11)**
+> ⚠️ **Debito chiuso.** `I/Y = ρα = 0.133` era l'identità del core Cobb-Douglas: sul
+> core attuale **non vale** (la quota di profitto non è pinnata ad α). **Misurato:
+> 0.158 (anchor) / 0.182 (headline) a ρ=0.40**
+> (`results/ces_b11_anchoring_ratios.csv`). Dato primario BEA ora estratto:
+> **0.138–0.141** (PNFI/PIL, `A008RE1Q156NBEA`, Q1 2025–Q1 2026). Il modello sta
+> **sopra** di 2 punti (anchor) o 4 (headline); ρ≈0.36 centra l'ancora allo scenario
+> anchor, mentre l'headline non la raggiunge dentro il supporto sweepato. Perimetro
+> risolto: **gross**, **business non residenziale**, su entrambi i lati.
 
 ### ~~Utilizzo della capacità — 0.99 (modello)~~ vs ~0.80 (empirico) — **STALE**
 > ⚠️ **STALE dal punto 11.** Il "0.99" apparteneva al core Cobb-Douglas **senza
@@ -755,12 +905,15 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
    > 0.90** (`model.MacroModel`), e questo file diceva 0.90 già prima. Il valore
    > 0.70 non ha referente nel codice: registrato come discrepanza del brief, non
    > "corretto" nel codice — il modello non si tocca in un task di validazione.
-3. **`c0 = 2.0` è il debito aperto più grande.** Non ancorabile e con
-   giustificazione falsificata (vedi voce). L'esito dello stress test del brief 05
-   è nella sezione dedicata più sotto: è quello che decide se il parametro va
-   rimosso, e con quali conseguenze sull'headline.
-3. **Unità temporale del periodo:** chiarirla, perché δ, K/Y, I/Y sono
-   annualizzati implicitamente.
+3. ~~**`c0 = 2.0` è il debito aperto più grande.**~~ **CHIUSO PER DECISIONE (brief
+   11): non ancorabile, e non si tenta.** `c0` è una scala del modello senza
+   referente empirico; la sensitivity è il doppio regime {1.0, 2.0} già riportato in
+   ogni brief, più la SA globale (punto 5). Vedi la voce `c0`. **Non chiude** la
+   tensione 3bis (disoccupazione fuori scala), che è di design, non di ancoraggio.
+3. ~~**Unità temporale del periodo:** chiarirla, perché δ, K/Y, I/Y sono
+   annualizzati implicitamente.~~ **CHIUSO (brief 11): 1 periodo = 1 anno,
+   dichiarato** — vedi §"Unità temporale". I 2000 step sono un dispositivo di
+   convergenza, non una serie storica.
 3bis. **⚠️ La disoccupazione è fuori scala a ogni `c0` (misurato, brief 05).** Alla
    ρ calibrata (0.40) e nel range empirico di σ, il modello gira a **U ≈ 52%**
    (`c0`=1.0) o **U ≈ 31%** (`c0`=2.0); la sonda `c0`=0.5 dà **63%**. Nessuno di
@@ -776,10 +929,17 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
    `σ*` unico. Vedi `ces_b05_curvature.csv`, `ces_b05_support_sensitivity.csv`.
 4. **Assunzione Cobb-Douglas a quote costanti:** dichiararla come scelta, citando
    la critica empirica (Karabarbounis–Neiman; Antràs).
-5. **Verificare I/Y** con dato BEA primario (serie NIPA investimento fisso non
-   residenziale/PIL): il match a 0.133 regge su una cifra di ordine di grandezza,
-   non ancora su una serie estratta. Attenzione a gross vs net e al perimetro di
-   capitale (il modello ha solo capitale produttivo d'impresa, niente residenziale).
+5. ~~**Verificare I/Y** con dato BEA primario~~ **CHIUSO (brief 11), con esito
+   diverso dall'atteso.** Serie estratta (`A008RE1Q156NBEA`: 0.138–0.141) e
+   perimetro risolto (**gross, business non residenziale, su entrambi i lati**). Ma
+   il confronto **non conferma** il vecchio "match incoraggiante": il modello
+   misurato sta a **0.158/0.182**, sopra l'ancora, e la vecchia formula `ρα=0.133`
+   non vale più su questo core. Emerso per giunta un **errore di comparatori** nella
+   sezione "sistema congiunto", corretto. Vedi lì.
+5bis. **Debito residuo, NUOVO (brief 11):** il modello non può matchare I/Y e K/Y
+   business simultaneamente perché `g=0` (`I/K = δ+g`; nei dati `g≈0.022`). È un
+   **limite strutturale dichiarato**, la cui unica risoluzione sarebbe il punto 13
+   (crescita di A), tagliato. Da riportare in tesi come limite, non da calibrare via.
 6. **Ancoraggio delle leve di domanda: rimandato al punto 11.** λ e
    `target_utilization` non vanno ancorati in questo core: l'empirico
    (λ≈0.05, u≈0.80) implica un regime **demand-constrained**, in cui il capitale
@@ -876,6 +1036,36 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
 - **OECD, Benefits and Wages database** (Tax-Benefit models, web calculator) — regole
   tax-benefit per età-lavorativa; base dei net/gross replacement rate.
   <https://www.oecd.org/social/benefits-and-wages/data>
+
+### Ancoraggio del blocco capitale — dati BEA (brief 11)
+
+> **Nota di provenienza, dichiarata.** Le tre serie sotto sono state lette su FRED
+> alla data indicata; la ri-verifica automatica al momento della stesura non è stata
+> possibile (FRED risponde 403 alle richieste programmatiche). I valori sono
+> riportati **con ID di serie e data di vintage** perché siano ricontrollabili a
+> mano; il vintage delle serie Fixed Assets è l'**aggiornamento annuale BEA di
+> settembre 2025** (dati fino al 2024), confermato sul sito BEA.
+
+- **U.S. Bureau of Economic Analysis, "Shares of Gross Domestic Product: Gross
+  Private Domestic Investment: Fixed Investment: Nonresidential" [A008RE1Q156NBEA]**,
+  retrieved from FRED, Federal Reserve Bank of St. Louis. — ancora di **I/Y**:
+  **13,8–14,1%** fra Q1 2025 e Q1 2026 (Q1 2026: 14,1%); aggiornamento 2026-04-30.
+  Sottostante: BEA NIPA **Table 1.1.10**, "Percentage Shares of Gross Domestic
+  Product". <https://fred.stlouisfed.org/series/A008RE1Q156NBEA>
+- **U.S. Bureau of Economic Analysis, "Current-Cost Net Stock of Fixed Assets:
+  Private: Nonresidential" [K1NTOTL1ES000]**, retrieved from FRED. — stock a fine
+  **2024: $35.899,9 mld**. Con PIL 2024 ≈ $29.180 mld ⇒ **K/Y business = 1,23**.
+  <https://fred.stlouisfed.org/series/K1NTOTL1ES000>
+- **U.S. Bureau of Economic Analysis, "Current-Cost Depreciation of Fixed Assets:
+  Private: Nonresidential" [M1NTOTL1ES000]**, retrieved from FRED. — deprezzamento
+  **2024: $3.194,1 mld** ⇒ **δ implicito ≈ 0,090** su uno stock medio ≈$35.300 mld.
+  <https://fred.stlouisfed.org/series/M1NTOTL1ES000>
+- **BEA, Fixed Assets Accounts Tables** (Standard Fixed Assets Tables; aggiornamento
+  annuale settembre 2025, dati 2020–2024). <https://www.bea.gov/itable/fixed-assets>
+- **Nota sull'uso:** le tre serie fissano un **comparatore unico** (capitale privato
+  **non residenziale**, cioè d'impresa) per I/Y, K/Y e δ. È il perimetro del K del
+  modello. La versione precedente di queste note mescolava questo comparatore con
+  ancore whole-economy per K/Y — errore corretto in §"Il sistema congiunto".
 
 ### Eterogeneità di impresa / dispersione della TFP (brief 10)
 - **Syverson, C. (2004). Product Substitutability and Productivity Dispersion.
