@@ -17,9 +17,11 @@ Production is a **normalised CES** with elasticity of substitution `sigma`
 (`sigma = 1` is the Cobb-Douglas core, `sigma -> 0` is Leontief); firms hire
 **endogenously** at a wage `w_t` set by a Blanchflower–Oswald **wage curve** on
 last period's unemployment (`eta = 0` fixes it at `w_bar` and recovers the
-fixed-wage model exactly), and the unemployed earn nothing - so employment drives
-demand. `sigma` governs the strength of capital–labour substitution, which is the
-mechanism that decides whether the model is wage-led or profit-led.
+fixed-wage model exactly), and the unemployed earn nothing unless a minimal
+**government** is switched on (brief 09: a balanced-budget unemployment benefit,
+`benefit_replacement_rate = 0` by default) - so employment drives demand. `sigma`
+governs the strength of capital–labour substitution, which is the mechanism that
+decides whether the model is wage-led or profit-led.
 
 ---
 
@@ -135,7 +137,11 @@ household settlement.
 6. firm accounting: wages, retained (= planned investment), residual dividends;
 7. investment settlement: pay for delivered goods, update capital, return the
    residual as dividends so the buffer returns to zero;
-8. household settlement: credit income, pay for delivered goods.
+8. **government** (brief 09) - a balanced-budget unemployment benefit: a flat tax on
+   this period's accrued income funds an equal transfer to the unemployed, after the
+   last income accrual and before settlement (`benefit_replacement_rate = 0` default
+   skips it, reproducing the pre-brief-09 model bit-for-bit);
+9. household settlement: credit income, pay for delivered goods.
 
 ---
 
@@ -290,6 +296,64 @@ touch: damping the *demand* expectation cannot stabilise an instability that doe
 originate in demand. Reported as a finding. Outputs: `results/ces_b08_*.csv` (via
 `scripts/run_brief08.py`).
 
+### 6. A balanced-budget benefit crowds capital *in* where demand-constrained, but does not stabilise the collapse (brief 09)
+
+The unemployed earn nothing, so every unemployed worker leaks entirely out of the
+circular flow (their notional `c0` is unfinanceable at zero wealth). Brief 09 reinnests
+the Leontief branch's **balanced-budget unemployment benefit** on the current core: a
+flat tax on accrued income funds an equal transfer to the unemployed, indexed to the
+current wage `w_t` (`benefit_replacement_rate` = rr its size; OECD net replacement rates
+~50–80 % for a low earner - see `parameter_notes.md`). `rr = 0` reproduces the committed
+brief-05/07 panels **byte-for-byte** (4 nesting checks, `max_abs_dev = 0.0`).
+
+**E1 - fiscal dose-response (the balanced-budget multiplier crowds capital in).** At the
+headline demand-constrained scenario (`c0 = 1.0, sigma = 0.5, eta = 0.10, rho = 0.40`):
+
+| rr   | U     | Y      | K      | wage share | realised tax | cash-constrained |
+| ---- | ----- | ------ | ------ | ---------- | ------------ | ---------------- |
+| 0.00 | 0.566 | 82.1   | 298.8  | 0.440      | 0.000        | 0.90             |
+| 0.25 | 0.483 | 98.1   | 359.2  | 0.446      | 0.128        | 0.90             |
+| 0.50 | 0.427 | 108.7  | 396.6  | 0.452      | 0.206        | 0.90             |
+| 0.75 | 0.373 | 119.0  | 435.7  | 0.457      | 0.250        | 0.90             |
+
+Unemployment falls and - the theoretical point - both output **and capital rise**
+(299 → 436): in a demand-constrained regime redistribution is **crowding-in** (more
+demand → more profit → more investment via `I = rho*pi`). The `anchor` scenario
+(`c0 = 2.0, sigma = 1`) moves the same way, more gently (U 0.257 → 0.177, K 418 → 469).
+The **cash-constrained fraction stays 0.90 = all 90 workers, invariant to rr**: the
+benefit never lifts a worker off the liquidity constraint (MPC ~ 1 is preserved), which
+is exactly why the balanced-budget multiplier keeps delivering across the whole dose.
+
+**E2 - the benefit eliminates the wage-led region (`c0 = 1.0`).** At rr = 0,
+`sigma*(Y)` = 0.654 (natural anchor) / 0.83 (across-config support), wage-led for
+`sigma` above it. At **rr = 0.5 `sigma*` is undefined** (`frac_undefined ~ 1.0`): every
+`dY/drho` slope turns **positive** across the tested range (`sigma = 1`: +38.7;
+`sigma = 1.5`: +19.3), pushing `sigma*` above 1.5. The demand floor makes retention
+expansionary at **every** `sigma` - the wage-led high-`sigma` region is gone. The `U`
+frontier barely moves (`sigma*_U ~ 0.40 → 0.43`): the benefit changes the *output*
+response to retention far more than the *unemployment* response. (The brief expected a
+*small* shift; the measured shift is large, and reported as such.)
+
+**E3 - the stabilisation hypothesis is falsified: the collapse region *enlarges*
+(`c0 = 2.0`).** The falsifiable guess was that a demand floor when `U` rises shrinks the
+brief-07 wage-curve collapse. It does the opposite. Cells with any collapsed seed:
+`eta = 0.10` **16 → 26** from rr = 0 to rr = 0.5; `eta = 0.15` **16 → 29**; the mean
+fraction of seeds at `U = 1` doubles (0.125 → 0.266, 0.129 → 0.333). The reference cell
+(`sigma = 1.5, rho = 0.40, eta = 0.10`) collapses to `K = 0, U = 1` at **both** rr = 0
+and rr = 0.5, but at rr = 0.5 the tax is **pinned at the cap** (`Tax_Rate = 0.600`,
+fraction of periods at cap = 1.0) - the instrument saturates and the economy still dies.
+*Mechanism* (from the tax-saturation diagnostics `mean_tax`, `frac_periods_at_cap` now
+in the collapse map and trace): where firms are collapsing the tax base is almost all
+wages, so taxing workers to pay workers is **MPC-neutral** (no net demand); the benefit
+indexed to `w_t` is **procyclical** (high `U` → low `w_t` → weak floor); and the demand
+it does inject **amplifies** the wage→`U`→capital-erosion oscillation in the high-`sigma`
+corner. A demand floor cannot stabilise a collapse that does not originate in demand -
+it aggravates it. Reported as a finding, not recalibrated. Outputs: `results/ces_b09_*.csv`
+(via `scripts/run_brief09.py`).
+
+![E1 fiscal dose-response: U, Y, K vs rr](results/ces_b09_dose_response.png)
+![E3 collapse map: does the demand floor shrink it? (it enlarges it)](results/ces_b09_collapse_map.png)
+
 ---
 
 ## Interpretive frame (read this before the results)
@@ -303,7 +367,9 @@ originate in demand. Reported as a finding. Outputs: `results/ces_b08_*.csv` (vi
   and empirical `sigma`, the model runs at ~50 % unemployment (`c0 = 1.0`) or
   ~31 % (`c0 = 2.0`). No tested `c0` brings it into a plausible band; this is a
   structural tension of the fixed-wage labour market (point 11), reported as an
-  open question, not calibrated away.
+  open question, not calibrated away. (The brief-09 benefit is a genuine demand-side
+  lever here - it lowers headline `U` 0.57 → 0.37 at rr = 0.75 - but it is a policy
+  instrument, not a recalibration of the structural tension.)
 * **The wage share (0.35–0.61 across viable cells) sits mostly *below* the
   empirical 0.60–0.68**, touching it only at high `sigma` and low `rho`.
 * **Multiple equilibria and a viability threshold near `rho ~ 0.30`.**
@@ -326,27 +392,29 @@ originate in demand. Reported as a finding. Outputs: `results/ces_b08_*.csv` (vi
 ```text
 src/
 ├── agents.py        Firm (normalised CES, wage-curve wage, internal financing), Household, Capitalist
-├── model.py         MacroModel: labour market, wage curve (U_REF, wage_from_curve), period sequence, metrics
+├── model.py         MacroModel: labour market, wage curve (U_REF, wage_from_curve), government (brief 09), period sequence, metrics
 └── experiment.py    Monte-Carlo runner, rho sweep, (sigma, rho) sign frontier, brief-05 robustness stack
 scripts/
 ├── run_brief04.py   Regenerates the brief-04 (sigma, rho) grid + sign frontier into results/ (reproducible)
 ├── run_brief05.py   Regenerates the brief-05 stage A/B/C outputs into results/ (reproducible)
 ├── run_brief07.py   Regenerates the brief-07 wage-curve sweep (sigma x rho x eta x c0) into results/ (reproducible)
-└── run_brief08.py   Regenerates the brief-08 adaptive-expectations sweep (sigma x rho x eta x lambda_e x c0) (reproducible)
+├── run_brief08.py   Regenerates the brief-08 adaptive-expectations sweep (sigma x rho x eta x lambda_e x c0) (reproducible)
+└── run_brief09.py   Regenerates the brief-09 government sweep (dose-response + sigma*(eta;rr) + collapse map) (reproducible)
 notebooks/
 └── 01_Endogenous_Investment.ipynb   rho sweep at sigma=1 + sigma sweep with the sign frontier
 results/
+├── ces_b09_*.csv    brief-09 government sweep: dose-response, sigma*(eta;rr), collapse map + trace; produced by scripts/run_brief09.py
 ├── ces_b08_*.csv    brief-08 adaptive-expectations sweep + sigma*(eta;lambda_e) + collapse map; produced by scripts/run_brief08.py
 ├── ces_b07_*.csv    brief-07 wage-curve sweep + sigma*(eta); produced by scripts/run_brief07.py
 ├── ces_b05_*.csv    brief-05 robustness stack (20 seeds); produced by scripts/run_brief05.py
 └── ces_*.csv        brief-04 (sigma, rho) grid, derivatives and sign frontier
 tests/
 ├── conftest.py
-└── test_model.py    SFC + buffer==0, distribution, labour accounting, CES nesting, robustness stack, wage curve, adaptive expectations
+└── test_model.py    SFC + buffer==0, distribution, labour accounting, CES nesting, robustness stack, wage curve, adaptive expectations, government
 performance/
 └── engine.cpp       STALE: additive Phase-1 model, NOT the current core (do not use)
 requirements.txt
-retention_sweep.png, ces_sign_frontier.png, results/ces_b07_sigma_star_eta.png, results/ces_b08_sigma_star_lambda.png
+retention_sweep.png, ces_sign_frontier.png, results/ces_b07_sigma_star_eta.png, results/ces_b08_sigma_star_lambda.png, results/ces_b09_dose_response.png
 ```
 
 ---
@@ -368,7 +436,10 @@ python scripts/run_brief07.py
 # regenerate the brief-08 adaptive-expectations sweep (results/ces_b08_*.csv); two phases, threads pinned
 python scripts/run_brief08.py
 
-# run the checks (SFC, buffer==0, distribution, labour accounting, CES nesting, wage curve, adaptive expectations, bootstrap)
+# regenerate the brief-09 government sweep (results/ces_b09_*.csv); two phases, threads pinned (~1.5-2h)
+python scripts/run_brief09.py
+
+# run the checks (SFC, buffer==0, distribution, labour accounting, CES nesting, wage curve, adaptive expectations, government, bootstrap)
 python -m pytest tests/ -q
 ```
 

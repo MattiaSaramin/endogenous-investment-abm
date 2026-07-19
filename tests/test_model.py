@@ -1227,3 +1227,206 @@ def test_run_grid_panels_metrics_override_adds_expected_demand():
     )
     assert "Expected_Demand" in panels[0].columns
     assert "Expected_Demand" not in _PANEL_METRICS      # the shared list is untouched
+
+
+# ======================================================================
+# Brief 09 — government: balanced-budget unemployment benefit
+# ======================================================================
+
+def test_government_off_by_default():
+    """The constructor default is rr = 0, and the fiscal metrics stay at 0, so the
+    default behaviour is unchanged by brief 09 (§5, §7)."""
+    m = MacroModel(seed=0)
+    assert m.benefit_replacement_rate == 0.0
+    for _ in range(50):
+        m.step()
+        assert m.tax_rate == 0.0
+        assert m.benefit == 0.0
+        assert m.gov_transfers == 0.0
+
+
+def test_fiscal_reporters_present_and_zero_when_off():
+    """The three fiscal columns exist (extra columns, harmless to the byte-check) and
+    are identically 0 when the government is off."""
+    m = MacroModel(seed=0)
+    for _ in range(20):
+        m.step()
+    df = m.datacollector.get_model_vars_dataframe()
+    for col in ("Tax_Rate", "Benefit_Per_Head", "Gov_Transfers", "Tax_At_Cap"):
+        assert col in df.columns
+        assert (df[col] == 0.0).all()
+
+
+def test_rr_zero_nests_the_no_government_model_bit_for_bit():
+    """benefit_replacement_rate = 0 reproduces the default trajectory exactly — the
+    explicit skip branch that leaves the RNG and every accrual untouched (§2, §6.2)."""
+    def outputs(**kw):
+        m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10, **kw)
+        out = []
+        for _ in range(200):
+            m.step()
+            out.append(sum(f.production for f in _firms(m)))
+        return out
+    assert outputs() == outputs(benefit_replacement_rate=0.0)
+
+
+@pytest.mark.parametrize("bad", [-0.1, -1.0])
+def test_benefit_replacement_rate_must_be_nonnegative(bad):
+    with pytest.raises(ValueError):
+        MacroModel(seed=0, benefit_replacement_rate=bad)
+
+
+@pytest.mark.parametrize("bad", [-0.1, 1.5])
+def test_max_tax_must_be_in_unit_interval(bad):
+    with pytest.raises(ValueError):
+        MacroModel(seed=0, max_tax=bad)
+
+
+def test_government_is_a_pure_transfer_and_balances():
+    """Levy = collected = benefits paid, both interior and when the max_tax cap binds;
+    total accrued income is unchanged (a pure transfer => SFC) — brief 09 §6.1."""
+    for rr, expect_cap in [(0.5, False), (5.0, True)]:
+        m = MacroModel(seed=1, benefit_replacement_rate=rr, max_tax=0.6)
+        hh = _households(m)
+        for i, h in enumerate(hh):
+            h.next_income = float(i % 5)          # a mix of zeros and positives
+            h.employed = (i % 3 != 0)             # ~1/3 unemployed
+        n_un = sum(1 for h in hh if not h.employed)
+        base = sum(max(0.0, h.next_income) for h in hh)
+        before = sum(h.next_income for h in hh)
+        m.government(hh)
+        after = sum(h.next_income for h in hh)
+        assert after == pytest.approx(before, abs=1e-12)                   # pure transfer
+        assert m.gov_transfers == pytest.approx(m.tax_rate * base, abs=1e-12)
+        assert n_un * m.benefit == pytest.approx(m.gov_transfers, abs=1e-12)
+        assert (m.tax_rate >= 0.6 - 1e-12) == expect_cap                   # cap binds only for rr=5
+
+
+def test_benefit_is_equal_for_every_unemployed():
+    """Each unemployed household receives exactly the same transfer (§6.1)."""
+    m = MacroModel(seed=2, benefit_replacement_rate=0.5)
+    hh = _households(m)
+    for i, h in enumerate(hh):
+        h.next_income = 3.0
+        h.employed = (i % 2 == 0)
+    unemployed = [h for h in hh if not h.employed]
+    m.government(hh)
+    incomes = [h.next_income for h in unemployed]
+    assert max(incomes) - min(incomes) < 1e-12
+    assert incomes[0] == pytest.approx((1.0 - m.tax_rate) * 3.0 + m.benefit, abs=1e-12)
+
+
+def test_tax_rate_zero_without_unemployed():
+    """No unemployed => no desired transfer => no tax (§6.1)."""
+    m = MacroModel(seed=3, benefit_replacement_rate=0.5)
+    hh = _households(m)
+    for h in hh:
+        h.next_income = 2.0
+        h.employed = True
+    m.government(hh)
+    assert m.tax_rate == 0.0
+    assert m.benefit == 0.0
+    assert m.gov_transfers == 0.0
+
+
+def test_tax_rate_zero_when_base_is_zero():
+    """Unemployed present but nothing positive to tax => no tax, no benefit (§6.1)."""
+    m = MacroModel(seed=3, benefit_replacement_rate=0.5)
+    hh = _households(m)
+    for i, h in enumerate(hh):
+        h.next_income = 0.0
+        h.employed = (i % 2 == 0)
+    m.government(hh)
+    assert m.tax_rate == 0.0
+    assert m.benefit == 0.0
+    assert m.gov_transfers == 0.0
+
+
+def test_levy_equals_collected_with_negative_income_present():
+    """A negative next_income (a capitalist's negative residual dividend) is NOT refunded:
+    the levy is on the positive part only, so sum(levies) == collected exactly and money is
+    conserved.  Scaling the whole next_income by (1 - tau) would refund it (§2, §6.3)."""
+    m = MacroModel(seed=4, benefit_replacement_rate=0.5)
+    hh = _households(m)
+    for i, h in enumerate(hh):
+        h.next_income = -2.0 if i == 0 else 3.0
+        h.employed = (i % 2 == 0)
+    pre = [h.next_income for h in hh]
+    m.government(hh)
+    total_levy = sum(m.tax_rate * max(0.0, p) for p in pre)
+    assert total_levy == pytest.approx(m.gov_transfers, abs=1e-12)
+    # hh[0] (income -2.0) is employed (i=0): untouched, and crucially not refunded.
+    assert hh[0].next_income == pytest.approx(-2.0, abs=1e-12)
+
+
+@pytest.mark.parametrize("sigma,eta,rr", [
+    (1.0, 0.0, 0.5), (0.5, 0.10, 0.75), (0.5, 0.10, 0.5),
+])
+def test_money_is_conserved_with_government(sigma, eta, rr):
+    """SFC survives the fiscal step: money (incl. the buffer) is conserved and the buffer
+    still returns to zero every period with rr > 0 (§5, §6.4)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=7, sigma=sigma, eta=eta,
+                   benefit_replacement_rate=rr)
+    initial = total_money(m)
+    for _ in range(400):
+        m.step()
+        assert total_money(m) == pytest.approx(initial, abs=1e-7)
+        for f in _firms(m):
+            assert f.money_buffer == pytest.approx(0.0, abs=1e-9)
+
+
+@pytest.mark.parametrize("rr", [0.5, 0.75])
+def test_determinism_with_government(rr):
+    """Same seed => same trajectory with the government on (§5, §6.5)."""
+    def final(seed):
+        m = MacroModel(retention_ratio=REF_RHO, seed=seed, sigma=0.5, eta=0.10,
+                       benefit_replacement_rate=rr)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert final(3) == final(3)
+    assert final(1) != final(2)
+
+
+def test_benefit_has_the_same_one_period_lag_as_a_wage():
+    """The benefit lands in next_income (like a wage), so it is spendable only next period,
+    never in the period it is granted (§6.6)."""
+    m = MacroModel(seed=0, benefit_replacement_rate=0.5)
+    hh = _households(m)
+    u = next(h for h in hh if not isinstance(h, Capitalist))
+    for h in hh:
+        h.employed = True
+        h.next_income = 3.0
+    u.employed = False
+    u.income = 0.0
+    u.wealth = 0.0
+    u.next_income = 0.0
+    m.government(hh)
+    # Parked in next_income, NOT in the spendable (income, wealth) of this period.
+    assert m.benefit > 0.0
+    assert u.next_income == pytest.approx(m.benefit, abs=1e-12)
+    assert u.income == 0.0 and u.wealth == 0.0
+    # Settlement rolls next_income into income => spendable next period.
+    u.step_settlement()
+    assert u.income == pytest.approx(m.benefit, abs=1e-12)
+
+
+def test_government_crowds_in_capital_and_lowers_unemployment():
+    """Headline demand-constrained scenario (c0=1.0, sigma=0.5, eta=0.10): the benefit
+    lowers steady-state unemployment and (crowding-in) raises capital (§1, §6.7).  Wide
+    tolerance — a short run averaged over seeds; only the direction is asserted."""
+    def steady(rr):
+        us, ks = [], []
+        for seed in (0, 1, 2):
+            m = MacroModel(retention_ratio=REF_RHO, seed=seed, sigma=0.5, eta=0.10,
+                           c0=1.0, benefit_replacement_rate=rr)
+            for _ in range(800):
+                m.step()
+            tail = m.datacollector.get_model_vars_dataframe().tail(100).mean()
+            us.append(tail["Unemployment_Rate"])
+            ks.append(tail["Total_Capital"])
+        return np.mean(us), np.mean(ks)
+    U0, K0 = steady(0.0)
+    U5, K5 = steady(0.5)
+    assert U5 < U0 - 0.05        # unemployment clearly down
+    assert K5 > K0 + 20.0        # capital clearly up (crowding-in)

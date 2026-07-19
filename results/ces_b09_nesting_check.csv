@@ -1,0 +1,5 @@
+c0,eta,ref,byte_equal,max_abs_dev,note
+1.0,0.0,ces_b05_stage_a_panel.csv,True,0.0,PASS
+1.0,0.1,ces_b07_stage_a_panel.csv,True,0.0,PASS
+2.0,0.1,ces_b07_stage_a_panel.csv,True,0.0,PASS
+2.0,0.15,ces_b07_stage_a_panel.csv,True,0.0,PASS

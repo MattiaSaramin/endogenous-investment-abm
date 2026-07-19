@@ -26,11 +26,19 @@ expected income depends on employment status) — step 0 added by brief 07:
     6. firm accounting: wage_bill = w_t*L, retained (= I_planned), residual dividends
     7. investment settlement: pay I_delivered; K(t+1) = (1-delta)K + I_delivered;
        buffer returns to zero
-    8. household settlement (credit income, pay for delivered goods)
+    8. government (brief 09): a balanced-budget unemployment benefit — a flat tax on
+       this period's accrued income (``next_income``) funds an equal transfer to the
+       unemployed.  Placed AFTER investment settlement (the last ``next_income`` accrual,
+       the residual dividend) and BEFORE household settlement, so the tax hits the
+       period's fully-accrued income and the benefit reaches the unemployed with the same
+       one-period lag as a wage.  ``benefit_replacement_rate = 0`` (default) skips the
+       whole step and reproduces the pre-brief-09 model bit-for-bit.
+    9. household settlement (credit income, pay for delivered goods)
 
 Conserved quantity (checked in ``tests/``): at a period boundary the buffer is
 zero, so ``sum(household wealth + income) + sum(firm money_buffer)`` is constant.
-The unemployed simply receive nothing, so money is still conserved.
+The unemployed receive either nothing (default) or a benefit funded one-for-one by the
+tax (a pure transfer, brief 09), so money is still conserved in both cases.
 """
 
 import mesa
@@ -413,6 +421,43 @@ def compute_cash_constrained_frac(model):
     return sum(1 for h in households if h.cash_constrained) / len(households)
 
 
+# --- fiscal diagnostics (brief 09) ----------------------------------------
+
+def compute_tax_rate(model):
+    """The balanced-budget flat tax rate realised this period (a *measured outcome*).
+
+    0.0 when the benefit is off (``benefit_replacement_rate = 0``) or there are no
+    unemployed; capped at ``max_tax`` when the desired transfer would need more (in
+    which case the benefit is scaled down to what the cap raises — brief 09 §2).
+    """
+    return model.tax_rate
+
+
+def compute_benefit_per_head(model):
+    """Transfer received by each unemployed household this period (0 if none)."""
+    return model.benefit
+
+
+def compute_gov_transfers(model):
+    """Total tax collected = total benefit distributed (balanced budget, brief 09).
+
+    Equal to the levy exactly by construction (the tax hits only the positive part of
+    accrued income, so collections and benefits paid coincide even when the cap binds).
+    """
+    return model.gov_transfers
+
+
+def compute_tax_at_cap(model):
+    """1.0 if the balanced-budget tax rate is pinned at ``max_tax`` this period, else 0.0.
+
+    Instrument-saturation diagnostic (brief 09 report): its tail-average over a run is the
+    fraction of steady-state periods in which the cap bound — i.e. the desired transfer
+    needed a higher rate than ``max_tax`` allows and the benefit was scaled down.  0.0 when
+    the government is off (``tax_rate = 0 < max_tax``).
+    """
+    return 1.0 if model.max_tax > 0.0 and model.tax_rate >= model.max_tax else 0.0
+
+
 # ============================================================
 # Model
 # ============================================================
@@ -472,6 +517,19 @@ class MacroModel(mesa.Model):
     c0, c1, capitalist_mpc, wealth_effect : float
         Consumption function terms.  ``c0`` and ``wealth_effect`` are demand levers
         (chosen values, not empirical estimates).
+    benefit_replacement_rate : float
+        Unemployment benefit as a fraction of the *current* wage ``w_t`` (brief 09),
+        funded by a flat income tax whose rate adjusts to balance the budget each period.
+        ``0.0`` (default) turns the government off and reproduces the pre-brief-09 model
+        bit-for-bit; ``> 0`` closes the demand leak from the unemployed (who are
+        cash-constrained, so their MPC ~ 1) via the balanced-budget multiplier.  The
+        benefit is indexed to ``w_t``, not ``w_bar``, so at high ``U`` the wage curve
+        lowers it (a procyclical floor — reported, not hidden).  Anchorable to OECD net
+        replacement rates (see parameter_notes.md); swept, not chosen.  Must be >= 0.
+    max_tax : float
+        Cap on the balanced-budget tax rate (a declared convention/guardrail, not an
+        estimate).  When the desired transfer would need more, the benefit is scaled
+        down to what the cap raises — the budget stays balanced.  Must lie in [0, 1].
     seed : int or None
         Seed for the model's random stream (network, hiring/firing order).
 
@@ -519,6 +577,10 @@ class MacroModel(mesa.Model):
         capitalist_mpc=0.4,
         wealth_effect=0.05,
 
+        # Government (brief 09): rr = 0 nests the no-government model exactly
+        benefit_replacement_rate=0.0,
+        max_tax=0.6,
+
         seed=None,
     ):
         super().__init__(seed=seed)
@@ -531,6 +593,10 @@ class MacroModel(mesa.Model):
             raise ValueError("the normalisation anchor (K0, L0) must be positive")
         if not (0.0 <= expectation_gain <= 1.0):
             raise ValueError("expectation_gain (lambda_e) must be in [0, 1]")
+        if benefit_replacement_rate < 0.0:
+            raise ValueError("benefit_replacement_rate must be >= 0")
+        if not (0.0 <= max_tax <= 1.0):
+            raise ValueError("max_tax must be in [0, 1]")
 
         # --- parameters -------------------------------------------------
         self.num_firms = num_firms
@@ -569,10 +635,19 @@ class MacroModel(mesa.Model):
         self.capitalist_mpc = capitalist_mpc
         self.wealth_effect = wealth_effect
 
+        # Government (brief 09): balanced-budget unemployment benefit.
+        self.benefit_replacement_rate = benefit_replacement_rate
+        self.max_tax = max_tax
+
         # --- economy-wide flow variables --------------------------------
         self.total_investment_demand = 0.0
         self.total_investment_realised = 0.0
         self.investment_rationing = 1.0
+        # Fiscal flow variables (brief 09) — set here so the t = 0 DataCollector.collect
+        # can read them before the government step ever runs.
+        self.tax_rate = 0.0
+        self.benefit = 0.0
+        self.gov_transfers = 0.0
 
         # --- build firms ------------------------------------------------
         firms = [
@@ -642,6 +717,11 @@ class MacroModel(mesa.Model):
                 "Bound_Capital": compute_bound_by_capital,
                 "Bound_Workforce": compute_bound_by_workforce,
                 "Cash_Constrained": compute_cash_constrained_frac,
+                # Fiscal diagnostics (brief 09): all identically 0 when rr = 0.
+                "Tax_Rate": compute_tax_rate,
+                "Benefit_Per_Head": compute_benefit_per_head,
+                "Gov_Transfers": compute_gov_transfers,
+                "Tax_At_Cap": compute_tax_at_cap,
             }
         )
         self.datacollector.collect(self)
@@ -677,6 +757,69 @@ class MacroModel(mesa.Model):
                 vacancies -= 1
             # Diagnostic: the pool ran dry, so the workforce is what bites here.
             f.labour_rationed = len(f.workers) < f.desired_employment
+
+    # ------------------------------------------------------------------
+    def government(self, households):
+        """Balanced-budget unemployment benefit: a flat tax funds equal transfers (brief 09).
+
+        A flat rate ``tau`` is levied on this period's accrued income (``next_income``)
+        and the whole take is split equally among the unemployed.  The rate adjusts so
+        collections equal the desired transfer, capped at ``max_tax`` (then the benefit is
+        scaled down to what the cap raises).  Being a pure transfer, it conserves money.
+
+            base      = sum(max(0, next_income))                over all households
+            desired   = benefit_replacement_rate * w_t * n_unemployed
+            tau       = min(max_tax, desired / base)            if base > 0 and desired > 0
+            collected = tau * base
+            benefit   = collected / n_unemployed               (0 if none unemployed)
+
+        TAX BASE — positive part only.  A capitalist's residual dividend can be negative
+        (gross profit below the retention planned on last period's profit), so
+        ``next_income`` is occasionally < 0 (measured: down to ~-0.007 at sigma=1.5,
+        c0=2.0, eta=0.10).  The levy is taken on ``max(0, next_income)`` so the total
+        collected equals the tax base exactly; scaling the whole ``next_income`` by
+        ``(1 - tau)`` would instead REFUND a negative-income household and break the
+        balanced budget (hence money conservation).  With this rule
+        ``sum(levies) == collected == sum(benefits)`` identically, cap or no cap.
+
+        BENEFIT INDEXED TO ``w_t`` — the *current* wage-curve wage, not ``w_bar``: a
+        replacement rate is a fraction of the prevailing wage.  Consequence (reported):
+        at high ``U`` the wage curve lowers ``w_t`` and hence the benefit, so the demand
+        floor is procyclical.
+
+        NO RESERVATION WAGE / labour-supply incentive: the unemployed always accept work;
+        the benefit changes only their income, never their willingness to be hired
+        (declared out of scope, brief 09 §8).
+
+        ``benefit_replacement_rate = 0`` short-circuits the entire step (no tax, no
+        transfer, the RNG untouched), which is what makes the default nest the
+        pre-brief-09 model bit-for-bit.
+        """
+        if self.benefit_replacement_rate == 0.0:
+            self.tax_rate = 0.0
+            self.benefit = 0.0
+            self.gov_transfers = 0.0
+            return
+
+        unemployed = [h for h in households if not h.employed]
+        n_unemployed = len(unemployed)
+
+        base = sum(max(0.0, h.next_income) for h in households)
+        desired = self.benefit_replacement_rate * self.wage_rate * n_unemployed
+
+        if base > 0.0 and desired > 0.0:
+            self.tax_rate = min(self.max_tax, desired / base)
+        else:
+            self.tax_rate = 0.0
+
+        collected = self.tax_rate * base
+        self.benefit = collected / n_unemployed if n_unemployed > 0 else 0.0
+        self.gov_transfers = collected
+
+        for h in households:
+            h.next_income -= self.tax_rate * max(0.0, h.next_income)
+        for h in unemployed:
+            h.next_income += self.benefit
 
     # ------------------------------------------------------------------
     def step(self):
@@ -732,7 +875,14 @@ class MacroModel(mesa.Model):
             f.step_investment()
         self.total_investment_realised = sum(f.investment_delivered for f in firms)
 
-        # 8. household settlement
+        # 8. government (brief 09): balanced-budget benefit on fully-accrued income.
+        #    AFTER step 7 (the residual dividend is the last next_income accrual) and
+        #    BEFORE settlement, so the tax hits the period's full income and the benefit
+        #    reaches the unemployed with the same one-period lag as a wage.  rr = 0 makes
+        #    this a no-op that leaves the RNG and every accrual untouched.
+        self.government(households)
+
+        # 9. household settlement
         for h in households:
             h.step_settlement()
 

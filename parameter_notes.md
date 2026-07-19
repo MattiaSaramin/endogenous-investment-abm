@@ -44,6 +44,8 @@
 | `initial_capital` | 40.0 | **Scelta di modellazione — NON toccare negli sweep** | seleziona il bacino: equilibri multipli e soglia di viability |
 | `target_utilization` | 0.90 | **Debole — sopra l'empirico** | utilizzo reale ~0.80 |
 | `expectation_gain` (λ_e) | **sweep**, default 1.0 | **Debole — sweep, non stima** | gain delle aspettative adattive sulla domanda (brief 08); nessuna stima puntuale affidabile per un ABM (aspettative adattive, Nerlove 1958; constant-gain learning, Evans & Honkapohja 2001). `λ_e=1` = aspettative statiche annidate bit-for-bit. **Esito misurato: σ\* e regione di collasso λ_e-invarianti entro CI/rumore** |
+| `benefit_replacement_rate` (rr) | **sweep**, default 0.0 | **Buono — ancorabile (OECD)** | sussidio di disoccupazione = frazione del salario corrente `w_t`, finanziato da flat tax a bilancio in pareggio (brief 09, punto 15). NRR netto OECD ~58% iniziale, 50–80% low earner; gross RR più bassi ~0.2–0.6. Sweep rr∈{0, 0.25, 0.5, 0.75} bracket-a la banda 0.4–0.6. `rr=0` annida il modello senza governo bit-for-bit. **Esito: crowding-in dove demand-constrained; NON stabilizza il collasso c0=2.0** |
+| `max_tax` | 0.6 | **Convenzione dichiarata — non stima** | cap sull'aliquota di bilancio in pareggio; se il sussidio desiderato richiede di più, si scala giù (budget resta in pareggio). Guardrail, non stima. `Tax_Rate` realizzato e `frac_periods_at_cap` sono **esiti misurati** |
 
 Benchmark di validazione (non parametri, ma target): quota salari, K/Y, quota
 profitti, I/Y, utilizzo — vedi sotto.
@@ -409,6 +411,103 @@ profitti, I/Y, utilizzo — vedi sotto.
 
 ---
 
+## Blocco governo — sussidio a bilancio in pareggio (brief 09, roadmap punto 15)
+
+> Introdotto dal brief 09. Reinnesta il **sussidio di disoccupazione a bilancio in
+> pareggio** dal ramo `labour-market-leontief` sul core attuale (CES + mercato del
+> lavoro + wage curve + aspettative adattive). Un solo parametro economico nuovo
+> (`benefit_replacement_rate`). `rr=0` (default) annida il modello senza governo
+> **bit-for-bit** (byte-check rr=0 vs `ces_b05`/`ces_b07`: dev = 0.0 su 4/4 config).
+> Fuori scope: spesa in beni/servizi, occupazione pubblica, debito, tassazione
+> progressiva, salario di riserva (i disoccupati accettano sempre).
+
+### `benefit_replacement_rate` (rr) = sweep, default 0.0 — replacement rate del sussidio
+- **Ruolo:** step di bilancio in pareggio dopo il settlement investimenti e prima del
+  settlement famiglie (step 8). Su tutte le famiglie:
+  `base = Σ max(0, next_income)`; `desired = rr·w_t·n_disoccupati`;
+  `τ = min(max_tax, desired/base)`; `sussidio = τ·base / n_disoccupati`. La tassa
+  colpisce **solo la parte positiva** di `next_income` (un dividendo residuo di
+  capitalista può essere negativo — misurato fino a −0.007 a σ=1.5/c0=2.0/η=0.10),
+  così `Σ prelievi = τ·base = Σ sussidi` **esattamente** (scalare tutto `next_income`
+  per `(1−τ)` rimborserebbe i redditi negativi e romperebbe SFC). Sussidio indicizzato
+  al salario **corrente** `w_t` (wage curve), non a `w̄`.
+- **Empirico — ancorabile (OECD):** il *net replacement rate* (NRR) OECD misura la
+  quota di reddito netto da lavoro mantenuta durante la disoccupazione. Media OECD
+  **≈58%** nella fase **iniziale** (single, no figli, salario medio), che scende a
+  **~37%** per i disoccupati di lungo periodo; per un single low earner la NRR
+  iniziale sta fra **50% e 80%**. I *gross* replacement rate sono più bassi
+  (~0.2–0.6 a seconda del paese). **Distinzione da dichiarare:** il parametro del
+  modello indicizza il sussidio al salario **lordo** corrente (`sussidio = rr·w_t`),
+  quindi è un concetto di replacement rate **gross**, mentre la NRR OECD del 58% è
+  netta (al netto delle imposte su sussidio e reddito da lavoro). Lo sweep
+  rr∈{0, 0.25, 0.5, 0.75} **bracket-a** la banda gross/net-informata 0.4–0.6 (0.5
+  dentro; 0.25 e 0.75 la racchiudono). **Sweep, non punto.**
+- **Fonti:** OECD (2024), *Society at a Glance 2024*, cap. "Unemployment and social
+  safety net benefits" (NRR iniziale 58% media OECD; 50–80% single low earner); OECD
+  **Benefits and Wages** database (modelli tax-benefit, calcolatore).
+- **Esito misurato (brief 09, 20 seed, 2000 step, `results/ces_b09_*`):**
+  - **E1 — dose-risposta fiscale (crowding-in confermato dove demand-constrained).**
+    Allo scenario **headline** (c0=1.0, σ=0.5, η=0.10, ρ=0.40) rr 0→0.75 abbassa U
+    **0.566→0.373** e — punto teorico chiave — alza sia Y (82→119) sia **K
+    (299→436)**: in regime demand-constrained il trasferimento è **crowding-in** (più
+    domanda → più profitti → più investimento via `I=ρπ`). Allo scenario **anchor**
+    (c0=2.0, σ=1, η=0, ρ=0.40), effetto direzionalmente identico ma più tenue (U
+    0.257→0.177, K 418→469). Corrisponde al probe di design (headline K 292→439). La
+    **frazione cash-constrained resta 0.90 = tutti i 90 lavoratori, invariante a rr**:
+    il sussidio non solleva i lavoratori dal vincolo di liquidità (MPC≈1 mantenuto),
+    quindi il **canale del moltiplicatore di bilancio in pareggio resta intatto** — è
+    il motivo per cui il crowding-in regge lungo tutta la dose-risposta. Aliquota
+    realizzata modesta (τ ≤ 0.10 anchor, ≤ 0.25 headline), cap **mai** al margine qui.
+  - **E2 — robustezza della frontiera (σ\* si muove MOLTO con rr, non "poco").** A
+    c0=1.0, sul supporto comune across-config, σ\*(Y) a rr=0 è 0.830 (η=0), 0.833
+    (η=0.10) [anchor naturale η=0/rr=0: σ\*=0.654, coerente col brief 05]. A **rr=0.5
+    σ\* è INDEFINITO** (`frac_undefined`≈1.0): tutte le pendenze `dY/dρ` diventano
+    **positive** su tutto il range σ testato (σ=1: +38.7; σ=1.5: +19.3), spingendo σ\*
+    **sopra 1.5**. Il sussidio **elimina la regione wage-led**: l'investimento torna
+    espansivo a ogni σ perché il pavimento di domanda garantisce che la capacità extra
+    trovi domanda. La frontiera su **U** invece **non si muove** (σ\*_U ≈ 0.40→0.43 a
+    η=0; ≈0.46 a η=0.10): il sussidio cambia la risposta dell'output alla ritenzione
+    molto più di quella della disoccupazione. **Contrariamente all'attesa del brief**
+    ("spostamento piccolo"), ma coerente con E1.
+  - **E3 — ipotesi di stabilizzazione c0=2.0: FALSIFICATA (il collasso si ALLARGA).**
+    Celle con qualche collasso (≥1 seed su 20): η=0.10 **16→26** da rr=0 a rr=0.5;
+    η=0.15 **16→29**; frazione media di seed a `U=1` **0.125→0.266** e **0.129→0.333**.
+    La cella di riferimento (σ=1.5, ρ=0.40, η=0.10) collassa a `K=0, U=1` **sia a rr=0
+    sia a rr=0.5**, ma a rr=0.5 la tassa è **fissata al cap** (τ=0.600,
+    `frac_periods_at_cap`=1.0). **Saturazione dello strumento diagnosticata** come
+    richiesto: nell'angolo di collasso il cap morde in una frazione crescente di
+    periodi (`frac_at_cap` 0.14 e 0.22 in media sulla griglia; `mean_tax` 0.14 e 0.21).
+    Meccanismo: (i) dove la base imponibile è quasi tutta salariale (imprese in
+    collasso, dividendi ~0), tassare lavoratori per pagare lavoratori è
+    **MPC-neutrale** → nessun boost netto di domanda; (ii) il sussidio indicizzato a
+    `w_t` è **prociclico** — a U alta la wage curve abbassa `w_t` e quindi il sussidio,
+    così il pavimento è più debole proprio quando servirebbe; (iii) la domanda extra
+    che il sussidio inietta **amplifica** l'oscillazione salario→occupazione→erosione
+    di capitale (meccanismo brief 07) nell'angolo alto-σ. Il collasso c0=2.0 non nasce
+    da domanda debole floor-abile: il pavimento di domanda non lo tocca, lo aggrava.
+- **Verdetto:** **ancorabile a fonte OECD, ma sweep non punto.** `rr=0` è il default
+  per l'identità col modello senza governo. Risultato duplice: il sussidio **funziona**
+  come stabilizzatore di domanda dove il regime è demand-constrained (E1 crowding-in;
+  E2 elimina il wage-led), ma **non** dove il collasso è guidato dall'offerta/oscillazione
+  di capitale (E3, ipotesi falsificata). `max_tax=0.6` è convenzione, non stima; la
+  saturazione al cap va **riportata**, non nascosta. Verifica contro
+  `ces_b09_dose_response.csv`, `ces_b09_sigma_star.csv`, `ces_b09_collapse_map.csv`,
+  `ces_b09_trace.csv`.
+
+### `max_tax` = 0.6 — cap sull'aliquota di bilancio in pareggio
+- **Ruolo:** `τ = min(max_tax, desired/base)`; se il sussidio desiderato richiede
+  un'aliquota superiore, il sussidio si scala giù a ciò che il cap raccoglie (budget
+  in pareggio per costruzione). Guardrail contro aliquote esplosive quando la base
+  imponibile crolla (angolo di collasso c0=2.0).
+- **Empirico:** nessun referente diretto — è una **convenzione dichiarata**, non una
+  stima. Il ramo Leontief usava lo stesso 0.6.
+- **Verdetto:** **convenzione.** L'aliquota realizzata `Tax_Rate` e la frazione di
+  periodi al cap `frac_periods_at_cap` sono **esiti misurati** da riportare (diagnostica
+  di saturazione dello strumento), non parametri da ancorare. Candidato per la
+  sensitivity analysis (punto 5), non per l'ancoraggio.
+
+---
+
 ## `c0` — esito dello stress test (brief 05 §2) — **il cerotto non regge, ma non per la ragione attesa**
 
 Misurato: griglia σ×ρ×`c0`, 20 seed, 2000 step, media ultime 50 (Stadio A, 3.080 run);
@@ -671,3 +770,13 @@ un sistema a due gradi di libertà, non due validazioni indipendenti.
   Macroeconomics*. Princeton University Press.** — constant-gain learning; il gain
   costante come caso adattivo. Nessuna stima strutturale di un gain di domanda
   d'impresa: `λ_e` è uno sweep.
+
+### Governo / sussidio di disoccupazione (brief 09)
+- **OECD (2024). *Society at a Glance 2024*, "Unemployment and social safety net
+  benefits".** — net replacement rate iniziale ≈58% (media OECD, single al salario
+  medio), ~37% per la disoccupazione di lungo periodo; 50–80% per un single low
+  earner. Fonte primaria di `benefit_replacement_rate`.
+  <https://www.oecd.org/en/publications/society-at-a-glance-2024_918d8db3-en/full-report/unemployment-and-social-safety-net-benefits_ddfedfa8.html>
+- **OECD, Benefits and Wages database** (Tax-Benefit models, web calculator) — regole
+  tax-benefit per età-lavorativa; base dei net/gross replacement rate.
+  <https://www.oecd.org/social/benefits-and-wages/data>

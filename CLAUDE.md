@@ -91,7 +91,10 @@ documentazione** più avanti dei tip locali; il codice `src/`/`tests/` coincide
 - **`labour-market-leontief`** (branch) — Checkpoint del punto 11 costruito fuori
   sequenza: produzione **Leontief** `output = A·L` con vincolo di capitale sui
   posti (`max_jobs = K/κ`) e settore pubblico a bilancio in pareggio. 15 test.
-  **Fuori rotta e NON mergiato**: da reinnestare solo per il governo (punto 15).
+  **Fuori rotta e NON mergiato**: il suo **governo** (`government()`, sussidio a
+  bilancio in pareggio) è stato **reinnestato su `main` col brief 09** (adattato al
+  core CES + wage curve, base imponibile su `max(0,·)`, `rr=0` di default). Il resto
+  del branch resta un checkpoint storico non mergiato.
 
 **Nota sui tag.** `phase-1-baseline` è il tag **citabile** della baseline Fase 1
 (sul commit `a02bf65`, ex tip di `main`). Esiste anche un tag preesistente
@@ -423,6 +426,35 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   `ces_b08_trace.png`. Note parametro (`λ_e`, Nerlove 1958, Evans & Honkapohja 2001)
   in `parameter_notes.md`. **Fuori scope:** aspettative su salari/prezzi/investimento
   (l'acceleratore usa `utilization_last_period`, un segnale realizzato).
+- **Brief 09 — governo: sussidio a bilancio in pareggio (punto 15, forma minima)**:
+  reinnestato il sussidio di disoccupazione a bilancio in pareggio dal ramo
+  `labour-market-leontief`. Flat tax sul reddito maturato (`next_income`) finanzia un
+  trasferimento uguale ai disoccupati, indicizzato al salario **corrente** `w_t`; step
+  8 tra settlement investimenti e settlement famiglie. Un solo parametro economico:
+  `benefit_replacement_rate` (rr, default 0.0). **Base imponibile su `max(0,·)`** (un
+  dividendo residuo può essere negativo, misurato −0.007 a σ=1.5/c0=2.0/η=0.10) → 
+  `Σ prelievi = Σ sussidi` esatto, SFC intatta. `rr=0` annida bit-for-bit (**byte-check
+  rr=0 vs `ces_b05`/`ces_b07`: 4/4 PASS, dev=0.0**). Reporter `Tax_Rate`,
+  `Benefit_Per_Head`, `Gov_Transfers`, `Tax_At_Cap` (diagnostica di saturazione). **Esiti
+  (20 seed, `results/ces_b09_*`): E1** — dose-risposta rr∈{0,0.25,0.5,0.75}: nello
+  scenario headline (c0=1.0, σ=0.5, η=0.10) U 0.566→0.373 e — punto teorico — **K
+  299→436** (crowding-in in regime demand-constrained); cash-constrained 0.90 = tutti i
+  90 lavoratori, invariante a rr (moltiplicatore intatto). **E2** — σ\*(η;rr) c0=1.0: a
+  rr=0.5 σ\* **INDEFINITO** (`frac_undef`≈1.0), tutte le pendenze `dY/dρ` positive → il
+  sussidio **elimina la regione wage-led** (σ\* spinto sopra 1.5); frontiera su U quasi
+  ferma. **E3** — ipotesi di stabilizzazione c0=2.0 **FALSIFICATA: il collasso si
+  ALLARGA** (celle con qualche collasso η=0.10 16→26, η=0.15 16→29; frac seed a U=1
+  raddoppia); cella di riferimento collassa a K=0/U=1 sia a rr=0 sia a rr=0.5, ma a
+  rr=0.5 la tassa è **fissata al cap** (τ=0.6, frac_at_cap=1.0) — strumento saturo.
+  Meccanismo: base ~tutta salariale ⇒ trasferimento MPC-neutrale; sussidio prociclico
+  (w_t giù a U alta); domanda extra amplifica l'oscillazione salario→U→erosione di
+  capitale. **397 test verdi** (378 invariati + 19 nuovi). Driver `scripts/run_brief09.py`
+  (due fasi, gate E2 su perdita di supporto vs rr=0); CSV `results/ces_b09_*.csv`; figure
+  `ces_b09_dose_response.png`, `ces_b09_sigma_star_rr.png`, `ces_b09_collapse_map.png`,
+  `ces_b09_trace.png`. Note parametro (`rr` ancorato OECD *Society at a Glance 2024* /
+  Benefits and Wages; `max_tax`=0.6 convenzione) in `parameter_notes.md`. **Fuori scope:**
+  spesa in beni/servizi, occupazione pubblica, debito, tassazione progressiva, salario di
+  riserva.
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
@@ -434,8 +466,9 @@ stabilizzazione c0=2.0 non confermata); **resta l'aspettativa sull'INVESTIMENTO*
 un'aspettativa — punto 10-bis);
 12) entrata/uscita/fallimento imprese; 13) cambiamento tecnologico (crescita di
 A); 14) banche e credito (estende la matrice SFC: depositi, prestiti);
-15) politica monetaria e fiscale — il **governo con sussidio a bilancio in
-pareggio esiste già** sul branch `labour-market-leontief`, da reinnestare;
+**15) politica monetaria e fiscale — il sussidio a bilancio in pareggio è REINNESTATO
+(brief 09, forma minima)**; restano spesa in beni/servizi, occupazione pubblica, debito
+pubblico e tassazione progressiva (future work dichiarato in `brief_09_government.md` §8);
 16) stesura metodologia e risultati.
 
 > **Punto 9 riscritto — e parzialmente FATTO col brief 07.** Diceva: "markup
@@ -493,11 +526,13 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   rompere la conservazione (profitti trattenuti = posta monetaria d'impresa, da
   aggiungere alla grandezza conservata).
 - **Sequenza del periodo** in `model.py`, esplicita e motivata nel docstring.
-  Sequenza **effettiva sul codice committato** (`cobb-douglas-core`):
-  domanda → piani di investimento → registrazione domanda →
-  produzione/razionamento → contabilità imprese → **settlement investimenti** →
-  **settlement famiglie**. Nota: il settlement investimenti precede quello delle
-  famiglie, così il dividendo residuo non subisce un lag aggiuntivo.
+  Sequenza **effettiva sul codice committato** (aggiornata al brief 09):
+  wage curve (step 0, brief 07) → mercato del lavoro → domanda → piani di
+  investimento → registrazione domanda → produzione/razionamento → contabilità
+  imprese → **settlement investimenti** → **governo** (step 8, brief 09: sussidio a
+  bilancio in pareggio, `rr=0` no-op) → **settlement famiglie**. Nota: il settlement
+  investimenti precede il governo (che precede le famiglie), così la tassa colpisce
+  il reddito interamente maturato e il sussidio arriva col medesimo lag di un salario.
   *(Correzione 2026-07: questo file elencava l'ordine inverso — famiglie prima di
   investimenti — in contraddizione col codice committato e col README. Il drift è
   durato dalla riscrittura del core al punto 11. Il documento anti-drift era
@@ -532,16 +567,22 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 - `src/agents.py` — Firm (CES normalizzata, salario dalla wage curve, finanziamento
   interno, aspettativa adattiva di domanda), Household, Capitalist; helper CES
   (`ces_capacity`, `ces_labour_*`, `ces_mpl`, …) e `adaptive_expectation` (brief 08,
-  branch esplicito λ_e=1)
+  branch esplicito λ_e=1). Nessuna modifica funzionale al brief 09: solo docstring
+  aggiornati dove i disoccupati "earn nothing" (ora salvo il sussidio brief 09)
 - `src/model.py` — MacroModel: mercato del lavoro, sequenza del periodo (step 0 =
   wage curve, brief 07; update aspettativa adattiva dentro lo step di produzione,
-  brief 08), settlement, metriche (incl. `Expected_Demand`, brief 08); ancore di
-  normalizzazione `ANCHOR_*`, costante `U_REF` e helper `wage_from_curve` (brief 07);
-  parametro `expectation_gain` (λ_e, default 1.0, validato ∈[0,1])
+  brief 08; **step 8 = governo, brief 09**), settlement, metriche (incl.
+  `Expected_Demand` brief 08; `Tax_Rate`/`Benefit_Per_Head`/`Gov_Transfers`/`Tax_At_Cap`
+  brief 09); ancore di normalizzazione `ANCHOR_*`, costante `U_REF` e helper
+  `wage_from_curve` (brief 07); parametro `expectation_gain` (λ_e, default 1.0,
+  validato ∈[0,1]); metodo `government()` e parametri `benefit_replacement_rate`
+  (rr, default 0.0, validato ≥0, branch esplicito rr=0) e `max_tax` (0.6, validato
+  ∈[0,1]) (brief 09)
 - `src/experiment.py` — runner Monte-Carlo, sweep ρ, griglia (σ, ρ) e sign
   frontier (brief 04), stack di robustezza brief 05 (`run_grid_panel`,
-  `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …); `eta` e
-  `expectation_gain` passano al modello via `**params`, come `c0`; `run_grid_panels`
+  `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …); `eta`,
+  `expectation_gain` e `benefit_replacement_rate` passano al modello via `**params`,
+  come `c0` (nessuna modifica di firma al brief 09); `run_grid_panels`
   (brief 08: **single-pool**, più config in un solo pool, `metrics` override)
 - `scripts/run_brief04.py` — driver **riproducibile** dello sweep (σ, ρ) e della
   sign frontier del brief 04; rigenera 5 dei 6 `results/ces_*.csv` (thread BLAS
@@ -558,9 +599,18 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   `ces_b05`/`ces_b07` (artifact-su-disco), σ*(η;λ_e) sul supporto comune-across-config,
   mappa di collasso E2 vs b07 e trace della cella di riferimento; rigenera
   `results/ces_b08_*.csv` + 3 figure
+- `scripts/run_brief09.py` — driver **riproducibile** del brief 09 (governo); 8 config
+  di griglia `(c0, η, rr)` in **single-pool**, due fasi (recon 3-seed con gate E2 su
+  perdita di supporto vs rr=0 → panel 20-seed). Tre esperimenti: **E1** dose-risposta
+  fiscale (2 scenari × rr∈{0,0.25,0.5,0.75}, con `Cash_Constrained` e `Tax_Rate`),
+  **E2** σ*(η;rr) c0=1.0 bootstrap CS, **E3** mappa di collasso c0=2.0 (con `mean_tax`,
+  `frac_periods_at_cap`) + trace della cella di riferimento (con `Tax_At_Cap`). 4
+  byte-check rr=0 vs `ces_b05`/`ces_b07` (artifact-su-disco, dev=0.0); rigenera
+  `results/ces_b09_*.csv` + 4 figure
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati. `ces_b08_*.csv` (brief 08) → rigenerati
+- `results/` — output misurati committati. `ces_b09_*.csv` (brief 09) → rigenerati
+  da `run_brief09.py`. `ces_b08_*.csv` (brief 08) → rigenerati
   da `run_brief08.py`. `ces_b07_*.csv` (brief 07) → rigenerati
   da `run_brief07.py`. `ces_b05_*.csv` (brief 05) → rigenerati
   da `run_brief05.py`. `ces_sigma_rho_grid.csv`, `ces_derivatives*.csv`,
@@ -572,7 +622,9 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   lavoro, nesting CES, pin di regressione (tolleranza), stack di robustezza,
   wage curve (brief 07: annidamento η=0, lag U_{t-1}, canale di sostituzione),
   aspettative adattive (brief 08: convergenza geometrica, annidamento λ_e=1, lag,
-  SFC/determinismo a λ_e<1, single-pool)
+  SFC/determinismo a λ_e<1, single-pool), governo (brief 09: bilancio in pareggio
+  esatto incl. cap, annidamento rr=0, base su `max(0,·)` con reddito negativo,
+  SFC/determinismo a rr>0, lag del sussidio, crowding-in direzionale). **397 test.**
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di

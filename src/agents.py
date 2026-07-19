@@ -27,7 +27,9 @@ Behavioural core:
    The wage share is a *measured outcome*, bounded above by the profit-max wage share
    :func:`ces_wage_share_profitmax` (which equals ``1-pi0`` only at ``sigma = 1``).
    Unemployed households earn no wage, so their consumption falls — this is what
-   makes the Keynesian demand channel bite.
+   makes the Keynesian demand channel bite.  (With the government on — brief 09,
+   ``benefit_replacement_rate > 0`` — they receive a tax-funded benefit that partly
+   refills this leak; the fiscal step lives in ``model.py``, not here.)
 
 3. **Endogenous employment.**  Each firm hires the minimum of three limits:
    labour needed for expected demand, the profit-maximising labour (where the
@@ -505,8 +507,10 @@ class Firm(mesa.Agent):
             dividends    = gross_profit - retained
 
         Identity ``wage_bill + dividends + retained == sales`` holds exactly.
-        Unemployed households are simply not paid, so the wage bill falls with
-        employment — the demand channel.
+        Unemployed households are simply not paid here, so the wage bill falls with
+        employment — the demand channel.  (Any unemployment benefit is a separate,
+        tax-funded transfer applied later in the period by ``MacroModel.government``,
+        brief 09; it never touches this firm-level accounting.)
         """
         self.sales = self.production
         L = len(self.workers)
@@ -551,7 +555,8 @@ class Household(mesa.Agent):
     Supplies labour (employed or unemployed), consumes
     ``C = c0 + mpc * income + lambda * wealth`` out of a money balance, and
     accumulates unspent income as wealth.  Income is the wage received while
-    employed (zero when unemployed), plus dividends for capitalists.
+    employed (zero when unemployed, save any brief-09 unemployment benefit), plus
+    dividends for capitalists, net of the brief-09 flat tax when the government is on.
     """
 
     is_capitalist = False
