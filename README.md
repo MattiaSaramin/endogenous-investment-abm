@@ -477,6 +477,18 @@ cells at 2000 steps × 20 seeds, artifact-vs-artifact) reproduces **7/7 with
 `max_abs_dev = 0.0`**, via `scripts/check_brief12_nesting.py` →
 `results/ces_b12_byte_check.csv`.
 
+*A slice and not the whole grid — a declared choice.* The committed set is ~28 000 cells
+(hours of compute), but the nesting claim is **mechanical, not statistical**: at the
+default the assignment is the same expression as before, and the ownership loop draws
+nothing from the RNG. A mechanical claim is falsified by **one representative cell per
+reference** — were it wrong, every cell would deviate, not one in a thousand. The slice
+therefore spans the dimensions along which the code *branches* (both `c0` regimes, `eta`
+on/off, government on/off, dispersion on/off — including a brief-10 config at
+`spread = 0.20`, the one path where firms differ and ownership order could interact with
+which firm dies first), rather than sampling the grid at random. It is a nesting check,
+not a revalidation of the panels; a full regeneration remains possible and costs only
+machine time.
+
 *The point worth keeping:* the SFC invariant was tested **only at the default
 configuration**. It held there, and nowhere else — and this is precisely what a global
 sensitivity analysis would have walked over in silence, reporting sensitivity indices for

@@ -724,6 +724,19 @@ serve solo a garantire che il transiente sia esaurito.
   committati (`ces_b05`, `ces_b07`, `ces_b09`, `ces_b10`; 440 celle a 2000 step, 20 seed,
   artifact-su-disco): **7/7 PASS, max_abs_dev = 0.0**. Vedi
   `scripts/check_brief12_nesting.py`, `results/ces_b12_byte_check.csv`.
+  - **Perché una fetta e non la griglia intera — scelta dichiarata.** L'insieme dei panel
+    committati è ~28.000 celle (ore di macchina), ma la claim di annidamento è
+    **meccanica**, non statistica: al default l'assegnazione è la stessa espressione di
+    prima (`j % 10 == j`) e il loop di proprietà **non estrae dall'RNG**. Una claim
+    meccanica si falsifica con **una cella rappresentativa per referente**: se fosse
+    sbagliata, ogni cella devierebbe, non una su mille. La fetta copre perciò le
+    dimensioni lungo cui il codice si **ramifica** — entrambi i regimi `c0`, η on/off,
+    governo on/off, dispersione on/off (inclusa una config brief-10 a `spread=0.20`,
+    l'unico percorso in cui le imprese differiscono e l'ordine di proprietà potrebbe
+    interagire con quale impresa muore per prima) — non un campione casuale della
+    griglia. **Limite dichiarato:** è una verifica di annidamento, non una
+    ri-validazione dei panel; una loro rigenerazione completa resta possibile e costa
+    solo tempo macchina.
 - **Verdetto:** **scelta di modellazione, ora sweepabile.** Range proposto per la SA
   globale **0.05–0.20** (Teglio 2025 come referente della dimensione, non del livello:
   nessuna stima puntuale è pretesa). Il default 0.10 resta e nessun risultato committato
