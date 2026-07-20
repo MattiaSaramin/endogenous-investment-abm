@@ -855,6 +855,54 @@ Registrato — errore incluso — perché un numero orfano senza spiegazione è
 esattamente il modo in cui nascono i "numeri fantasma" (`CLAUDE.md` §4), e una
 spiegazione *plausibile ma non verificata* è il modo in cui ci restano.
 
+#### Identità di Kalecki (`Π = I + C_k`): TENTATA, NON CHIUDIBILE coi reporter attuali
+
+Il candidato naturale per spiegare il **profitto piatto in η** è il paradosso dei
+costi kaleckiano: il profitto sarebbe determinato dalla **spesa dei capitalisti**
+(`Π = I + C_k`), non dalla quota salari — il che spiegherebbe perché il monte
+salari può crollare del 22% lasciando `Π` fermo. **Verificato sui panel committati:
+non è testabile qui.** Dichiarato, non forzato.
+
+**Cosa chiude, e perché non basta.** Sulla cella (b07, `c0`=1.0, σ=0.5, ρ=0.40) e
+per costruzione su ogni panel:
+
+| relazione | residuo misurato | statuto |
+|---|---|---|
+| `Wage_Share + Profit_Share = 1` | 2.2e-16 | **definizionale** (la quota di profitto è il residuo) |
+| `Y = C + I` | **0.0 esatto** | chiusura del mercato dei beni (a `rr`=0, nessun governo) |
+| `Π − I = C − W` | 0.0 esatto | **conseguenza algebrica delle due sopra** |
+
+Le tre righe non sono tre verifiche: sono **una**. Data `Π ≡ Y − W` e `Y ≡ C + I`,
+l'uguaglianza `Π − I = C − W` segue per sostituzione — vale in **qualunque**
+economia chiusa contabilmente coerente, e non distingue questo modello da nessun
+altro. Registrarla come "struttura misurata" sarebbe **spacciare una tautologia per
+un risultato**.
+
+**Il pezzo mancante è `C_k`.** `Π = I + C_k` diventa un'affermazione con contenuto
+solo se `C_k` è **osservato separatamente**. Nei panel c'è solo `Consumption`
+aggregato (`compute_consumption`, `src/model.py`, somma su **tutte** le famiglie):
+nessun reporter per classe. Il residuo `C − W` (30.33 → 31.34 su η = 0 → 0.15)
+**non** è `C_k`: lo sarebbe solo se i lavoratori consumassero **esattamente** il
+monte salari, cioè con risparmio netto nullo. È plausibile (`Cash_Constrained` = 0.90
+= tutti i 90 lavoratori, MPC≈1) ma **non è misurato**: i lavoratori disoccupati a
+`rr`=0 hanno reddito zero e consumano dalla ricchezza, e la ricchezza **per classe**
+non è riportata (c'è `Wealth_Gini`, che è una dispersione, non un livello).
+
+**Limite più profondo, da tenere presente anche se il reporter arrivasse.**
+L'identità kaleckiana è **contabile**, e la tesi di Kalecki è **causale** (la spesa
+dei capitalisti *determina* il profitto, non viceversa). Nessuna identità può
+stabilire una direzione di determinazione: `Π = I + C_k` è vera anche in un modello
+dove la causalità corre all'incontrario. Chiuderla numericamente **non**
+dimostrerebbe il paradosso dei costi — servirebbe un **intervento** (es. variare la
+propensione al consumo dei capitalisti a quota salari fissa, e vedere `Π` muoversi).
+
+**Verdetto: il pointer "non decomposto" sul profitto piatto RESTA.** Non viene
+sostituito da una spiegazione kaleckiana. Per chiuderla servirebbe (i) un reporter
+`Capitalist_Consumption` — aggiunta pura di diagnostica, nessun effetto sulla
+dinamica, ma richiede di **rigenerare i panel** — e (ii) un esperimento di
+intervento per la parte causale. **Candidato per un brief futuro**, non per questo:
+il brief 11 non fa run nuovi.
+
 **Nota su `I/Y = ρ·α`: non vale più.** L'identità analitica della vecchia sezione
 (0.133 a ρ=0.40) apparteneva al core **Cobb-Douglas senza mercato del lavoro**, dove
 la quota di profitto era pinnata ad α per costruzione. Sul core attuale la quota di
