@@ -1630,3 +1630,125 @@ def test_dispersion_above_the_threshold_kills_firms_and_the_economy():
     assert alive["Unemployment_Rate"] < 0.9
     assert dispersed["Dead_Firms"] > 0.0
     assert dispersed["Unemployment_Rate"] > 0.9
+
+
+# ----------------------------------------------------------------------
+# Firm ownership off the default (brief 12)
+# ----------------------------------------------------------------------
+#
+# Ownership used to be assigned by cycling over the HOUSEHOLDS, which is a bijection
+# only at the default (100 x 0.10 = 10 capitalists, 10 firms).  Off the default it broke
+# in two directions, both measured before the fix at seed 0:
+#
+#   pct = 0.05 -> 5/10 firms ownerless, money 400.00 -> 11.34 by t = 200 (DESTROYED);
+#   pct = 0.08 -> 8/10 firms ownerless, money 400.00 -> 46.15;
+#   pct = 0.20 -> money conserved, but sum(net_worth) = 840.0 against K = 400.0 (2.10x),
+#                 because 10 of the 20 capitalists kept a stale ``owned_firm``.
+#
+# The SFC invariant was only ever tested at the default: it held there and nowhere else.
+# These tests move it onto the parameter range, which is what the global SA needs.
+
+#: Spans both sides of the default: fewer capitalists than firms (a capitalist owns
+#: several), equal (the nested case), more (some capitalists own none).
+PCTS = [0.02, 0.05, 0.10, 0.15, 0.20, 0.50]
+
+
+def _capitalists(model):
+    return [h for h in _households(model) if isinstance(h, Capitalist)]
+
+
+@pytest.mark.parametrize("pct", PCTS)
+def test_money_is_conserved_across_pct_capitalists(pct):
+    """THE test the defect would have failed: no firm is ownerless, so no dividend and no
+    residual buffer can vanish, at any ``pct_capitalists`` (brief 12 §5.1)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=7, pct_capitalists=pct)
+    initial = total_money(m)
+    for _ in range(250):
+        m.step()
+        assert total_money(m) == pytest.approx(initial, abs=1e-7)
+        for f in _firms(m):
+            assert f.money_buffer == pytest.approx(0.0, abs=1e-9)
+
+
+@pytest.mark.parametrize("pct", PCTS)
+def test_every_firm_has_exactly_one_owner(pct):
+    """Ownership covers the firms exactly, and the owners are precisely the capitalists
+    holding a non-empty ``owned_firms`` (brief 12 §5.2)."""
+    m = MacroModel(seed=0, pct_capitalists=pct)
+    firms, capitalists = _firms(m), _capitalists(m)
+
+    assert all(f.owner is not None for f in firms)
+    assert {id(f.owner) for f in firms} == {
+        id(c) for c in capitalists if c.owned_firms
+    }
+    # Each firm appears in exactly one ownership list, and only firms do.
+    owned = [f for c in capitalists for f in c.owned_firms]
+    assert sorted(id(f) for f in owned) == sorted(id(f) for f in firms)
+    assert all(f.owner is c for c in capitalists for f in c.owned_firms)
+
+
+@pytest.mark.parametrize("pct", PCTS)
+def test_net_worth_does_not_double_count_firm_wealth(pct):
+    """Capitalist net worth above own money is EXACTLY the firms' capital and buffer —
+    each firm counted once, through its single owner (brief 12 §5.3).
+
+    Before the fix this failed at pct > 0.10: at 0.20 the excess was 2.10x aggregate
+    capital, because stale ``owned_firm`` references were still being summed.  Checked
+    after stepping too, so it pins the identity in motion, not just at construction.
+    """
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, pct_capitalists=pct)
+    for _ in range(200):
+        m.step()
+    capitalists = _capitalists(m)
+    excess = sum(c.net_worth() for c in capitalists) - sum(c.wealth for c in capitalists)
+    firm_side = sum(f.capital + f.money_buffer for f in _firms(m))
+    assert excess == pytest.approx(firm_side, abs=1e-9)
+
+
+def test_default_ownership_is_the_pre_fix_bijection():
+    """NESTING (brief 12 §2, §5.4).  At the default ``j % num_capitalists == j``, so firm
+    ``j`` is owned by capitalist ``j`` — identical to the old household-indexed
+    assignment.  This is the mechanical reason the default trajectory is unchanged and
+    the committed panels stay byte-identical; the regression pins elsewhere in this file
+    cover the trajectory itself."""
+    m = MacroModel(seed=0)
+    firms, capitalists = _firms(m), _capitalists(m)
+    assert len(capitalists) == len(firms) == 10
+    for j, f in enumerate(firms):
+        assert f.owner is capitalists[j]
+        assert capitalists[j].owned_firms == [f]
+
+
+@pytest.mark.parametrize("pct", [0.05, 0.20])
+def test_determinism_off_the_default_ownership(pct):
+    """Same seed => same trajectory away from ``pct = 0.10`` (brief 12 §5.5)."""
+    def final(seed):
+        m = MacroModel(retention_ratio=REF_RHO, seed=seed, pct_capitalists=pct)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert final(3) == final(3)
+    assert final(1) != final(2)
+
+
+@pytest.mark.parametrize("pct,n_hh", [(0.0, 100), (0.005, 100), (0.05, 10)])
+def test_zero_capitalists_raises(pct, n_hh):
+    """An economy whose firms have no owner is not defined here: the dividends would have
+    nowhere to go and money would be destroyed (brief 12 §5.6)."""
+    with pytest.raises(ValueError):
+        MacroModel(seed=0, pct_capitalists=pct, num_households=n_hh)
+
+
+def test_a_capitalist_may_own_several_firms_or_none():
+    """Both off-default cases are DECLARED semantics, not degenerate ones (brief 12 §2)."""
+    few = MacroModel(seed=0, pct_capitalists=0.02)          # 2 capitalists, 10 firms
+    counts = sorted(len(c.owned_firms) for c in _capitalists(few))
+    assert counts == [5, 5]
+
+    many = MacroModel(seed=0, pct_capitalists=0.20)         # 20 capitalists, 10 firms
+    counts = [len(c.owned_firms) for c in _capitalists(many)]
+    assert sorted(counts) == [0] * 10 + [1] * 10
+    # A capitalist without firms is a low-MPC household on labour income alone.
+    idle = next(c for c in _capitalists(many) if not c.owned_firms)
+    assert idle.net_worth() == pytest.approx(idle.wealth, abs=1e-12)
+    assert idle.marginal_propensity() == many.capitalist_mpc

@@ -615,22 +615,44 @@ class Household(mesa.Agent):
 
 
 class Capitalist(Household):
-    """A household that also owns a firm and receives its dividends.
+    """A household that also owns firms and receives their dividends.
 
     It supplies labour like any household (can be employed or unemployed) and, in
-    addition, collects the dividends of the firm it owns.  Its net worth includes
-    the money and capital of that firm.
+    addition, collects the dividends of the firms it owns.  Its net worth includes
+    the money and capital of those firms.
+
+    Ownership is a **list**, not a single firm (brief 12).  The model assigns it by
+    cycling over the *firms*, so every firm has exactly one owner for any number of
+    capitalists >= 1:
+
+    * fewer capitalists than firms -> a capitalist owns several firms;
+    * more capitalists than firms  -> some capitalists own **none**.  That is a
+      declared case, not a degenerate one: such a household is simply a low-MPC
+      household living on labour income (and the benefit) alone.
+
+    Before brief 12 ownership was assigned by cycling over the *households*, which
+    left firms ownerless below the default ``pct_capitalists`` (their dividends
+    vanished -> money destroyed) and left stale ``owned_firm`` references above it
+    (net worth double-counted).  See ``MacroModel.__init__``.
     """
 
     is_capitalist = True
 
-    def __init__(self, model, firm_owned):
+    def __init__(self, model, owned_firms=None):
         super().__init__(model)
-        self.owned_firm = firm_owned
+        #: Firms owned by this capitalist; may legitimately be empty (see class doc).
+        self.owned_firms = list(owned_firms) if owned_firms else []
 
     def marginal_propensity(self):
         return self.model.capitalist_mpc
 
     def net_worth(self):
-        """Money balance + the money and capital of the owned firm."""
-        return self.wealth + self.owned_firm.capital + self.owned_firm.money_buffer
+        """Money balance + the money and capital of every firm owned.
+
+        Summing over the ownership list (and not over a possibly stale single
+        reference) is what keeps the wealth aggregate free of double counting: each
+        firm's capital enters exactly once, through its one owner.
+        """
+        return self.wealth + sum(
+            f.capital + f.money_buffer for f in self.owned_firms
+        )

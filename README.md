@@ -106,7 +106,14 @@ K(t+1)      = (1 - delta)*K(t) + I_delivered
 The firm cash account (`money_buffer`) is an **intra-period pass-through** and
 **returns to zero every period** - no money sequestration. **Conserved quantity
 (SFC):** `sum(household wealth + income) + sum(firm money_buffer)` is constant
-(deviation < 1e-9).
+(deviation < 1e-9) — across the `pct_capitalists` range, not only at the default
+(brief 12, §8).
+
+**Ownership.** `int(num_households * pct_capitalists)` households are capitalists; firms
+are assigned to them by cycling over the **firms**, so every firm has exactly one owner
+at any `pct_capitalists` (which is what keeps the money circuit closed). A capitalist may
+own several firms, or none — the latter is a low-MPC household on labour income alone, a
+declared case.
 
 **Consumption** (worker MPC `c1`, lower capitalist MPC, wealth effect `lambda`,
 bounded by money on hand):
@@ -434,6 +441,51 @@ lognormal `A` with the same variance need not have the same threshold.
 
 ---
 
+### 8. Firm ownership, and an invariant that only held at the default (brief 12)
+
+Not a result — a **defect corrected**, and a methodological point worth more than the fix.
+
+Ownership was assigned by cycling over the **households**: capitalist `i` owned firm
+`i % num_firms`. That is a bijection *only* at the default (100 households × 0.10 = 10
+capitalists, 10 firms). Off the default it broke in both directions, measured at seed 0
+over 200 steps:
+
+| `pct_capitalists` | capitalists | firms with an owner | money t=0 → t=200 | Σ net worth vs `K` |
+|---|---|---|---|---|
+| 0.05 | 5 | **5/10** | 400.00 → **11.34** | 0.53× |
+| 0.08 | 8 | **8/10** | 400.00 → **46.15** | 0.84× |
+| 0.10 | 10 | 10/10 | 400.00 → 400.00 ✓ | 1.05× |
+| 0.20 | 20 | 10/10 | 400.00 → 400.00 ✓ | **2.10×** |
+
+**Below the default, money is destroyed:** an ownerless firm's `dividend_pool` and
+residual `money_buffer` are paid out inside `if self.owner is not None`, so they simply
+vanish — a direct violation of the stock-flow invariant. **Above it, wealth is
+double-counted:** the assignment overwrote itself, leaving capitalists holding a stale
+`owned_firm` whose capital `net_worth()` still summed, inflating `Wealth_Gini`.
+
+The fix assigns ownership by cycling over the **firms**, so every firm has exactly one
+owner for any number of capitalists ≥ 1 (validated: zero capitalists raises). A capitalist
+may own several firms, or none — the latter is a declared case, a low-MPC household living
+on labour income alone, not a degenerate one. `Capitalist.owned_firm` became
+`owned_firms` (a list), with no compatibility alias: a silently ambiguous singular
+reference is what produced the defect.
+
+**Nothing committed moves.** At the default `j % 10 == j`, so firm `j` still belongs to
+capitalist `j` — the same assignment as before — and the ownership loop draws nothing from
+the RNG. A slice of the committed panels (`ces_b05`/`ces_b07`/`ces_b09`/`ces_b10`, 440
+cells at 2000 steps × 20 seeds, artifact-vs-artifact) reproduces **7/7 with
+`max_abs_dev = 0.0`**, via `scripts/check_brief12_nesting.py` →
+`results/ces_b12_byte_check.csv`.
+
+*The point worth keeping:* the SFC invariant was tested **only at the default
+configuration**. It held there, and nowhere else — and this is precisely what a global
+sensitivity analysis would have walked over in silence, reporting sensitivity indices for
+a model that leaks money. Invariants are now parametrised over the range a sweep will
+reach (`pct_capitalists ∈ {0.02 … 0.50}` in the suite), and the same reading is owed to
+`num_firms`, `num_households` and `initial_capital` **before** the global SA, not during.
+
+---
+
 ## Interpretive frame (read this before the results)
 
 * **The regime is demand-constrained almost everywhere.** In 76 of 77 viable
@@ -504,7 +556,7 @@ lognormal `A` with the same variance need not have the same threshold.
 
 ```text
 src/
-├── agents.py        Firm (normalised CES, wage-curve wage, internal financing), Household, Capitalist
+├── agents.py        Firm (normalised CES, wage-curve wage, internal financing), Household, Capitalist (owns a LIST of firms)
 ├── model.py         MacroModel: labour market, wage curve (U_REF, wage_from_curve), government (brief 09), period sequence, metrics
 └── experiment.py    Monte-Carlo runner, rho sweep, (sigma, rho) sign frontier, brief-05 robustness stack
 scripts/
@@ -514,10 +566,12 @@ scripts/
 ├── run_brief08.py   Regenerates the brief-08 adaptive-expectations sweep (sigma x rho x eta x lambda_e x c0) (reproducible)
 ├── run_brief09.py   Regenerates the brief-09 government sweep (dose-response + sigma*(eta;rr) + collapse map) (reproducible)
 ├── run_brief10.py   Regenerates the brief-10 firm-heterogeneity viability probe (aggregates vs spread + domino trace) (reproducible)
-└── compute_anchoring_ratios.py   Brief-11 I/Y and K/Y at the reference cells; reads committed panels, runs NO simulation
+├── compute_anchoring_ratios.py   Brief-11 I/Y and K/Y at the reference cells; reads committed panels, runs NO simulation
+└── check_brief12_nesting.py      Brief-12 nesting check: re-runs a SLICE of the committed panels and byte-compares (not a driver)
 notebooks/
 └── 01_Endogenous_Investment.ipynb   rho sweep at sigma=1 + sigma sweep with the sign frontier
 results/
+├── ces_b12_*.csv    brief-12 ownership-fix nesting check: byte-check summary + the regenerated slice; produced by scripts/check_brief12_nesting.py
 ├── ces_b11_anchoring_ratios.csv   brief-11 I/Y, K/Y, I/K by scenario and rho; produced by scripts/compute_anchoring_ratios.py
 ├── ces_b10_*.csv    brief-10 heterogeneity probe: aggregates vs spread, viability thresholds, domino trace; produced by scripts/run_brief10.py
 ├── ces_b09_*.csv    brief-09 government sweep: dose-response, sigma*(eta;rr), collapse map + trace; produced by scripts/run_brief09.py
@@ -527,7 +581,7 @@ results/
 └── ces_*.csv        brief-04 (sigma, rho) grid, derivatives and sign frontier
 tests/
 ├── conftest.py
-└── test_model.py    SFC + buffer==0, distribution, labour accounting, CES nesting, robustness stack, wage curve, adaptive expectations, government, heterogeneity probe
+└── test_model.py    SFC + buffer==0 (across pct_capitalists, not just at the default), distribution, labour accounting, CES nesting, robustness stack, wage curve, adaptive expectations, government, heterogeneity probe, firm ownership
 performance/
 └── engine.cpp       STALE: additive Phase-1 model, NOT the current core (do not use)
 requirements.txt
@@ -562,7 +616,10 @@ python scripts/run_brief10.py
 # recompute the brief-11 anchoring ratios (results/ces_b11_anchoring_ratios.csv); reads panels, no simulation (~1 s)
 python scripts/compute_anchoring_ratios.py
 
-# run the checks (SFC, buffer==0, distribution, labour accounting, CES nesting, wage curve, adaptive expectations, government, heterogeneity, bootstrap)
+# re-verify the brief-12 ownership fix changes nothing at the default (7 configs, 440 cells, ~2 min); exits nonzero on a FINDING
+python scripts/check_brief12_nesting.py
+
+# run the checks (SFC across pct_capitalists, buffer==0, distribution, labour accounting, CES nesting, wage curve, adaptive expectations, government, heterogeneity, ownership, bootstrap)
 python -m pytest tests/ -q
 ```
 

@@ -46,6 +46,7 @@
 | `expectation_gain` (λ_e) | **sweep**, default 1.0 | **Debole — sweep, non stima** | gain delle aspettative adattive sulla domanda (brief 08); nessuna stima puntuale affidabile per un ABM (aspettative adattive, Nerlove 1958; constant-gain learning, Evans & Honkapohja 2001). `λ_e=1` = aspettative statiche annidate bit-for-bit. **Esito misurato: σ\* e regione di collasso λ_e-invarianti entro CI/rumore** |
 | `benefit_replacement_rate` (rr) | **sweep**, default 0.0 | **Buono — ancorabile (OECD)** | sussidio di disoccupazione = frazione del salario corrente `w_t`, finanziato da flat tax a bilancio in pareggio (brief 09, punto 15). NRR netto OECD ~58% iniziale, 50–80% low earner; gross RR più bassi ~0.2–0.6. Sweep rr∈{0, 0.25, 0.5, 0.75} bracket-a la banda 0.4–0.6. `rr=0` annida il modello senza governo bit-for-bit. **Esito: crowding-in dove demand-constrained; NON stabilizza il collasso c0=2.0** |
 | `max_tax` | 0.6 | **Convenzione dichiarata — non stima** | cap sull'aliquota di bilancio in pareggio; se il sussidio desiderato richiede di più, si scala giù (budget resta in pareggio). Guardrail, non stima. `Tax_Rate` realizzato e `frac_periods_at_cap` sono **esiti misurati** |
+| `pct_capitalists` | 0.10, **ora sweepabile** (range SA 0.05–0.20) | **Scelta di modellazione — dimensione di disuguaglianza (Teglio 2025)** | quota di famiglie che possiede imprese. **Era di fatto bloccata al default da un difetto** (proprietà assegnata ciclando sulle famiglie): sotto 0.10 imprese senza proprietario ⇒ **moneta distrutta**; sopra 0.10 riferimenti obsoleti ⇒ **ricchezza contata due volte**. Corretto dal brief 12 (2026-07-20): ciclo sulle **imprese**, SFC intatta e testata su tutto il range |
 
 Benchmark di validazione (non parametri, ma target): quota salari, K/Y, quota
 profitti, I/Y, utilizzo — vedi sotto.
@@ -671,6 +672,70 @@ serve solo a garantire che il transiente sia esaurito.
 
 ---
 
+## Proprietà d'impresa — `pct_capitalists` sbloccato (brief 12, prerequisito SA)
+
+> Il brief 12 non aggiunge parametri, flussi o step: **corregge un difetto** che rendeva
+> `pct_capitalists` inutilizzabile fuori dal suo default, e sposta l'invariante SFC dal
+> singolo punto di default a **tutto il range del parametro**. Prerequisito della SA
+> globale (punto 5), che deve poter sweepare la disuguaglianza.
+
+### `pct_capitalists` = 0.10 (default), **sweepabile** — quota di famiglie proprietarie
+- **Ruolo:** `int(num_households · pct_capitalists)` famiglie sono `Capitalist` — MPC più
+  bassa (`capitalist_mpc`) e incasso dei dividendi. È la **dimensione di disuguaglianza**
+  del modello, ereditata da **Teglio (2025)**: le famiglie non sono tutte uguali né nella
+  propensione al consumo né nella fonte di reddito.
+- **Il difetto (misurato, non ipotizzato — seed 0, 200 step, altri default):** la
+  proprietà si assegnava ciclando sulle **famiglie** (`firms[i % num_firms]` per
+  `i < num_capitalists`), che è una biiezione **solo** al default (10 capitalisti,
+  10 imprese).
+
+  | `pct_capitalists` | capitalisti | imprese con proprietario | moneta t=0 → t=200 | Σ net worth vs K |
+  |---|---|---|---|---|
+  | 0.02 | 2 | **2/10** | 400.00 → **6.14** | 0.21× |
+  | 0.05 | 5 | **5/10** | 400.00 → **11.34** | 0.53× |
+  | 0.08 | 8 | **8/10** | 400.00 → **46.15** | 0.84× |
+  | 0.10 | 10 | 10/10 | 400.00 → 400.00 ✓ | 1.05× |
+  | 0.15 | 15 | 10/10 | 400.00 → 400.00 ✓ | 1.57× |
+  | 0.20 | 20 | 10/10 | 400.00 → 400.00 ✓ | **2.10×** |
+  | 0.50 | 50 | 10/10 | 400.00 → 400.00 ✓ | **5.25×** |
+
+  **Sotto 0.10 — moneta distrutta:** i trasferimenti in `Firm.step_accounting` e
+  `Firm.step_investment` sono dentro `if self.owner is not None`, quindi il
+  `dividend_pool` e il residuo di `money_buffer` delle imprese senza proprietario
+  **svaniscono**. Violazione diretta dell'invariante SFC.
+  **Sopra 0.10 — ricchezza contata due volte:** l'assegnazione si sovrascriveva, e i
+  capitalisti rimasti con un `owned_firm` **obsoleto** non incassavano dividendi ma ne
+  sommavano ancora il capitale in `net_worth()` → `Wealth_Gini` gonfiato. (Il rapporto
+  `Σ net worth / K` resta ≥1 anche dopo il fix per una ragione legittima: include la
+  moneta propria dei capitalisti, 2.0 a testa a t=0.)
+- **Il fix (brief 12):** la proprietà si assegna ciclando sulle **imprese**
+  (`firm.owner = capitalists[j % n_cap]`), in un secondo loop che **non estrae dall'RNG**
+  — così la sequenza dei `random.sample` dei link di consumo è invariata e l'annidamento
+  al default è byte-identico. `Capitalist.owned_firm` (singolare) è **sostituito** da
+  `owned_firms` (lista): nessuna property di compatibilità, perché l'unico chiamante era
+  `net_worth()` e un alias silenziosamente ambiguo è esattamente ciò che ha prodotto il
+  difetto. Validazione: 0 capitalisti ⇒ `ValueError`.
+- **Semantica dichiarata fuori dal default:** con meno capitalisti che imprese un
+  capitalista ne possiede **più d'una**; con più capitalisti che imprese alcuni non ne
+  possiedono **nessuna** — una famiglia a MPC bassa che vive di solo reddito da lavoro
+  (più il sussidio, se `rr>0`). Caso dichiarato, non degenere.
+- **Annidamento verificato:** al default `j % 10 == j`, cioè l'impresa `j` al capitalista
+  `j` — **identica** all'assegnazione precedente. Byte-check di una fetta dei panel
+  committati (`ces_b05`, `ces_b07`, `ces_b09`, `ces_b10`; 440 celle a 2000 step, 20 seed,
+  artifact-su-disco): **7/7 PASS, max_abs_dev = 0.0**. Vedi
+  `scripts/check_brief12_nesting.py`, `results/ces_b12_byte_check.csv`.
+- **Verdetto:** **scelta di modellazione, ora sweepabile.** Range proposto per la SA
+  globale **0.05–0.20** (Teglio 2025 come referente della dimensione, non del livello:
+  nessuna stima puntuale è pretesa). Il default 0.10 resta e nessun risultato committato
+  si muove.
+- **Nota metodologica, da tenere:** l'invariante SFC era testato **solo al default**.
+  Valeva lì e in nessun altro punto dello spazio dei parametri — ed è esattamente ciò che
+  una SA globale avrebbe calpestato in silenzio, producendo indici di sensitivity su un
+  modello che perde moneta. Da qui la riformulazione dell'invariante in `CLAUDE.md` §9:
+  *SFC su tutto lo spazio dei parametri, testata lì*.
+
+---
+
 ## `c0` — esito dello stress test (brief 05 §2) — **il cerotto non regge, ma non per la ragione attesa**
 
 Misurato: griglia σ×ρ×`c0`, 20 seed, 2000 step, media ultime 50 (Stadio A, 3.080 run);
@@ -1045,6 +1110,15 @@ ancoraggio.
    vivo. Fino ad allora: leve di regime **dichiarate**, non stime.
 6. **Prossimo:** al punto 9 (markup endogeno) il legame markup↔quota salari salta
    e serviranno dati sui markup (De Loecker et al.).
+7. **NUOVO (brief 12) — gli invarianti vanno testati sul RANGE, non al default.** La
+   SFC era verificata solo alla configurazione di default e lì valeva; fuori di lì
+   `pct_capitalists` distruggeva moneta (sotto 0.10) o gonfiava la ricchezza (sopra).
+   Corretto e testato su tutto il range. **Da fare prima della SA globale:** rileggere
+   allo stesso modo gli altri parametri che la SA vuole sweepare e che nessun test
+   tocca fuori dal default — in particolare `num_firms`, `num_households` e
+   `initial_capital` (quest'ultimo già dichiarato come selettore di bacino). Il
+   difetto era latente da sempre: non è stato introdotto da un brief, è stato
+   **scoperto** guardando lo spazio dei parametri invece del punto.
 
 ---
 

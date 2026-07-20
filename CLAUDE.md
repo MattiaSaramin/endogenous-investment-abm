@@ -532,6 +532,38 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   sono citate con ID e data ma la ri-verifica automatica non è stata possibile (FRED
   risponde 403 a fetch programmatici) — dichiarato nelle note.
 
+- **Brief 12 — proprietà d'impresa e SFC fuori dal default (prerequisito della SA
+  globale)**: correzione di un **bug latente**, nessun parametro nuovo, nessuna modifica a
+  flussi o sequenza. La proprietà si assegnava ciclando sulle **famiglie**
+  (`firms[i % num_firms]` per `i < num_capitalists`): biiezione **solo** al default
+  (10 capitalisti, 10 imprese). **Sotto 0.10 — moneta distrutta** (imprese senza
+  proprietario: `dividend_pool` e residuo di `money_buffer` svaniscono dentro
+  `if self.owner is not None`): misurato, moneta 400.00 → **11.34** a `pct=0.05`,
+  → **46.15** a 0.08, → **6.14** a 0.02, in 200 step. **Sopra 0.10 — ricchezza contata
+  due volte:** riferimenti `owned_firm` obsoleti ancora sommati in `net_worth()`,
+  Σ net worth **840.0 contro K=400.0 (2.10×)** a `pct=0.20` (5.25× a 0.50).
+  **Fix:** ciclo sulle **imprese** (`firm.owner = capitalists[j % n_cap]`), in un secondo
+  loop che **non estrae dall'RNG** (la sequenza dei `random.sample` dei link di consumo è
+  invariata); `Capitalist.owned_firm` → **`owned_firms` (lista)**, `net_worth()` somma
+  sulla lista (nessun alias di compatibilità: l'ambiguità silenziosa è ciò che ha prodotto
+  il difetto); `ValueError` se i capitalisti sono 0. **Semantica dichiarata:** un
+  capitalista può possedere più imprese (n_cap < n_firms) o nessuna (n_cap > n_firms —
+  famiglia a MPC bassa con solo reddito da lavoro). **Annidamento: al default
+  `j % 10 == j`**, quindi assegnazione identica alla precedente — byte-check di una fetta
+  dei panel committati (`ces_b05`/`ces_b07`/`ces_b09`/`ces_b10`, 440 celle, 2000 step,
+  20 seed, artifact-su-disco): **7/7 PASS, max_abs_dev = 0.0**; nessun risultato committato
+  si muove. **463 test verdi** (438 invariati + 25 nuovi: SFC parametrizzata su
+  `pct_capitalists ∈ {0.02, 0.05, 0.10, 0.15, 0.20, 0.50}`, copertura della proprietà,
+  assenza di doppio conteggio, annidamento al default, determinismo fuori dal default,
+  validazione). Script `scripts/check_brief12_nesting.py` (**non un driver**: non genera
+  scienza nuova, ri-esegue una fetta e confronta); CSV `results/ces_b12_byte_check.csv`,
+  `ces_b12_nesting_slice.csv`; note in `parameter_notes.md` (`pct_capitalists` **ora
+  sweepabile**, range SA 0.05–0.20). **Lezione metodologica registrata in §9:** l'invariante
+  SFC era testato **solo al default** — è esattamente ciò che una SA globale avrebbe
+  calpestato in silenzio, producendo indici di sensitivity su un modello che perde moneta.
+  **Fuori scope:** la SA globale (brief successivo); strutture di proprietà più ricche
+  (quote frazionarie, mercato azionario, proprietà incrociata) = future work dichiarato.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
@@ -587,6 +619,11 @@ modellazione. Stato attuale:
 
 **Punto 5 (analisi di sensibilità globale): RIMANDATO PER DECISIONE** al modello
 finito — non si stabilisce la robustezza su una tappa intermedia nota.
+**Prerequisito saldato dal brief 12:** `pct_capitalists` è ora sweepabile (prima
+rompeva la SFC fuori dal default). **Prerequisito ancora aperto:** gli altri parametri
+strutturali che la SA vorrà muovere e che nessun test tocca fuori dal default —
+`num_firms`, `num_households`, `initial_capital` — vanno riletti allo stesso modo
+**prima** della SA, non durante.
 
 **Debito residuo:** ~~verificare I/Y con una serie BEA primaria~~ e ~~fissare
 l'unità temporale del periodo~~ — **entrambi CHIUSI dal brief 11** (I/Y verificato
@@ -608,10 +645,16 @@ salda questo debito** (i risultati λ_e sono nel README; notebook al consolidame
 Claude Code non conosce la storia del progetto e non vede queste conversazioni.
 Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 
-- **Stock-flow consistency:** nessuna creazione/distruzione di moneta nel
-  settlement. Con il finanziamento a utili trattenuti, la ritenzione **non deve**
-  rompere la conservazione (profitti trattenuti = posta monetaria d'impresa, da
-  aggiungere alla grandezza conservata).
+- **Stock-flow consistency — su tutto lo spazio dei parametri, e testata lì:**
+  nessuna creazione/distruzione di moneta nel settlement. Con il finanziamento a
+  utili trattenuti, la ritenzione **non deve** rompere la conservazione (profitti
+  trattenuti = posta monetaria d'impresa, da aggiungere alla grandezza conservata).
+  *(Riformulato dal brief 12. Diceva solo "nel settlement", e i test lo verificavano
+  **solo alla configurazione di default**: `pct_capitalists` fuori dal default
+  distruggeva moneta — 400.00 → 11.34 in 200 step a 0.05 — perché le imprese senza
+  proprietario non distribuivano nulla. Un invariante testato in un punto vale in
+  quel punto. Ogni invariante va parametrizzato sui parametri che la SA globale
+  vorrà sweepare, **prima** della SA.)*
 - **Sequenza del periodo** in `model.py`, esplicita e motivata nel docstring.
   Sequenza **effettiva sul codice committato** (aggiornata al brief 09):
   wage curve (step 0, brief 07) → mercato del lavoro → domanda → piani di
@@ -652,7 +695,9 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 ## 11. Struttura del codice
 
 - `src/agents.py` — Firm (CES normalizzata, salario dalla wage curve, finanziamento
-  interno, aspettativa adattiva di domanda), Household, Capitalist; helper CES
+  interno, aspettativa adattiva di domanda), Household, Capitalist (brief 12:
+  **`owned_firms` lista** al posto di `owned_firm`, `net_worth()` che somma sulla lista
+  — nessun doppio conteggio, nessun alias di compatibilità); helper CES
   (`ces_capacity`, `ces_labour_*`, `ces_mpl`, …) e `adaptive_expectation` (brief 08,
   branch esplicito λ_e=1). Nessuna modifica funzionale al brief 09: solo docstring
   aggiornati dove i disoccupati "earn nothing" (ora salvo il sussidio brief 09). Nessuna modifica al brief 10: la `A` d'impresa era già un attributo
@@ -667,7 +712,9 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   (rr, default 0.0, validato ≥0, branch esplicito rr=0) e `max_tax` (0.6, validato
   ∈[0,1]) (brief 09); helper `productivity_fan` (ventaglio mean-preserving, branch
   esplicito spread=0), parametro `productivity_spread` (default 0.0, validato ∈[0,1)),
-  costanti `DEAD_FIRM_K`/`TOPK_N` e reporter `Dead_Firms`/`TopK_Share` (brief 10)
+  costanti `DEAD_FIRM_K`/`TOPK_N` e reporter `Dead_Firms`/`TopK_Share` (brief 10);
+  assegnazione della proprietà **ciclando sulle imprese**, in un loop separato che non
+  tocca l'RNG, e validazione `pct_capitalists` ⇒ almeno 1 capitalista (brief 12)
 - `src/experiment.py` — runner Monte-Carlo, sweep ρ, griglia (σ, ρ) e sign
   frontier (brief 04), stack di robustezza brief 05 (`run_grid_panel`,
   `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …); `eta`,
@@ -714,9 +761,19 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   parallelismo ⇒ **deterministico per costruzione**; **non coperto da pytest**
   (dichiarato: non c'è comportamento del modello da pinnare). Emette anche `I/K`, che
   è la verifica della chiusura `I = δK` a g=0 (misurato 0.0500 = δ)
+- `scripts/check_brief12_nesting.py` — **brief 12**, e **non un driver di simulazione**:
+  non produce scienza nuova e non rigenera nessun panel committato. Ri-esegue una **fetta**
+  dei panel (7 config × 20 seed × 2000 step = 440 celle, sia `c0`, η on/off, governo on/off,
+  dispersione on/off) col codice corrente e la confronta **artifact-su-disco** con le righe
+  committate: è ciò che rende falsificabile la claim di annidamento del fix di proprietà.
+  Fetta e non griglia intera perché la claim è **meccanica** (`j % 10 == j`): una cella
+  rappresentativa per referente la falsifica se è sbagliata. Scrive
+  `results/ces_b12_byte_check.csv` e `ces_b12_nesting_slice.csv`; exit code ≠ 0 su FINDING
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati. `ces_b11_anchoring_ratios.csv` (brief 11) →
+- `results/` — output misurati committati. `ces_b12_byte_check.csv` e
+  `ces_b12_nesting_slice.csv` (brief 12) → rigenerati da `check_brief12_nesting.py`.
+  `ces_b11_anchoring_ratios.csv` (brief 11) →
   rigenerato da `compute_anchoring_ratios.py`. `ces_b10_*.csv` (brief 10) → rigenerati
   da `run_brief10.py`. `ces_b09_*.csv` (brief 09) → rigenerati
   da `run_brief09.py`. `ces_b08_*.csv` (brief 08) → rigenerati
@@ -736,8 +793,11 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   SFC/determinismo a rr>0, lag del sussidio, crowding-in direzionale), eterogeneità
   (brief 10: ventaglio e mean-preservation, annidamento spread=0, validazione del range,
   SFC/determinismo a spread>0, reporter, collasso direzionale, e il pin del fatto che a
-  spread=0 le imprese divergono comunque per via della rete). **438 test.** *(Brief 11
-  non aggiunge test: non tocca `src/`.)*
+  spread=0 le imprese divergono comunque per via della rete), proprietà d'impresa
+  (brief 12: SFC parametrizzata su `pct_capitalists`, copertura della proprietà, assenza
+  di doppio conteggio in `net_worth()`, biiezione al default = annidamento, determinismo
+  fuori dal default, `ValueError` a 0 capitalisti, semantica multi-proprietà/nessuna
+  proprietà). **463 test.** *(Brief 11 non aggiunge test: non tocca `src/`.)*
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di

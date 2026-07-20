@@ -563,6 +563,14 @@ class MacroModel(mesa.Model):
 
     Parameters
     ----------
+    pct_capitalists : float
+        Share of households that own firms — the inequality dimension of Teglio (2025).
+        ``int(num_households * pct_capitalists)`` must be >= 1.  Ownership is assigned
+        by cycling over the FIRMS (brief 12), so every firm has exactly one owner at
+        any value: below ``num_firms / num_households`` a capitalist owns several
+        firms, above it some capitalists own none (a declared case — a low-MPC
+        household on labour income alone).  **Sweepable**: SFC holds across the range,
+        and is tested there, not only at the default.
     sigma : float
         Elasticity of substitution between capital and labour.  ``1.0`` (default) is
         the Cobb-Douglas core and reproduces branch ``labour-market`` exactly;
@@ -711,6 +719,15 @@ class MacroModel(mesa.Model):
         # producing a permanently dead firm.
         if not (0.0 <= productivity_spread < 1.0):
             raise ValueError("productivity_spread must be in [0, 1)")
+        # Ownership is assigned by cycling over the firms (brief 12), which needs at
+        # least one capitalist to cycle onto.  An economy whose firms have no owner is
+        # not defined here: the dividends and the residual buffer would have nowhere to
+        # go and money would be destroyed — precisely the defect brief 12 removes.
+        if int(num_households * pct_capitalists) < 1:
+            raise ValueError(
+                "pct_capitalists must leave at least one capitalist "
+                f"(got {pct_capitalists} x {num_households} households -> 0)"
+            )
 
         # --- parameters -------------------------------------------------
         self.num_firms = num_firms
@@ -780,11 +797,11 @@ class MacroModel(mesa.Model):
 
         # --- build households -------------------------------------------
         num_capitalists = int(num_households * pct_capitalists)
+        capitalists = []
         for i in range(num_households):
             if i < num_capitalists:
-                owned = firms[i % num_firms]
-                household = Capitalist(self, firm_owned=owned)
-                owned.owner = household
+                household = Capitalist(self)
+                capitalists.append(household)
             else:
                 household = Household(self)
 
@@ -800,6 +817,25 @@ class MacroModel(mesa.Model):
             household.num_consumption_links = len(linked)
             for firm in linked:
                 firm.customers.append(household)
+
+        # --- assign ownership -------------------------------------------
+        # Cycle over the FIRMS, not the households (brief 12).  This runs in its own
+        # loop, after the one above, and draws nothing from the RNG: the sequence of
+        # ``self.random.sample`` calls is untouched, so the default configuration stays
+        # bit-for-bit identical (at 10 capitalists and 10 firms ``j % 10 == j``, i.e.
+        # exactly the old household-indexed assignment).
+        #
+        # The old assignment cycled over households, which broke outside the default:
+        # below it firms were left ownerless and their dividends and residual buffer
+        # vanished (money destroyed, SFC violated); above it the assignment overwrote
+        # itself, leaving capitalists with a stale ``owned_firm`` whose capital they
+        # still counted in ``net_worth`` (wealth double-counted, Gini inflated).
+        # Cycling over the firms gives every firm exactly one owner for any
+        # ``num_capitalists >= 1``, so no flow can leak at any ``pct_capitalists``.
+        for j, firm in enumerate(firms):
+            owner = capitalists[j % num_capitalists]
+            firm.owner = owner
+            owner.owned_firms.append(firm)
 
         # Initial expectations so the first-period labour market is not a shock.  Each
         # firm expects what IT could produce, i.e. with its own A_i (brief 10): seeding a
