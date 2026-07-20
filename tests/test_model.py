@@ -1835,3 +1835,96 @@ def test_initial_capital_per_worker_selects_the_basin():
     dead, alive = steady(5), steady(10)
     assert dead["Unemployment_Rate"] > 0.99 and dead["Total_Capital"] < 1.0
     assert alive["Unemployment_Rate"] < 0.9 and alive["Total_Capital"] > 100.0
+
+
+# ----------------------------------------------------------------------
+# u_min exposed, and the new SA reporter (brief 13)
+# ----------------------------------------------------------------------
+
+def test_u_min_defaults_to_the_derived_value():
+    """None keeps 1/N — the pre-brief-13 behaviour, unchanged."""
+    for n in (50, 100, 200):
+        assert MacroModel(seed=0, num_households=n).U_min == pytest.approx(1.0 / n)
+    assert MacroModel(seed=0, u_min=0.02).U_min == 0.02
+
+
+def test_u_min_none_nests_the_derived_value_bit_for_bit():
+    """Passing the derived value explicitly must be indistinguishable from the default:
+    brief 13 EXPOSES a constant, it does not change the wage curve."""
+    def outputs(**kw):
+        m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10, **kw)
+        out = []
+        for _ in range(200):
+            m.step()
+            out.append(sum(f.production for f in _firms(m)))
+        return out
+    assert outputs() == outputs(u_min=None) == outputs(u_min=1.0 / 100)
+
+
+@pytest.mark.parametrize("bad", [0.0, -0.1, 1.0, 1.5])
+def test_u_min_out_of_range_raises(bad):
+    with pytest.raises(ValueError):
+        MacroModel(seed=0, u_min=bad)
+
+
+def test_u_min_changes_the_wage_only_through_the_guard():
+    """The guard binds only when U < u_min, so a larger u_min raises the wage exactly
+    where unemployment is below it and nowhere else (the brief-07 oscillation mechanism)."""
+    # Below the guard: raising u_min lowers max(U, u_min)^(-eta) -> lower wage.
+    hi_guard = wage_from_curve(0.9, 0.001, 0.10, U_REF, 0.05, 0.45)
+    lo_guard = wage_from_curve(0.9, 0.001, 0.10, U_REF, 0.005, 0.45)
+    assert hi_guard < lo_guard
+    # Above the guard: u_min is irrelevant.
+    assert (wage_from_curve(0.9, 0.30, 0.10, U_REF, 0.05, 0.45)
+            == wage_from_curve(0.9, 0.30, 0.10, U_REF, 0.005, 0.45))
+
+
+@pytest.mark.parametrize("sigma", [
+    1.0 - 5e-4, 1.0 - 1e-4, 1.0 - 1e-5, 1.0 - 2e-6,
+    1.0 + 2e-6, 1.0 + 1e-5, 1.0 + 1e-4, 1.0 + 5e-4,
+])
+def test_labour_for_demand_survives_the_cobb_douglas_neighbourhood(sigma):
+    """REGRESSION (brief 13).  The closed-form CES inverse overflows as r -> 0, in a band
+    R_EPS is three orders of magnitude too narrow to cover: exp's argument passes 709 once
+    |r| < ~5.7e-4, i.e. sigma within ~0.0006 of 1.  Every committed sweep uses sigma = 1.0
+    EXACTLY (r == 0.0, caught by the R_EPS branch), so a continuously sampled sigma is the
+    first thing to land in the gap — which is how the SA found it."""
+    L = ces_labour_for_demand(50.0, 40.0, A, K0, L0, PI0, sigma)
+    assert math.isfinite(L) and L > 0.0
+
+
+def test_labour_for_demand_is_continuous_through_sigma_one():
+    """The guard must return the LIMIT, not a saturating +inf: a value that big would
+    claim no finite L can meet ordinary demand.  Checked against the Cobb-Douglas value
+    the neighbourhood converges to."""
+    cd = ces_labour_for_demand(50.0, 40.0, A, K0, L0, PI0, 1.0)
+    for sigma in (1.0 - 1e-4, 1.0 - 1e-6, 1.0 + 1e-6, 1.0 + 1e-4):
+        got = ces_labour_for_demand(50.0, 40.0, A, K0, L0, PI0, sigma)
+        assert got == pytest.approx(cd, rel=1e-3)
+
+
+@pytest.mark.parametrize("sigma", SIGMAS)
+def test_guard_does_not_touch_the_swept_sigmas(sigma):
+    """Away from r ~ 0 the guard must be inert — it may not perturb any value the
+    committed grids actually use."""
+    K, Ye = 40.0, 50.0
+    r = (sigma - 1.0) / sigma
+    L = ces_labour_for_demand(Ye, K, A, K0, L0, PI0, sigma)
+    if math.isfinite(L) and L > 0.0:
+        # Round-trip: the labour returned must reproduce the demand it was solved for.
+        assert cap(K, L, sigma) == pytest.approx(Ye, rel=1e-9)
+    assert abs(r) > 5.7e-4 or sigma == 1.0      # the swept grid avoids the gap entirely
+
+
+def test_capitalist_consumption_reporter():
+    """It is exactly the capitalists' realised consumption, and it is NOT in the panel
+    metric list (adding a column there would break every committed byte-check)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0)
+    for _ in range(50):
+        m.step()
+    expected = sum(h.actual_consumption for h in _households(m) if isinstance(h, Capitalist))
+    df = m.datacollector.get_model_vars_dataframe()
+    assert df["Capitalist_Consumption"].iloc[-1] == pytest.approx(expected, abs=1e-12)
+    # Capitalists are a strict subset of households, so it must be below total consumption.
+    assert 0.0 < df["Capitalist_Consumption"].iloc[-1] < df["Consumption"].iloc[-1]
+    assert "Capitalist_Consumption" not in _PANEL_METRICS

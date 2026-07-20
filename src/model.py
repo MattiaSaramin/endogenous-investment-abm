@@ -262,6 +262,24 @@ def compute_wealth_gini(model):
     return compute_gini(net_worth)
 
 
+def compute_capitalist_consumption(model):
+    """Realised consumption of the capitalist households (brief 13).
+
+    Carries the **Kaleckian intervention**.  Brief 11 established that the accounting
+    identity ``Pi - I = C - W`` is a TAUTOLOGY here and cannot settle the direction of
+    causation: it holds whatever drives what.  Kalecki's claim ("capitalists earn what
+    they spend") is causal, so testing it needs an intervention, not an identity —
+    vary ``capitalist_mpc``, watch this reporter move, and see whether the profit share
+    follows.  That is what the SA sweep of ``capitalist_mpc`` buys.
+
+    NOT in ``_PANEL_METRICS``: adding a column there would change every committed panel's
+    serialisation and break the brief-05..12 byte-checks.  It travels through the
+    ``metrics`` override introduced in brief 08 instead (verified by a control byte-check).
+    """
+    return sum(h.actual_consumption for h in _households(model)
+               if isinstance(h, Capitalist))
+
+
 def compute_output(model):
     return sum(f.production for f in _firms(model))
 
@@ -649,6 +667,15 @@ class MacroModel(mesa.Model):
         benefit is indexed to ``w_t``, not ``w_bar``, so at high ``U`` the wage curve
         lowers it (a procyclical floor — reported, not hidden).  Anchorable to OECD net
         replacement rates (see parameter_notes.md); swept, not chosen.  Must be >= 0.
+    u_min : float or None
+        Lower guard on unemployment inside the wage curve: below the workforce resolution
+        ``U`` is not observable, and ``U -> 0`` would send ``w -> +inf`` for ``eta > 0``.
+        ``None`` (default) keeps the derived ``1/num_households`` — i.e. every result
+        committed before brief 13 is reproduced bit-for-bit — while an explicit value
+        makes the convention sweepable.  It IS a convention, not an estimate, and the
+        amplitude of the wage oscillation that drives the c0 = 2.0 collapse rests on it
+        (brief 07), which is why brief 13 exposes rather than fixes it.  Exposing a
+        constant is not adding a mechanism: the wage-curve formula is unchanged.
     max_tax : float
         Cap on the balanced-budget tax rate (a declared convention/guardrail, not an
         estimate).  When the desired transfer would need more, the benefit is scaled
@@ -687,6 +714,9 @@ class MacroModel(mesa.Model):
         # Wage curve (brief 07): eta = 0 nests the fixed-wage model exactly
         eta=0.0,
         wage_floor=0.45,
+        # u_min = None keeps the derived 1/num_households (brief 13: exposed so the
+        # global SA can sweep the convention; None reproduces every earlier result).
+        u_min=None,
 
         # Internal financing / investment
         retention_ratio=0.40,
@@ -732,6 +762,8 @@ class MacroModel(mesa.Model):
         # least one capitalist to cycle onto.  An economy whose firms have no owner is
         # not defined here: the dividends and the residual buffer would have nowhere to
         # go and money would be destroyed — precisely the defect brief 12 removes.
+        if u_min is not None and not (0.0 < u_min < 1.0):
+            raise ValueError("u_min must be in (0, 1) when given explicitly")
         if int(num_households * pct_capitalists) < 1:
             raise ValueError(
                 "pct_capitalists must leave at least one capitalist "
@@ -762,7 +794,15 @@ class MacroModel(mesa.Model):
         self.eta = eta
         self.wage_floor = wage_floor
         #: Below the workforce resolution U is not observable; guards w -> inf at U = 0.
-        self.U_min = 1.0 / num_households if num_households > 0 else 0.0
+        #: ``None`` (default) keeps the derived 1/N, i.e. the pre-brief-13 behaviour
+        #: exactly; an explicit value makes the convention SWEEPABLE, which is what the
+        #: brief-07 debt asked for (the amplitude of the wage oscillation rests on it).
+        #: The wage-curve formula itself is untouched — this exposes a constant, it does
+        #: not add a mechanism.
+        if u_min is None:
+            self.U_min = 1.0 / num_households if num_households > 0 else 0.0
+        else:
+            self.U_min = u_min
 
         self.retention_ratio = retention_ratio
         self.beta = beta
@@ -897,6 +937,10 @@ class MacroModel(mesa.Model):
                 # TopK_Share is TOPK_N/num_firms while the firms stay homogeneous.
                 "Dead_Firms": compute_dead_firms,
                 "TopK_Share": compute_topk_share,
+                # Kaleckian intervention (brief 13).  Collected here so the SA can read
+                # it, but deliberately NOT added to experiment._PANEL_METRICS: the
+                # committed panels must keep their exact column set and serialisation.
+                "Capitalist_Consumption": compute_capitalist_consumption,
             }
         )
         self.datacollector.collect(self)

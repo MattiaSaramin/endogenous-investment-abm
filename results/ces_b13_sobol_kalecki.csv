@@ -1,0 +1,4 @@
+pair,corr
+capitalist_mpc -> Capitalist_Consumption,0.4088748213294717
+Capitalist_Consumption -> profit LEVEL,0.8310048020085672
+Capitalist_Consumption -> profit SHARE,-0.0645609693603441

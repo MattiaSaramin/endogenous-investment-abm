@@ -448,6 +448,164 @@ def run_grid_panels(
     ]
 
 
+# ======================================================================
+# Global sensitivity analysis (brief 13)
+# ======================================================================
+
+#: The treatment: every design point is evaluated at BOTH retention ratios and the QoI is
+#: the difference.  Both sit inside the canonical viable support (RHO_SWEEP_B05).
+SA_RHO_LO, SA_RHO_HI = 0.35, 0.55
+
+#: A run counts as collapsed at ``U -> 1`` or ``K -> 0`` (brief 13 §3.2).  Output is not
+#: used as the criterion here: it is the numerator of the QoI, and a viability rule
+#: written on the QoI itself would build in exactly the correlation the SA measures.
+SA_U_COLLAPSE = 0.999
+SA_K_COLLAPSE = 1.0
+
+#: Metrics a design point carries out of each run.  ``Capitalist_Consumption`` rides the
+#: ``metrics`` override (brief 08) rather than ``_PANEL_METRICS``, so the committed panels
+#: keep their exact columns and the brief-05..12 byte-checks still pass.
+SA_METRICS = [
+    "Output", "Total_Capital", "Investment", "Unemployment_Rate", "Wage_Share",
+    "Profit_Share", "Average_Utilization", "Capitalist_Consumption", "Tax_Rate",
+    "Consumption", "Employment", "Wage_Rate", "Money_Buffer",
+]
+
+
+def _sa_job(job):
+    """Run one (point, rho, seed) cell for the SA.  Module-level and picklable.
+
+    Unlike :func:`_panel_job_tagged` the whole parameter vector — ``sigma`` included —
+    travels inside ``params``, because in the SA *every* design point has its own sigma.
+    ``run_grid_panels`` shares a single ``sigmas`` list across its configs, so it cannot
+    express that; the single-pool discipline is kept, the grid abstraction is not.
+    """
+    idx, rho, seed, steps, tail, params, metrics = job
+    df = run_single(rho, steps=steps, seed=seed, **params)
+    steady = df[df.index >= steps - tail].mean()
+
+    row = {"point": idx, "rho": rho, "seed": seed}
+    row.update({m: float(steady[m]) for m in metrics})
+    return row
+
+
+def run_design_points(
+    points,
+    rho_lo=SA_RHO_LO,
+    rho_hi=SA_RHO_HI,
+    seeds=5,
+    steps=DEFAULT_STEPS,
+    tail=50,
+    workers=None,
+    metrics=None,
+):
+    """Evaluate SA design points at both retention ratios, in ONE process pool.
+
+    ``points`` is a list of ``MacroModel`` kwarg dicts (one per row of the SALib sample).
+    Returns the raw per-(point, rho, seed) frame; :func:`qoi_from_runs` reduces it.
+
+    **Common random numbers.** Every point is run at the SAME seeds ``0..seeds-1`` at BOTH
+    rho values.  This is not a detail: the QoI is a *difference* of two noisy quantities,
+    and with independent seeds that difference is noise on noise — the Sobol indices would
+    then largely decompose the variance of the seed draw rather than of the parameters.
+    Pairing the seeds cancels the common component, which is why the difference is taken
+    per seed and averaged afterwards (see :func:`qoi_from_runs`), never as a difference of
+    means over unrelated draws.
+    """
+    metrics = list(SA_METRICS) if metrics is None else list(metrics)
+    jobs = [
+        (idx, rho, seed, steps, tail, params, metrics)
+        for idx, params in enumerate(points)
+        for rho in (rho_lo, rho_hi)
+        for seed in range(seeds)
+    ]
+
+    if workers == 1:
+        rows = [_sa_job(j) for j in jobs]
+    else:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            rows = list(pool.map(_sa_job, jobs, chunksize=4))
+
+    return pd.DataFrame(rows).sort_values(["point", "rho", "seed"], ignore_index=True)
+
+
+def qoi_from_runs(runs, rho_lo=SA_RHO_LO, rho_hi=SA_RHO_HI,
+                  u_collapse=SA_U_COLLAPSE, k_collapse=SA_K_COLLAPSE):
+    """Reduce raw SA runs to one row of QoIs per design point.
+
+    Returns, per point:
+
+    ``slope_raw``
+        ``(Y_hi - Y_lo) / (rho_hi - rho_lo)`` per seed, then averaged — the CRN estimator,
+        **as measured, at every point including the collapsed ones**.  It is a real
+        measurement everywhere: when both rho values collapse, Y is ~0 at both and the
+        difference is genuinely ~0; when only one collapses, the large value records
+        retention pushing the economy over the viability cliff.  That mixture is exactly
+        why ``viable`` is a separate QoI — but because ``slope_raw`` needs no imputation
+        and no subsetting, it is the quantity the variance decomposition can use without
+        breaking the Morris trajectory structure or the Saltelli matrix.
+    ``slope``
+        The same number, but ``NaN`` where the point is not viable — the *conditional*
+        response, for descriptive statistics on the viable subset.  Never imputed:
+        brief 13 §3 asks for the restriction to be reported, not patched.
+    ``slope_seed_sd``
+        Inter-seed standard deviation of that per-seed slope.  Reported ALONGSIDE the
+        sensitivity indices (§3), so a reader can see how much of the spread is seed
+        noise before reading anything into a parameter.
+    ``viable``
+        1.0 when neither rho collapsed.  This is a QoI in its own right, evaluated on ALL
+        points; the slope analysis is conditional on it, and the conditioning is a
+        declared limitation of the design, not something to correct away.
+    ``wage_led``
+        1.0 when ``slope < 0`` (viable points only) — the indicator ``P(dY/drho < 0)``
+        averages.
+    Levels at both rho values are carried through with ``_lo``/``_hi`` suffixes.
+    """
+    out = []
+    for idx, block in runs.groupby("point"):
+        lo = block[block["rho"] == rho_lo].set_index("seed").sort_index()
+        hi = block[block["rho"] == rho_hi].set_index("seed").sort_index()
+
+        # CRN: the seeds must pair up, or the difference is not the estimator we mean.
+        if list(lo.index) != list(hi.index):
+            raise ValueError(f"point {idx}: seeds do not pair across rho (CRN broken)")
+
+        dead = (
+            (lo["Unemployment_Rate"] >= u_collapse) | (lo["Total_Capital"] < k_collapse)
+            | (hi["Unemployment_Rate"] >= u_collapse) | (hi["Total_Capital"] < k_collapse)
+        )
+        # A point is viable when NO seed collapsed at either rho; the mixed case (some
+        # seeds alive) is recorded rather than rounded, because in this model a mixed
+        # point is a basin boundary — the very thing the viability QoI is looking for.
+        frac_dead = float(dead.mean())
+        viable = frac_dead == 0.0
+
+        per_seed = (hi["Output"].to_numpy() - lo["Output"].to_numpy()) / (rho_hi - rho_lo)
+        raw = float(np.mean(per_seed))
+        raw_sd = (float(np.std(per_seed, ddof=1)) if len(per_seed) > 1 else float("nan"))
+        row = {
+            "point": int(idx),
+            "viable": float(viable),
+            "frac_seeds_collapsed": frac_dead,
+            "slope_raw": raw,
+            "slope_raw_seed_sd": raw_sd,
+            "slope": raw if viable else float("nan"),
+            "slope_seed_sd": raw_sd if viable else float("nan"),
+            "n_seeds": int(len(per_seed)),
+        }
+        row["wage_led"] = float(raw < 0.0) if viable else float("nan")
+        row["wage_led_raw"] = float(raw < 0.0)
+        for name, frame in (("lo", lo), ("hi", hi)):
+            for m in frame.columns:
+                if m in ("point", "rho"):
+                    continue
+                row[f"{m}_{name}"] = float(frame[m].mean())
+        out.append(row)
+
+    return pd.DataFrame(out).sort_values("point", ignore_index=True)
+
+
 def cells_from_panel(panel, collapse_y=COLLAPSE_Y):
     """Collapse a per-seed panel to one row per (sigma, rho) cell.
 

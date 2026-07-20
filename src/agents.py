@@ -79,6 +79,11 @@ R_EPS = 1e-6
 
 _INF = float("inf")
 
+#: Largest argument ``math.exp`` accepts before raising OverflowError (~709.78).  Used to
+#: detect, BEFORE evaluating it, an exponent that would overflow — see the guard in
+#: :func:`ces_labour_for_demand`.
+_LOG_HUGE = 709.0
+
 
 def ces_r(sigma):
     """Substitution parameter ``r = (sigma-1)/sigma``."""
@@ -196,6 +201,29 @@ def ces_labour_for_demand(Ye, K, A, K0, L0, pi0, sigma):
 
     d = log_pk - log_yr                      # < 0
     log_lr = log_yr + math.log1p(-math.exp(d)) - math.log1p(-pi0)
+
+    # NUMERICAL GUARD (brief 13).  As r -> 0 the term -log1p(-pi0) does NOT vanish with
+    # r, so log_lr/r -> +-inf and math.exp overflows -- while the TRUE limit is
+    # Cobb-Douglas and finite.  With pi0 = 1/3 that constant is ~0.405, so the exponent
+    # passes 709 (the overflow point of exp) once |r| < ~5.7e-4, i.e. sigma within
+    # ~0.0006 of 1.  R_EPS = 1e-6 is three orders of magnitude too narrow to cover it:
+    # the closed form is numerically unusable long before it reaches the branch.
+    #
+    # Saturating to +inf here would be wrong economics -- it would report "no finite L
+    # reaches Ye" exactly where labour requirements are perfectly ordinary.  So the
+    # overflow band falls back to the Cobb-Douglas expression, which IS the limit being
+    # approached (the error in the exponent is O(r) < 1e-3 there).
+    #
+    # Found by the brief-13 SA, not by the grids: every committed sweep uses sigma = 1.0
+    # EXACTLY, where r == 0.0 exactly and the R_EPS branch already caught it.  A
+    # continuously sampled sigma is the first thing to land in the gap -- the same shape
+    # of latent defect as the brief-12 ownership bug, and found the same way.
+    if abs(log_lr) > _LOG_HUGE * abs(r):
+        if K <= 0.0:
+            return _INF
+        AKa = A * (K ** pi0)
+        return (Ye / AKa) ** (1.0 / (1.0 - pi0))
+
     return L0 * math.exp(log_lr / r)
 
 

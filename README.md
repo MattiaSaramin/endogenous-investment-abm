@@ -498,6 +498,127 @@ reach (`pct_capitalists ∈ {0.02 … 0.50}` in the suite), and the same reading
 
 ---
 
+### 9. Global sensitivity analysis — the headline does not survive the parameter space (brief 13)
+
+Every result above is measured at a **cell**: a chosen `sigma`, a chosen `c0`, everything
+else at its default. Brief 13 asks whether the headline — the *sign* `dY/drho < 0` — holds
+when all 16 defensible parameters move at once. It does not.
+
+> **`P(chord < 0 | viable) = 0.095 ± 0.007`** (binomial SE, 1 606 viable points of
+> 3 328). **Fraction viable = 0.483.**
+>
+> Over the empirically defensible space, **wage-led is the exception, not the rule** — and
+> half the space does not survive at all.
+
+**Read that as a statement about a chord, not a derivative — a declared design defect.**
+The QoI is a two-point difference between `rho = 0.35` and `0.55`. But brief 05 had already
+measured that `Y(rho)` is **U-shaped**, with the turning point *inside* the support in 19 of
+22 cells. On a U-shaped response the sign of a chord depends on where it is taken and can
+differ from both the local derivative and an OLS slope over the full support — which is
+brief 07's method. So `P = 0.095` is exact about *"the chord over [0.35, 0.55] is
+negative"* and is **not** the same claim as *"the derivative is negative somewhere"*. Brief
+13 inherited this QoI from its own design without reconciling it against brief 05's
+curvature finding. What survives untouched: the Sobol indices correctly decompose the
+variance *of that* quantity, the `viable` QoI is not a difference and is unaffected, and the
+by-products below are about levels and viability. What must be redone before the write-up:
+evaluate the sign at three or more `rho` values per design point, separating chord,
+derivative and curvature (~1.5x the present cost).
+
+`retention_ratio` is the **treatment**, not a swept parameter: every design point runs at
+`rho = 0.35` and `0.55` under **common random numbers** (same seeds at both, difference per
+seed, then averaged). Without CRN the QoI is a difference of two noisy numbers and the
+indices would decompose the variance of the seed draw. Uniform ranges are a declared
+**choice of ignorance**. Two levels: Morris screening (k = 17, r = 20) under a pruning rule
+**frozen in the source before any output existed**, then Sobol (N = 256) with bootstrap CIs.
+
+**What governs the outcome — and it is not what the project thought.**
+
+| | `viable` S1 | `viable` ST | `slope_raw` S1 | `slope_raw` ST |
+|---|---|---|---|---|
+| **`delta`** | **0.718** | **1.002** | **0.331** | **0.966** |
+| `pi0` | 0.116 | 0.290 | 0.001 | 0.562 |
+| `c0` | 0.069 | 0.086 | −0.030 | 0.277 |
+| `wealth_effect` | 0.038 | 0.086 | 0.040 | 0.264 |
+| **`sigma`** | 0.008 | **0.008** | 0.030 | **0.024** |
+
+`ST >> S1` throughout: the model is dominated by **interactions**, as expected of a
+wage → U → capital channel that is interactive by construction.
+
+**`delta` is a cliff, and the model lives just inside its edge:**
+
+| `delta` | fraction viable | P(wage-led \| viable) |
+|---|---|---|
+| 0.030–0.045 | **0.992** | 0.044 |
+| 0.045–0.060 | 0.758 | 0.111 |
+| 0.060–0.075 | 0.180 | 0.313 |
+| 0.075–0.090 | **0.000** | — |
+
+Brief 11 demoted `delta = 0.05` to a declared convention, noting the BEA-implied figure is
+≈0.090, and warned against recalibrating. The SA sharpens that into something harder: **at
+the value the data suggest, this model does not exist** — 0 of 832 points survive. A
+declared structural limitation for the write-up, not a parameter to tune.
+
+**`sigma` is close to irrelevant inside the empirical band** (`ST` = 0.024, S1
+indistinguishable from zero) — `delta` and `pi0` do the work that the project's narrative
+attributed to `sigma`.
+
+The declared **wide-`sigma` check** (0.30–1.00, N = 128, secondary by construction) puts
+that in context. Viability is identical (0.483) and `P(chord < 0 | viable)` doubles to
+0.201, with the change concentrated sharply:
+
+| `sigma` | fraction viable | P(wage-led \| viable) | mean slope |
+|---|---|---|---|
+| 0.301–0.475 | 0.519 | 0.042 | +53.7 |
+| 0.475–0.649 | 0.464 | 0.057 | +46.7 |
+| **0.649–0.823** | 0.469 | **0.338** | +27.2 |
+| **0.823–0.998** | 0.481 | **0.380** | +21.5 |
+
+**The threshold lands at `sigma ~ 0.65` — exactly where briefs 04 and 07 put `sigma*` — but
+the direction is inverted relative to how the conclusion is written up.** The documents say
+empirical `sigma` sits *below* `sigma*` and is therefore wage-led; here, below 0.65
+wage-led is rare and above it is common. This is **not** recorded as a contradiction: the
+likely cause is the chord-vs-derivative defect above. Brief 07 fits an OLS slope over the
+whole support `rho` in [0.35, 0.65]; this measures a chord over [0.35, 0.55]; on a U-shaped
+`Y(rho)` with the turning point inside the support, the two can differ in sign with neither
+being wrong. That the *location* reproduces at ~0.65 under two independent methods is
+evidence *for* the frontier. It is the **sign** that is not comparable until the QoI is
+redefined over three or more `rho` values — and it is the point where the thesis is most at
+risk of asserting the opposite of the truth.
+
+**Two by-products, no new mechanism.**
+
+*Kalecki, confirmed in levels.* Brief 11 showed `Pi - I = C - W` is a tautology here and
+cannot settle causation. Sobol sampling varies `capitalist_mpc` independently of everything
+else, which makes the comparison **interventional**:
+
+| `capitalist_mpc` | capitalist consumption | **profit (level)** | profit share | Y |
+|---|---|---|---|---|
+| [0.20, 0.275) | 38.40 | 52.28 | 0.578 | 90.96 |
+| (0.425, 0.50] | 49.23 | **63.84** | 0.560 | 115.80 |
+
++10.83 of spending, **+11.56 of profit** — near one-for-one, correlation **+0.83** on
+levels. Capitalists do earn what they spend. The *share* falls slightly, because output
+rises faster; Kalecki's claim is about levels, and it is the levels that hold.
+
+*Point 10-bis, hypothesis reversed.* At `beta < 0.1` there is **not one wage-led point out
+of 338**, and viability is *lower* (0.385) than at `beta ~ 1` (0.533). The wage-led sign is
+substantially **produced by** accelerator reactivity rather than being an intrinsic
+property, and `beta` governs both the sign and survival — the opposite of the brief's
+expectation that the instability would prove independent of investment reactivity.
+
+*Declared limits.* 3 seeds ⇒ ~4.3% of the QoI variance is seed noise (measured in the
+pilot), which lands in the residual, depressing S1 and inflating apparent interaction — two
+S1 values come out slightly negative, i.e. zero within noise. N = 256 over 11 parameters
+gives wide CIs: `sigma`, `capitalist_mpc`, `beta`, `eta` have S1 indistinguishable from
+zero. `slope_raw` deliberately mixes marginal response with regime change, which is why
+`viable` is a separate QoI on the complete, unimputed sample.
+
+![Morris screening](results/ces_b13_morris_mu_sigma.png)
+![Sobol indices with bootstrap CIs](results/ces_b13_sobol_indices.png)
+![Viability and sign against the two governing dials](results/ces_b13_sobol_byproducts.png)
+
+---
+
 ## Interpretive frame (read this before the results)
 
 * **The regime is demand-constrained almost everywhere.** In 76 of 77 viable
@@ -579,10 +700,13 @@ scripts/
 ├── run_brief09.py   Regenerates the brief-09 government sweep (dose-response + sigma*(eta;rr) + collapse map) (reproducible)
 ├── run_brief10.py   Regenerates the brief-10 firm-heterogeneity viability probe (aggregates vs spread + domino trace) (reproducible)
 ├── compute_anchoring_ratios.py   Brief-11 I/Y and K/Y at the reference cells; reads committed panels, runs NO simulation
-└── check_brief12_nesting.py      Brief-12 nesting check: re-runs a SLICE of the committed panels and byte-compares (not a driver)
+├── check_brief12_nesting.py      Brief-12 nesting check: re-runs a SLICE of the committed panels and byte-compares (not a driver)
+└── run_brief13.py                Regenerates the brief-13 global SA: pilot -> Morris screening -> Sobol (+ wide-sigma check, + report/figures)
 notebooks/
 └── 01_Endogenous_Investment.ipynb   rho sweep at sigma=1 + sigma sweep with the sign frontier
 results/
+├── ces_b13_*.csv    brief-13 global SA: pilot, Morris screening, Sobol design/QoI/indices, by-products, summary; produced by scripts/run_brief13.py
+├── ces_b13_environment.json       brief-13 run environment (versions, sampling seed, seeds/steps, the declared Morris keep rule)
 ├── ces_b12_*.csv    brief-12 ownership-fix nesting check: byte-check summary + the regenerated slice; produced by scripts/check_brief12_nesting.py
 ├── ces_b11_anchoring_ratios.csv   brief-11 I/Y, K/Y, I/K by scenario and rho; produced by scripts/compute_anchoring_ratios.py
 ├── ces_b10_*.csv    brief-10 heterogeneity probe: aggregates vs spread, viability thresholds, domino trace; produced by scripts/run_brief10.py
@@ -630,6 +754,13 @@ python scripts/compute_anchoring_ratios.py
 
 # re-verify the brief-12 ownership fix changes nothing at the default (7 configs, 440 cells, ~2 min); exits nonzero on a FINDING
 python scripts/check_brief12_nesting.py
+
+# the brief-13 global sensitivity analysis; phases are separable and each writes its own CSVs
+python scripts/run_brief13.py --phase pilot    # ~8 min: fixes n_seeds on evidence, measures the viable fraction
+python scripts/run_brief13.py --phase morris   # ~20 min: screening under the pruning rule frozen in the source
+python scripts/run_brief13.py --phase sobol    # ~2.2 h: indices with bootstrap CIs
+python scripts/run_brief13.py --phase wide     # ~45 min: the declared wide-sigma check
+python scripts/run_brief13.py --phase report   # analysis + figures only, no simulation
 
 # run the checks (SFC across pct_capitalists, buffer==0, distribution, labour accounting, CES nesting, wage curve, adaptive expectations, government, heterogeneity, ownership, bootstrap)
 python -m pytest tests/ -q

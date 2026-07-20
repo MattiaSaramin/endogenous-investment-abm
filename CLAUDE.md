@@ -564,6 +564,75 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   **Fuori scope:** la SA globale (brief successivo); strutture di proprietà più ricche
   (quote frazionarie, mercato azionario, proprietà incrociata) = future work dichiarato.
 
+- **Brief 13 — SENSITIVITY ANALYSIS GLOBALE (punto 5), l'ultima analisi prima della
+  stesura.** Nuova dipendenza **SALib** (pinnata in `requirements.txt`). Nessuna modifica a
+  meccanismi o parametri: la SA misura. Due aggiunte tecniche dichiarate — reporter
+  `Capitalist_Consumption` (**fuori** da `_PANEL_METRICS`, viaggia sull'override `metrics`
+  del brief 08) e `u_min` **esposto** come parametro opzionale (`None` = il derivato
+  `1/N`, annidamento bit-for-bit testato), perché §2 lo vuole sweepato e il debito del
+  brief 07 non era altrimenti pagabile.
+  - **Task 0 — audit dei tre parametri strutturali congelati.** `num_firms ∈ {5,10,20}` ×
+    `num_households ∈ {50,100,200}`: moneta conservata ovunque (peggior deviazione
+    **2.1e-12**), `money_buffer ≡ 0`, copertura proprietà 9/9, determinismo per seed.
+    **Nessun difetto analogo al brief 12.** Ma l'audit ha trovato il motivo *economico*
+    per congelarli: `initial_capital` è **per impresa**, quindi
+    `num_firms·initial_capital/num_households` è il capitale per lavoratore a t=0 — a
+    **1.0 l'economia muore** (K→0, U→1), a 2.0 vive, a 4.0 vive meglio. Sono **selettori
+    di bacino**, non di scala; sweeparli confonderebbe isteresi e sensitivity.
+  - **Disegno.** `retention_ratio` è il **trattamento** (ρ_lo=0.35, ρ_hi=0.55) con
+    **common random numbers**; 16 parametri uniformi (scelta di ignoranza dichiarata);
+    QoI primaria il **segno**, non il livello. **Pilot** (32 punti) per fissare `n_seed`
+    su evidenza: noise ratio 0.207/0.170/0.111 a 3/5/10 seed, scala come 1/√n. **Morris**
+    k=17 r=20 con **regola di sfoltimento congelata nel sorgente PRIMA** di guardare i
+    risultati → 11 sopravvissuti. **Sobol** N=256, CI bootstrap.
+  - **⚠️ LIMITE DI DISEGNO, dichiarato e da risolvere prima della stesura.** La QoI di §3 è
+    una **corda** a due punti (ρ=0.35 vs 0.55), ma il brief 05 aveva già misurato che
+    `Y(ρ)` è **a U con la svolta DENTRO il supporto in 19 celle su 22**: su una curva a U il
+    segno della corda dipende da dove la si prende e può differire dalla pendenza OLS
+    sull'intero supporto (il metodo del brief 07). Quindi l'headline è esatto su *"la corda
+    [0.35,0.55] è negativa"*, **non** su *"la derivata è negativa"*. Il brief 13 ha ereditato
+    la QoI dal proprio §3 senza raccordarla al reperto di curvatura del brief 05.
+    **Resta valido:** gli indici decompongono correttamente *quella* quantità, `viable` non
+    è una differenza e non è toccata, i sottoprodotti sono su livelli/viability. **Da
+    rifare:** segno su ≥3 valori di ρ per punto (~1,5× il costo).
+  - **Esito headline: `P(corda < 0 | viable) = 0.095 ± 0.007`, frazione viable 0.483.**
+    **Il wage-led è l'eccezione, non la regola**, e metà dello spazio empirico non è
+    viable. **`delta` domina tutto** (`ST`≈1.00 sulla viability): a δ∈[0.075,0.09]
+    **0/832 punti sopravvivono**, e δ=0.05 siede appena dentro il bordo — il brief 11
+    aveva ragione a non ricalibrare, ma per la ragione sbagliata. **`sigma` è irrilevante
+    nella banda empirica** (`ST`=0.024): **la frontiera σ\* del brief 07 non sopravvive
+    alla globalizzazione** — era condizionata alla cella in cui fu misurata. `ST ≫ S1`
+    ovunque: modello dominato dalle interazioni, come previsto.
+  - **Check σ largo (0.30–1.00, N=128, secondario):** viability identica (0.483),
+    `P(corda<0|viable)` **raddoppia a 0.201**, concentrata sopra σ≈0.65 (per bin: 0.042 /
+    0.057 / **0.338** / **0.380**). **La soglia cade dove il brief 04/07 mette σ\*, ma la
+    DIREZIONE è invertita** rispetto a come la conclusione è scritta. Non registrato come
+    contraddizione: è quasi certamente il difetto corda-vs-derivata qui sopra (brief 07 usa
+    OLS su tutto [0.35,0.65], qui è una corda [0.35,0.55]). Che la **posizione** si riproduca
+    con due metodi indipendenti è evidenza *a favore* della frontiera; è il **segno** a non
+    essere confrontabile finché la QoI non è ridefinita. **È il punto su cui la tesi rischia
+    di affermare l'opposto del vero.**
+  - **Sottoprodotti.** **Kalecki: confermato in LIVELLI** — `capitalist_mpc` alto vs basso
+    dà consumo capitalisti +10.83 e profitto **+11.56 (+22%)**, corr **+0.83**; sulla
+    *quota* −0.06 (l'output cresce più in fretta). È l'**intervento** che il brief 11
+    dichiarava impossibile con l'identità tautologica. **Punto 10-bis: ipotesi
+    ROVESCIATA** — a β<0.1 **zero punti wage-led su 338** e viability 0.385 contro 0.533 a
+    β≈1: il segno wage-led è in larga misura *prodotto* dall'acceleratore, e β governa
+    **sia** il segno **sia** la sopravvivenza.
+  - **Due reperti metodologici, entrambi trovati DALLA SA** (dettagli in
+    `parameter_notes.md` §"Tensioni aperte" 7bis e 8): (a) il criterio **`dev = 0.0`** dei
+    byte-check **non è riproducibile nel tempo** — `7c2670f` oggi devia di 1 ULP dai propri
+    risultati, otto ipotesi escluse per misura, causa non identificata; ampiezza **max 2,1
+    ULP, zero flip di regime**, nessuna conclusione economica si muove. (b) **bug latente a
+    σ→1** in `ces_labour_for_demand` (`OverflowError`, banda |r|<5.7e-4 che `R_EPS=1e-6`
+    non copre): stessa forma del difetto del brief 12, mai toccato dalle griglie perché
+    usano σ=1.0 **esatto**. Corretto instradando al ramo Cobb-Douglas, non saturando.
+  - **512 test verdi.** Driver `scripts/run_brief13.py` (fasi `pilot`/`morris`/`sobol`/
+    `wide`/`report`, seed di campionamento fissato e dichiarato, ambiente registrato in
+    `ces_b13_environment.json`); CSV `results/ces_b13_*.csv` + 3 figure. **Fuori scope:**
+    ricalibrare qualunque parametro sulla base della SA (sarebbe calibrazione mascherata
+    da robustezza); consolidamento del notebook (b07–b13, subito dopo).
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
@@ -617,13 +686,11 @@ modellazione. Stato attuale:
   governo (punto 15): `benefit_replacement_rate`, `max_tax`, tarati nel branch
   Leontief senza ancoraggio.
 
-**Punto 5 (analisi di sensibilità globale): RIMANDATO PER DECISIONE** al modello
-finito — non si stabilisce la robustezza su una tappa intermedia nota.
-**Prerequisito saldato dal brief 12:** `pct_capitalists` è ora sweepabile (prima
-rompeva la SFC fuori dal default). **Prerequisito ancora aperto:** gli altri parametri
-strutturali che la SA vorrà muovere e che nessun test tocca fuori dal default —
-`num_firms`, `num_households`, `initial_capital` — vanno riletti allo stesso modo
-**prima** della SA, non durante.
+~~**Punto 5 (analisi di sensibilità globale): RIMANDATO PER DECISIONE**~~ — **FATTO col
+brief 13.** Entrambi i prerequisiti sono stati saldati prima di eseguirla:
+`pct_capitalists` reso sweepabile dal brief 12, e `num_firms`/`num_households`/
+`initial_capital` auditati dal Task 0 del brief 13 (nessun difetto; congelati come
+**selettori di bacino** con la ragione misurata, non asserita).
 
 **Debito residuo:** ~~verificare I/Y con una serie BEA primaria~~ e ~~fissare
 l'unità temporale del periodo~~ — **entrambi CHIUSI dal brief 11** (I/Y verificato
@@ -669,6 +736,17 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   driftato: è il motivo per cui va riletto contro il codice a ogni brief.)*
   Ogni deviazione va dichiarata e giustificata.
 - **Determinismo per seed** e **test verdi** dopo ogni modifica.
+  > **⚠️ Reperto del brief 13 — il determinismo per seed regge, l'uguaglianza byte a
+  > distanza di tempo NO.** Il codice di `7c2670f`, il cui byte-check riportò *7/7 PASS,
+  > dev = 0.0*, oggi devia di **1 ULP** sulle stesse celle. Otto ipotesi escluse per
+  > misura (reporter, `u_min`, riduzione pandas, modifiche brief 13 via checkout,
+  > pool vs processo principale, `scipy`, P-core vs E-core, versioni di libreria):
+  > **causa non identificata**. Ampiezza su 160 celle × 24 metriche: **max 2,1 ULP, non si
+  > amplifica, zero flip di regime** — nessuna conclusione economica si muove, e dentro
+  > una sessione il determinismo per seed è intatto (3/3). **Non ho riscritto il criterio
+  > dentro il brief che lo viola** (sarebbe post-hoc): la proposta — tolleranza ULP
+  > dichiarata + check di regime a tolleranza **zero** — è registrata in
+  > `parameter_notes.md` §"Tensioni aperte" 7bis per il brief successivo.
 - **README, codice e figure coerenti tra loro** (è già emerso un disallineamento
   documentale in passato — la spec "Fase 2" fantasma: non deve ripetersi).
 - **Ancoraggio bibliografico:** ogni scelta di modellazione e ogni parametro
@@ -694,7 +772,11 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 
 ## 11. Struttura del codice
 
-- `src/agents.py` — Firm (CES normalizzata, salario dalla wage curve, finanziamento
+- `src/agents.py` — **brief 13: guardia numerica in `ces_labour_for_demand`** — la banda
+  |r| < 5.7e-4 attorno a σ=1 andava in `OverflowError` (il termine `−log1p(−pi0)` non
+  svanisce con r) e ora è instradata al ramo Cobb-Douglas, che è il limite vero; `R_EPS`
+  **non** è stato allargato, la guardia è locale e la costante `_LOG_HUGE` è dichiarata.
+  Firm (CES normalizzata, salario dalla wage curve, finanziamento
   interno, aspettativa adattiva di domanda), Household, Capitalist (brief 12:
   **`owned_firms` lista** al posto di `owned_firm`, `net_worth()` che somma sulla lista
   — nessun doppio conteggio, nessun alias di compatibilità); helper CES
@@ -721,7 +803,13 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   `expectation_gain` e `benefit_replacement_rate` passano al modello via `**params`,
   come `c0` (nessuna modifica di firma al brief 09); `run_grid_panels`
   (brief 08: **single-pool**, più config in un solo pool, `metrics` override); `productivity_spread`
-  passa via `**params` come gli altri (nessuna modifica di firma al brief 10)
+  passa via `**params` come gli altri (nessuna modifica di firma al brief 10); **brief 13:
+  blocco SA** — `run_design_points` (valuta i punti di design ai due ρ con **CRN**, pool
+  singolo; l'intero vettore di parametri viaggia dentro `params` perché nella SA ogni punto
+  ha la **sua** σ, cosa che `run_grid_panels` — una sola lista `sigmas` per tutte le config
+  — non può esprimere) e `qoi_from_runs` (distingue `slope_raw`, **misurata ovunque** e
+  usata dalla decomposizione, da `slope`, **condizionale** ai punti viable e mai imputata);
+  costanti `SA_RHO_LO/HI`, `SA_U_COLLAPSE`, `SA_K_COLLAPSE`, `SA_METRICS`
 - `scripts/run_brief04.py` — driver **riproducibile** dello sweep (σ, ρ) e della
   sign frontier del brief 04; rigenera 5 dei 6 `results/ces_*.csv` (thread BLAS
   pinnati). **Non** rigenera `ces_decomposition.csv` (vedi sotto).
@@ -769,9 +857,20 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   Fetta e non griglia intera perché la claim è **meccanica** (`j % 10 == j`): una cella
   rappresentativa per referente la falsifica se è sbagliata. Scrive
   `results/ces_b12_byte_check.csv` e `ces_b12_nesting_slice.csv`; exit code ≠ 0 su FINDING
+- `scripts/run_brief13.py` — **brief 13**, driver della SA globale. Fasi separabili
+  (`pilot` → `morris` → `sobol` → `wide` → `report`), thread BLAS pinnati prima di numpy,
+  **seed di campionamento SALib fissato e dichiarato** (`SAMPLE_SEED`), ambiente registrato
+  in `results/ces_b13_environment.json`, **regola di sfoltimento Morris congelata nel
+  sorgente** (`MORRIS_KEEP_RULE`) prima di qualunque esecuzione. `--reuse-runs` ri-analizza
+  le run Morris salvate senza ri-simulare; `--phase report` produce sottoprodotti e figure
+  leggendo i CSV committati, **senza simulazione**. La matrice di design viaggia **con** le
+  QoI (`ces_b13_*_design.csv`), così le analisi a valle non dipendono dal campionatore che
+  si riproduce
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati. `ces_b12_byte_check.csv` e
+- `results/` — output misurati committati. `ces_b13_*.csv` + `ces_b13_environment.json`
+  e 3 figure (brief 13) → rigenerati da `run_brief13.py` (fasi separabili; `--phase report`
+  non simula). `ces_b12_byte_check.csv` e
   `ces_b12_nesting_slice.csv` (brief 12) → rigenerati da `check_brief12_nesting.py`.
   `ces_b11_anchoring_ratios.csv` (brief 11) →
   rigenerato da `compute_anchoring_ratios.py`. `ces_b10_*.csv` (brief 10) → rigenerati
@@ -797,7 +896,12 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
   (brief 12: SFC parametrizzata su `pct_capitalists`, copertura della proprietà, assenza
   di doppio conteggio in `net_worth()`, biiezione al default = annidamento, determinismo
   fuori dal default, `ValueError` a 0 capitalisti, semantica multi-proprietà/nessuna
-  proprietà). **463 test.** *(Brief 11 non aggiunge test: non tocca `src/`.)*
+  proprietà), parametri strutturali e SA (brief 13: SFC/proprietà/determinismo su
+  `num_firms × num_households`, pin direzionale del **bacino** via capitale per lavoratore,
+  annidamento `u_min=None` bit-for-bit e validazione, reporter `Capitalist_Consumption`
+  fuori da `_PANEL_METRICS`, e la **regressione sulla banda σ→1** che il bug di overflow
+  avrebbe fatto fallire — continuità attraverso σ=1 e guardia inerte sulle σ sweepate).
+  **512 test.** *(Brief 11 non aggiunge test: non tocca `src/`.)*
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di

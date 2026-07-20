@@ -749,6 +749,217 @@ serve solo a garantire che il transiente sia esaurito.
 
 ---
 
+## Analisi di sensibilità globale — spazio campionato (brief 13, roadmap punto 5)
+
+> **A cosa serve questa sezione.** Un indice di Sobol non è interpretabile senza il
+> **range su cui è calcolato**: `S_T(δ)` grande significa "l'esito dipende molto da δ
+> *dentro la banda 0.03–0.09*", che è un'affermazione sull'incertezza **dichiarata**, non
+> una proprietà del modello. Cambiare i range cambia gli indici. Perciò la tabella è
+> parte del risultato, non un'appendice. Le distribuzioni sono **uniformi**, dichiarate
+> come **scelta di ignoranza** — non come conoscenza di priori.
+
+**Trattamento, non parametro:** `retention_ratio` non è campionato. Ogni punto di design
+è valutato a **ρ_lo = 0.35** e **ρ_hi = 0.55** (entrambi nel supporto viable canonico) e
+la QoI è la **differenza**, con **common random numbers** (stessi seed ai due ρ,
+differenza per seed, poi media). Senza CRN la differenza sarebbe rumore su rumore e gli
+indici decomporrebbero la varianza del sorteggio dei seed anziché quella dei parametri.
+
+### Parametri campionati (16) — range e categoria
+
+| Parametro | Range | Categoria | Referente |
+|---|---|---|---|
+| `sigma` | 0.40–0.60 | **Ancorato** | Chirinko 2008; Chirinko & Mallick 2017; Knoblach et al. 2020 |
+| `eta` | 0.05–0.15 | **Ancorato** | Blanchflower–Oswald ≈0.10; Nijkamp–Poot ≈0.07 |
+| `benefit_replacement_rate` | 0.0–0.6 | **Ancorato** | OECD NRR ≈0.4–0.6; lo 0 spanna l'assenza di welfare |
+| `pi0` (α) | 0.30–0.40 | **Ancorato** | quota del capitale |
+| `pct_capitalists` | 0.05–0.20 | **Ancorato** | dimensione di disuguaglianza di Teglio (2025); sweepabile dal brief 12 |
+| `delta` | 0.03–0.09 | **Convenzione con banda empirica** | strutture 2–3%; aggregato BEA con IPP ≈9% (brief 11) |
+| `c1` | 0.80–0.95 | Semi-ancorato | MPC alta per famiglie vincolate |
+| `wealth_effect` | 0.03–0.08 | Semi-ancorato | Slacalek 2009 ≈0.05 |
+| `capitalist_mpc` | 0.20–0.50 | Semi-ancorato | **porta l'intervento kaleckiano** |
+| `beta` | 0.0–1.0 | Convenzione | guadagno dell'acceleratore; **risponde al punto 10-bis** |
+| `target_utilization` | 0.80–0.95 | Convenzione | utilizzo realizzato empirico ≈0.80 |
+| `investment_floor` | 0.0–0.25 | Convenzione | guardrail, nessun referente |
+| `u_min` | 0.005–0.05 | Convenzione | **debito registrato dal brief 07** |
+| `wage_floor` (w_min) | 0.30–0.60 | Convenzione | target di design |
+| `expectation_gain` (λ_e) | 0.25–1.0 | Non ancorabile | sweepato, non scelto (brief 08) |
+| `c0` | 0.5–2.5 | **Non ancorabile per decisione** | D3 brief 11; spanna il doppio regime con margine |
+
+`max_tax` (0.30–0.90) entra **solo nello screening Morris**, come conferma che il
+guardrail è irrilevante fuori dalla saturazione fiscale (brief 09 E3).
+
+**Congelati e perché** — `K0`, `L0`, `U_REF`, `productivity` (A=1), `wage_rate` (w̄):
+dispositivi di normalizzazione o unità, variarli cambia lo strumento di misura, non il
+modello. `productivity_spread`=0: decisione del punto 8 (brief 10).
+**`initial_capital`, `num_firms`, `num_households`**: selettori di **bacino**, non di
+scala — vedi §"Proprietà d'impresa" e il Task 0 del brief 13, che ha misurato la cosa
+direttamente (capitale per lavoratore a t=0 = `num_firms·initial_capital/num_households`;
+a 1.0 l'economia muore, a 2.0 vive). Sweeparli confonderebbe **isteresi** e
+**sensitivity**.
+
+### `u_min` — il debito del brief 07, e come si chiude
+
+`U_min` era un **derivato** (`1/num_households`), non un parametro: il brief 07 aveva
+registrato che l'ampiezza dell'oscillazione salariale ci poggia sopra e che una
+sensitivity era dovuta. Il brief 13 lo **espone** come parametro opzionale (`u_min=None`
+riproduce il derivato **bit-for-bit**, verificato in test): esporre una costante non
+aggiunge un meccanismo, la formula della wage curve è intatta. Questo è ciò che rende
+il debito **pagabile** invece che solo dichiarabile.
+
+### Nota di metodo — perché la decomposizione gira su `slope_raw` e `viable`
+
+Il disegno ovvio — decomporre la pendenza sui soli punti viable — **non è disponibile**:
+Morris stima gli effetti elementari lungo traiettorie di (k+1) punti e Saltelli legge la
+sua matrice **posizionalmente**, quindi eliminare righe distrugge lo stimatore (fallisce
+proprio: *"cannot reshape array of size 159 into shape (8,19)"*). L'alternativa —
+riempire i punti collassati con la media dei viable — è **imputazione**: inventa valori
+che il modello non ha prodotto e schiaccia verso zero gli indici di ciò che *causa* il
+collasso. Nessuna delle due è accettabile, quindi la decomposizione gira su grandezze
+**misurate ovunque**: `slope_raw` (la differenza CRN come misurata, collasso incluso) e
+`viable` (binaria, esatta). La domanda **condizionale** che il brief pone comunque — la
+risposta dato che l'economia sopravvive — è trattata a parte, in modo descrittivo e con
+indici **RBD-FAST** del primo ordine, che a differenza di Saltelli lavorano su un
+campione arbitrario (prezzo: nessun indice totale). **Due stimatori diversi su due
+campioni diversi, riportati separatamente e mai mescolati in una stessa tabella.**
+
+**Limite dichiarato:** `slope_raw` mescola due cose — la risposta marginale dove
+l'economia vive, e il salto di regime dove ρ la spinge oltre la soglia di viability. È
+esattamente per questo che `viable` è una QoI **a sé**, sull'intero campione non imputato.
+
+### Esiti misurati (Sobol primario, N=256 su 11 parametri, 3.328 punti, 3 seed)
+
+**Headline: `P(corda < 0 | viable) = 0.095 ± 0.007`** (SE binomiale, 1.606 punti viable),
+**frazione viable = 0.483**. Sullo spazio empiricamente difendibile il **wage-led è
+l'eccezione, non la regola**, e metà dello spazio non è nemmeno viable. Non si
+ricalibra: è il risultato per cui la SA esiste (§8 del brief lo vieta esplicitamente).
+
+> **⚠️ LIMITE DEL DISEGNO, scoperto a valle e da riportare con l'headline.** La QoI di
+> §3 è una **differenza a due punti** fra ρ=0.35 e ρ=0.55 — cioè la **corda**, non la
+> derivata. Ma il brief 05 aveva già misurato che **`Y(ρ)` è a U**, con curvatura
+> significativa in 20 celle su 22 e **punto di svolta dentro il supporto in 19 su 22**
+> (voce 3ter qui sotto). Su una curva a U il segno della corda dipende da **dove** la si
+> prende, e può differire sia dalla derivata locale sia da una pendenza OLS sull'intero
+> supporto — che è il metodo del brief 07. **Quindi `P = 0.095` è un enunciato esatto su
+> "la corda [0.35, 0.55] è negativa", NON su "la derivata è negativa da qualche parte nel
+> supporto".** Il brief 13 ha ereditato questa QoI dal proprio §3 senza raccordarla al
+> reperto di curvatura del brief 05: è un difetto di disegno, dichiarato qui, non
+> aggirato. **Cosa resta valido comunque:** gli indici di Sobol decompongono correttamente
+> la varianza *di quella* quantità; la QoI **`viable`** non è toccata dal problema (non è
+> una differenza); e i sottoprodotti su livelli e viability (Kalecki, β) reggono. **Cosa
+> va rifatto prima della stesura:** valutare il segno su ≥3 valori di ρ per punto di
+> design, così da separare corda, derivata e curvatura — costo ~1,5× il presente.
+
+| | `viable` S1 | `viable` ST | `slope_raw` S1 | `slope_raw` ST |
+|---|---|---|---|---|
+| **`delta`** | **0.718** ±0.149 | **1.002** ±0.118 | **0.331** ±0.164 | **0.966** ±0.144 |
+| `pi0` | 0.116 ±0.089 | 0.290 ±0.087 | 0.001 ±0.134 | 0.562 ±0.124 |
+| `c0` | 0.069 ±0.048 | 0.086 ±0.049 | −0.030 ±0.092 | 0.277 ±0.085 |
+| `wealth_effect` | 0.038 ±0.049 | 0.086 ±0.049 | 0.040 ±0.081 | 0.264 ±0.091 |
+| `capitalist_mpc` | 0.008 ±0.040 | 0.055 ±0.040 | 0.023 ±0.087 | 0.187 ±0.077 |
+| **`sigma`** | 0.008 ±0.015 | **0.008** ±0.015 | 0.030 ±0.025 | **0.024** ±0.023 |
+
+`ST ≫ S1` ovunque: il modello è **dominato dalle interazioni**, come §4 prevedeva.
+
+**δ è una scogliera, e il modello ci vive sopra il bordo.**
+
+| δ | frazione viable | P(wage-led \| viable) |
+|---|---|---|
+| 0.030–0.045 | **0.992** | 0.044 |
+| 0.045–0.060 | 0.758 | 0.111 |
+| 0.060–0.075 | 0.180 | 0.313 |
+| 0.075–0.090 | **0.000** | — |
+
+Il brief 11 aveva declassato δ=0.05 a **convenzione** notando che il δ implicito BEA è
+≈0.090, e concludeva "non ricalibrare, invaliderebbe ogni numero canonico". La SA mostra
+qualcosa di più forte e più scomodo: **a δ≈0.09 il modello non esiste** (0/832 punti
+viable), e δ=0.05 siede appena dentro il bordo. Il monito era giusto per la ragione
+sbagliata. **Da riportare in tesi come limite strutturale**, non da aggiustare.
+
+**σ è irrilevante dentro la banda empirica** (`ST` = 0.024, S1 indistinguibile da zero).
+Il brief 07 concludeva "l'empirico σ 0.40–0.60 sta **sotto** σ\* ⟹ wage-led"; qui, nella
+stessa banda ma con gli altri 15 parametri liberi, il wage-led è al 9,5%. **La frontiera
+σ\* non sopravvive alla globalizzazione**: era un enunciato condizionato alla cella in
+cui è stato misurato. Per bin di σ, `P(wage-led|viable)` = 0.071 / 0.068 / 0.091 / 0.150
+(0.40→0.60): un effetto lieve e nella direzione attesa, ma di secondo ordine rispetto a δ.
+
+**Kalecki — l'intervento che l'identità non poteva dare** (punti viable, a ρ_lo):
+
+| `capitalist_mpc` | consumo capitalisti | **profitto (livello)** | quota profitti | Y |
+|---|---|---|---|---|
+| [0.20, 0.275) | 38.40 | 52.28 | 0.578 | 90.96 |
+| (0.425, 0.50] | 49.23 | **63.84** | 0.560 | 115.80 |
+| **Δ** | **+10.83** | **+11.56 (+22%)** | −0.018 | +24.84 |
+
+corr(consumo capitalisti, profitto **livello**) = **+0.83**; sulla **quota**, −0.06. Quasi
+uno-a-uno: **i capitalisti guadagnano ciò che spendono.** Il brief 11 aveva stabilito che
+`Π−I = C−W` è una tautologia e non può decidere la causazione; qui `capitalist_mpc` è
+variato **indipendentemente** dagli altri parametri nel campione Saltelli, quindi il
+confronto è **interventistico**. Nota di precisione: la *quota* di profitto **scende**
+(l'output cresce più in fretta del profitto) — la tesi kaleckiana è sui **livelli**, ed è
+quella che regge. Riportare entrambe.
+
+**Punto 10-bis — risposta, e ribalta l'ipotesi del brief:**
+
+| `beta` | frazione viable | P(wage-led \| viable) | pendenza media |
+|---|---|---|---|
+| [0.0, 0.1) | 0.385 | **0.000** | +108.1 |
+| [0.1, 0.5) | 0.455 | 0.018 | +64.0 |
+| [0.5, 0.9) | 0.523 | 0.133 | +25.2 |
+| [0.9, 1.0] | 0.533 | **0.278** | +12.2 |
+
+A β≈0 **non esiste un solo punto wage-led** su 338. Il segno wage-led è in larga misura
+**prodotto dalla reattività dell'acceleratore**, non una proprietà intrinseca del modello.
+E la fragilità **non** sopravvive a β≈0 nel senso ipotizzato: a β basso l'economia è
+*meno* viable (0.385 contro 0.533), non più. L'ipotesi del brief ("se l'instabilità
+sopravvive a β≈0, il canale di erosione non è governato dall'investimento") va rovesciata:
+β governa **entrambe**, sia il segno sia la sopravvivenza.
+
+**Caveat sullo screening, da registrare.** Morris dava `beta` con μ\*=**0.000** sulla
+viability, ma la frazione viable va da 0.385 a 0.533 al variare di β: **lo screening ha
+mancato un effetto reale**. `beta` è sopravvissuto lo stesso perché la regola guardava
+*due* QoI — la ridondanza ha salvato il disegno. Che un μ\* nullo non implichi assenza di
+effetto è un limite del metodo da tenere presente, non un incidente di questa esecuzione.
+
+**Check σ largo (0.30–1.00, N=128, dichiaratamente secondario).** Frazione viable
+**0.483**, identica al primario; `P(corda<0 | viable)` sale a **0.201**. Per bin di σ:
+
+| bin σ | frazione viable | P(wage-led \| viable) | pendenza media |
+|---|---|---|---|
+| 0.301–0.475 | 0.519 | 0.042 | +53.7 |
+| 0.475–0.649 | 0.464 | 0.057 | +46.7 |
+| **0.649–0.823** | 0.469 | **0.338** | +27.2 |
+| **0.823–0.998** | 0.481 | **0.380** | +21.5 |
+
+`sigma` guadagna peso ma resta secondario (`ST` su `slope_raw` 0.024 → **0.092** ±0.077;
+su `viable` 0.008 → 0.047 ±0.052 — entrambi indistinguibili da zero alle CI di N=128).
+`delta` continua a dominare (`ST` = 1.019 su `slope_raw`, 0.970 su `viable`).
+
+> **La soglia cade a σ≈0.65 — esattamente dove il brief 04/07 colloca σ\* — ma la
+> DIREZIONE è invertita rispetto a come la conclusione è scritta.** I documenti dicono
+> "l'empirico σ 0.40–0.60 sta **sotto** σ\* ⟹ wage-led"; qui sotto 0.65 il wage-led è raro
+> (4–6%) e sopra è frequente (34–38%). **Non lo registro come contraddizione**, perché la
+> spiegazione più probabile è il limite di disegno qui sopra: il brief 07 stima una
+> pendenza **OLS sull'intero supporto** ρ∈[0.35,0.65], io misuro una **corda** [0.35,0.55],
+> e su una `Y(ρ)` a U con svolta **dentro** il supporto le due cose possono avere segno
+> opposto **senza che nessuna delle due sia sbagliata**. Che la *posizione* della soglia
+> si riproduca a σ≈0.65 con due metodi indipendenti è, semmai, un elemento a favore della
+> frontiera; è il **segno** a non essere confrontabile finché la QoI non è ridefinita su
+> ≥3 valori di ρ. **Da risolvere prima della stesura: è il punto su cui la tesi rischia di
+> affermare l'opposto del vero.**
+
+**Kalecki, replicato sul campione largo:** corr(consumo capitalisti, profitto **livello**)
+= **+0.82** (contro +0.83 sul primario), sulla **quota** +0.00. La conclusione
+interventistica non dipende dal range di σ.
+
+**Limiti della stima, dichiarati.** 3 seed ⇒ ~4,3% della varianza è rumore di seed
+(misurato nel pilot), che finisce nel residuo: **deprime S1 e gonfia l'interazione
+apparente** — si vede nei due S1 leggermente negativi, che sono zero dentro il rumore.
+N=256 su 11 parametri ⇒ CI larghe: `sigma`, `capitalist_mpc`, `beta`, `eta` hanno S1
+**indistinguibili da zero** e vanno letti come tali. La dispersione inter-seed media
+della pendenza è 12.24 contro una sd fra punti di 50.18.
+
+---
+
 ## `c0` — esito dello stress test (brief 05 §2) — **il cerotto non regge, ma non per la ragione attesa**
 
 Misurato: griglia σ×ρ×`c0`, 20 seed, 2000 step, media ultime 50 (Stadio A, 3.080 run);
@@ -1123,7 +1334,39 @@ ancoraggio.
    vivo. Fino ad allora: leve di regime **dichiarate**, non stime.
 6. **Prossimo:** al punto 9 (markup endogeno) il legame markup↔quota salari salta
    e serviranno dati sui markup (De Loecker et al.).
-7. **NUOVO (brief 12) — gli invarianti vanno testati sul RANGE, non al default.** La
+7bis. **NUOVO (brief 13) — il criterio `dev = 0.0` dei byte-check non è riproducibile
+   nel tempo su questa piattaforma.** Misurato: il codice del commit `7c2670f`, la cui
+   verifica di annidamento riportò **7/7 PASS, dev = 0.0**, oggi produce valori diversi
+   di **1 ULP** sulle stesse celle. Otto ipotesi escluse per misura — il reporter
+   `Capitalist_Consumption` (rimosso a runtime), `u_min` (passato esplicito), la
+   riduzione `pandas.mean()` su un blocco più largo (colonna droppata, media
+   per-colonna), le modifiche del brief 13 (`src/` di `7c2670f` estratto da git),
+   processo principale contro pool (`workers=None/1`), `scipy` che tocchi lo stato FP
+   (importato e ri-misurato), P-core contro E-core (affinity 0x1 vs 0x800), versioni di
+   libreria (numpy 2.4.3 / pandas 3.0.1 invariate). **Causa non identificata.**
+   **Ampiezza, misurata su 160 celle × 24 metriche:** deviazione relativa massima
+   **2,1 ULP**, **non si amplifica**, e **zero flip di regime** (nessuna cella attraversa
+   `U≥0.999` né `Y<1`). Il determinismo per seed **regge** dentro la sessione.
+   **Conseguenza:** nessuna conclusione economica si muove, ma un criterio di
+   uguaglianza esatta che fallisce senza che nulla sia cambiato è un criterio che il
+   progetto smetterà di credere — cioè il drift che §9 di `CLAUDE.md` esiste per
+   prevenire. **Proposta per il brief successivo, NON applicata qui** (cambiare un
+   criterio di accettazione dentro il brief che lo viola sarebbe post-hoc): sostituire
+   l'uguaglianza esatta con una **tolleranza ULP dichiarata** (es. ≤4 ULP relativi) più
+   un **check di regime a tolleranza zero** — che è la parte che porta davvero il
+   contenuto scientifico.
+8. **NUOVO (brief 13) — un bug latente a σ→1, trovato dalla SA.**
+   `ces_labour_for_demand` andava in `OverflowError` per σ entro ~0.0006 da 1: a `r→0`
+   il termine `−log1p(−pi0)` **non svanisce**, quindi l'esponente supera 709 mentre il
+   limite vero è Cobb-Douglas e **finito**. `R_EPS = 1e-6` è tre ordini di grandezza
+   troppo stretto per coprire la banda. **Nessuna griglia committata lo ha mai toccato**
+   perché tutte usano σ = 1.0 **esatto** (`r == 0.0`, già intercettato dal ramo CD): un
+   σ campionato con continuità è la prima cosa che ci finisce dentro. **Stessa forma del
+   difetto di proprietà del brief 12** — un percorso che regge sui valori testati e si
+   rompe fuori — e trovato allo stesso modo. Corretto instradando la banda di overflow al
+   ramo Cobb-Douglas (errore sull'esponente O(r) < 1e-3), **non** saturando a `+inf`, che
+   avrebbe dichiarato irraggiungibile una domanda del tutto ordinaria.
+9. **NUOVO (brief 12) — gli invarianti vanno testati sul RANGE, non al default.** La
    SFC era verificata solo alla configurazione di default e lì valeva; fuori di lì
    `pct_capitalists` distruggeva moneta (sotto 0.10) o gonfiava la ricchezza (sopra).
    Corretto e testato su tutto il range. **Da fare prima della SA globale:** rileggere
