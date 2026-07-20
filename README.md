@@ -106,13 +106,13 @@ K(t+1)      = (1 - delta)*K(t) + I_delivered
 The firm cash account (`money_buffer`) is an **intra-period pass-through** and
 **returns to zero every period** - no money sequestration. **Conserved quantity
 (SFC):** `sum(household wealth + income) + sum(firm money_buffer)` is constant
-(deviation < 1e-9) — across the `pct_capitalists` range, not only at the default
+(deviation < 1e-9) - across the `pct_capitalists` range, not only at the default
 (brief 12, §8).
 
 **Ownership.** `int(num_households * pct_capitalists)` households are capitalists; firms
 are assigned to them by cycling over the **firms**, so every firm has exactly one owner
 at any `pct_capitalists` (which is what keeps the money circuit closed). A capitalist may
-own several firms, or none — the latter is a low-MPC household on labour income alone, a
+own several firms, or none - the latter is a low-MPC household on labour income alone, a
 declared case.
 
 **Consumption** (worker MPC `c1`, lower capitalist MPC, wealth effect `lambda`,
@@ -443,7 +443,7 @@ lognormal `A` with the same variance need not have the same threshold.
 
 ### 8. Firm ownership, and an invariant that only held at the default (brief 12)
 
-Not a result — a **defect corrected**, and a methodological point worth more than the fix.
+Not a result - a **defect corrected**, and a methodological point worth more than the fix.
 
 Ownership was assigned by cycling over the **households**: capitalist `i` owned firm
 `i % num_firms`. That is a bijection *only* at the default (100 households × 0.10 = 10
@@ -459,38 +459,38 @@ over 200 steps:
 
 **Below the default, money is destroyed:** an ownerless firm's `dividend_pool` and
 residual `money_buffer` are paid out inside `if self.owner is not None`, so they simply
-vanish — a direct violation of the stock-flow invariant. **Above it, wealth is
+vanish - a direct violation of the stock-flow invariant. **Above it, wealth is
 double-counted:** the assignment overwrote itself, leaving capitalists holding a stale
 `owned_firm` whose capital `net_worth()` still summed, inflating `Wealth_Gini`.
 
 The fix assigns ownership by cycling over the **firms**, so every firm has exactly one
 owner for any number of capitalists ≥ 1 (validated: zero capitalists raises). A capitalist
-may own several firms, or none — the latter is a declared case, a low-MPC household living
+may own several firms, or none - the latter is a declared case, a low-MPC household living
 on labour income alone, not a degenerate one. `Capitalist.owned_firm` became
 `owned_firms` (a list), with no compatibility alias: a silently ambiguous singular
 reference is what produced the defect.
 
 **Nothing committed moves.** At the default `j % 10 == j`, so firm `j` still belongs to
-capitalist `j` — the same assignment as before — and the ownership loop draws nothing from
+capitalist `j` - the same assignment as before - and the ownership loop draws nothing from
 the RNG. A slice of the committed panels (`ces_b05`/`ces_b07`/`ces_b09`/`ces_b10`, 440
 cells at 2000 steps × 20 seeds, artifact-vs-artifact) reproduces **7/7 with
 `max_abs_dev = 0.0`**, via `scripts/check_brief12_nesting.py` →
 `results/ces_b12_byte_check.csv`.
 
-*A slice and not the whole grid — a declared choice.* The committed set is ~28 000 cells
+*A slice and not the whole grid - a declared choice.* The committed set is ~28 000 cells
 (hours of compute), but the nesting claim is **mechanical, not statistical**: at the
 default the assignment is the same expression as before, and the ownership loop draws
 nothing from the RNG. A mechanical claim is falsified by **one representative cell per
-reference** — were it wrong, every cell would deviate, not one in a thousand. The slice
+reference** - were it wrong, every cell would deviate, not one in a thousand. The slice
 therefore spans the dimensions along which the code *branches* (both `c0` regimes, `eta`
-on/off, government on/off, dispersion on/off — including a brief-10 config at
+on/off, government on/off, dispersion on/off - including a brief-10 config at
 `spread = 0.20`, the one path where firms differ and ownership order could interact with
 which firm dies first), rather than sampling the grid at random. It is a nesting check,
 not a revalidation of the panels; a full regeneration remains possible and costs only
 machine time.
 
 *The point worth keeping:* the SFC invariant was tested **only at the default
-configuration**. It held there, and nowhere else — and this is precisely what a global
+configuration**. It held there, and nowhere else - and this is precisely what a global
 sensitivity analysis would have walked over in silence, reporting sensitivity indices for
 a model that leaks money. Invariants are now parametrised over the range a sweep will
 reach (`pct_capitalists ∈ {0.02 … 0.50}` in the suite), and the same reading is owed to
@@ -498,23 +498,23 @@ reach (`pct_capitalists ∈ {0.02 … 0.50}` in the suite), and the same reading
 
 ---
 
-### 9. Global sensitivity analysis — the headline does not survive the parameter space (brief 13)
+### 9. Global sensitivity analysis - the headline does not survive the parameter space (brief 13)
 
 Every result above is measured at a **cell**: a chosen `sigma`, a chosen `c0`, everything
-else at its default. Brief 13 asks whether the headline — the *sign* `dY/drho < 0` — holds
+else at its default. Brief 13 asks whether the headline - the *sign* `dY/drho < 0` - holds
 when all 16 defensible parameters move at once. It does not.
 
 > **`P(chord < 0 | viable) = 0.095 ± 0.007`** (binomial SE, 1 606 viable points of
 > 3 328). **Fraction viable = 0.483.**
 >
-> Over the empirically defensible space, **wage-led is the exception, not the rule** — and
+> Over the empirically defensible space, **wage-led is the exception, not the rule** - and
 > half the space does not survive at all.
 
-**Read that as a statement about a chord, not a derivative — a declared design defect.**
+**Read that as a statement about a chord, not a derivative - a declared design defect.**
 The QoI is a two-point difference between `rho = 0.35` and `0.55`. But brief 05 had already
 measured that `Y(rho)` is **U-shaped**, with the turning point *inside* the support in 19 of
 22 cells. On a U-shaped response the sign of a chord depends on where it is taken and can
-differ from both the local derivative and an OLS slope over the full support — which is
+differ from both the local derivative and an OLS slope over the full support - which is
 brief 07's method. So `P = 0.095` is exact about *"the chord over [0.35, 0.55] is
 negative"* and is **not** the same claim as *"the derivative is negative somewhere"*. Brief
 13 inherited this QoI from its own design without reconciling it against brief 05's
@@ -531,7 +531,7 @@ indices would decompose the variance of the seed draw. Uniform ranges are a decl
 **choice of ignorance**. Two levels: Morris screening (k = 17, r = 20) under a pruning rule
 **frozen in the source before any output existed**, then Sobol (N = 256) with bootstrap CIs.
 
-**What governs the outcome — and it is not what the project thought.**
+**What governs the outcome - and it is not what the project thought.**
 
 | | `viable` S1 | `viable` ST | `slope_raw` S1 | `slope_raw` ST |
 |---|---|---|---|---|
@@ -551,15 +551,15 @@ wage → U → capital channel that is interactive by construction.
 | 0.030–0.045 | **0.992** | 0.044 |
 | 0.045–0.060 | 0.758 | 0.111 |
 | 0.060–0.075 | 0.180 | 0.313 |
-| 0.075–0.090 | **0.000** | — |
+| 0.075–0.090 | **0.000** | - |
 
 Brief 11 demoted `delta = 0.05` to a declared convention, noting the BEA-implied figure is
 ≈0.090, and warned against recalibrating. The SA sharpens that into something harder: **at
-the value the data suggest, this model does not exist** — 0 of 832 points survive. A
+the value the data suggest, this model does not exist** - 0 of 832 points survive. A
 declared structural limitation for the write-up, not a parameter to tune.
 
 **`sigma` is close to irrelevant inside the empirical band** (`ST` = 0.024, S1
-indistinguishable from zero) — `delta` and `pi0` do the work that the project's narrative
+indistinguishable from zero) - `delta` and `pi0` do the work that the project's narrative
 attributed to `sigma`.
 
 The declared **wide-`sigma` check** (0.30–1.00, N = 128, secondary by construction) puts
@@ -573,7 +573,7 @@ that in context. Viability is identical (0.483) and `P(chord < 0 | viable)` doub
 | **0.649–0.823** | 0.469 | **0.338** | +27.2 |
 | **0.823–0.998** | 0.481 | **0.380** | +21.5 |
 
-**The threshold lands at `sigma ~ 0.65` — exactly where briefs 04 and 07 put `sigma*` — but
+**The threshold lands at `sigma ~ 0.65` - exactly where briefs 04 and 07 put `sigma*` - but
 the direction is inverted relative to how the conclusion is written up.** The documents say
 empirical `sigma` sits *below* `sigma*` and is therefore wage-led; here, below 0.65
 wage-led is rare and above it is common.
@@ -585,7 +585,7 @@ until an experiment distinguishes them.**
   [0.35, 0.65]; this measures a chord over [0.35, 0.55]. On a U-shaped `Y(rho)` with the
   turning point inside the support (brief 05: 19 of 22 cells), the two can differ in sign
   with neither being wrong. This is the design defect declared above.
-* **(b) Conditional vs marginal.** `sigma*` is a **conditional** statement — measured with
+* **(b) Conditional vs marginal.** `sigma*` is a **conditional** statement - measured with
   every other parameter held at its default. The SA measures a **marginal** effect: each
   point draws its own values for the other fifteen, and the observed sign is averaged over
   that distribution. There is no reason these should agree in a model where `ST >> S1`.
@@ -595,7 +595,7 @@ until an experiment distinguishes them.**
   entirely compatible.
 
 **How to separate them (an experiment, not an argument):** re-run both the chord *and* the
-full-support OLS slope over three or more `rho` values, under two regimes — (i) all other
+full-support OLS slope over three or more `rho` values, under two regimes - (i) all other
 parameters **fixed at brief 07's defaults**, (ii) marginalised as here. A sign flip between
 chord and OLS at fixed parameters implicates (a); a flip between fixed and marginalised at
 constant method implicates (b); both flipping means both contribute and the weights need
@@ -603,7 +603,7 @@ quantifying. Until that experiment exists, **the contradiction stays open and is
 as open.**
 
 That the *location* reproduces at ~0.65 under two independent methods remains evidence
-*for* the frontier. It is the **sign** that is not comparable — and it is the point where
+*for* the frontier. It is the **sign** that is not comparable - and it is the point where
 the thesis is most at risk of asserting the opposite of the truth.
 
 **Two by-products, no new mechanism.**
@@ -617,18 +617,18 @@ else, which makes the comparison **interventional**:
 | [0.20, 0.275) | 38.40 | 52.28 | 0.578 | 90.96 |
 | (0.425, 0.50] | 49.23 | **63.84** | 0.560 | 115.80 |
 
-+10.83 of spending, **+11.56 of profit** — near one-for-one, correlation **+0.83** on
++10.83 of spending, **+11.56 of profit** - near one-for-one, correlation **+0.83** on
 levels. Capitalists do earn what they spend. The *share* falls slightly, because output
 rises faster; Kalecki's claim is about levels, and it is the levels that hold.
 
 *Point 10-bis, hypothesis reversed.* At `beta < 0.1` there is **not one wage-led point out
 of 338**, and viability is *lower* (0.385) than at `beta ~ 1` (0.533). The wage-led sign is
 substantially **produced by** accelerator reactivity rather than being an intrinsic
-property, and `beta` governs both the sign and survival — the opposite of the brief's
+property, and `beta` governs both the sign and survival - the opposite of the brief's
 expectation that the instability would prove independent of investment reactivity.
 
 *Declared limits.* 3 seeds ⇒ ~4.3% of the QoI variance is seed noise (measured in the
-pilot), which lands in the residual, depressing S1 and inflating apparent interaction — two
+pilot), which lands in the residual, depressing S1 and inflating apparent interaction - two
 S1 values come out slightly negative, i.e. zero within noise. N = 256 over 11 parameters
 gives wide CIs: `sigma`, `capitalist_mpc`, `beta`, `eta` have S1 indistinguishable from
 zero. `slope_raw` deliberately mixes marginal response with regime change, which is why
@@ -667,9 +667,9 @@ zero. `slope_raw` deliberately mixes marginal response with regime change, which
   firm productivity leaves the aggregates alone up to ~±5 % and viable up to a
   sharp cliff at ~±12 %, past which the economy dies outright (§7). Two caveats
   that follow from it: the firm side is quasi-representative in its **aggregates,
-  not in its cross-section** — even with identical `A`, random consumption links
+  not in its cross-section** - even with identical `A`, random consumption links
   make firms diverge in capital (`TopK_Share` settles at 0.35–0.38, not the equal-split
-  0.30) — and the narrowness of the viable range is itself a **limitation of the
+  0.30) - and the narrowness of the viable range is itself a **limitation of the
   model**, caused by the absence of any reallocation channel.
 * **`c0` and `wealth_effect` note.** `wealth_effect = 0.05` is anchored (Slacalek
   2009). `c0 = 2.0` is a demand-scale lever with a falsified original
@@ -821,9 +821,9 @@ aggregate second implementation inherited from the additive Phase-1 model. It ha
 * Slacalek, J. (2009). *What Drives Personal Consumption? The Role of Housing and
   Financial Wealth.* The B.E. Journal of Macroeconomics 9(1). - <https://ideas.repec.org/a/bpj/bejmac/v9y2009i1n37.html>
 * Blanchflower, D. G. & Oswald, A. J. (1994). *The Wage Curve.* MIT Press. -
-  wage-curve elasticity ~-0.10 (the level relation used in brief 07).
+  wage-curve elasticity ~-0.10 (the level relation used in brief 07). - <https://ideas.repec.org/b/mtp/titles/026202375x.html>
 * Nijkamp, P. & Poot, J. (2005). *The Last Word on the Wage Curve?* Journal of
-  Economic Surveys 19(3), 421–450. - meta-analysis, corrected elasticity ~-0.07.
+  Economic Surveys 19(3), 421–450. - meta-analysis, corrected elasticity ~-0.07. - <https://ideas.repec.org/a/bla/jecsur/v19y2005i3p421-450.html>
 
 Mesa: Agent-Based Modeling in Python - <https://mesa.readthedocs.io/>
 
