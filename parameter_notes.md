@@ -807,6 +807,17 @@ richiederebbe `ρ ≈ 0.30`, **fuori** dal supporto sweepato e vicino alla sogli
 viability (~0.30). Da riportare così: *l'ancora è raggiungibile nel range di ρ
 esplorato allo scenario anchor, non allo scenario headline.*
 
+**Nota sul numero orfano `0.176` — tracciato, non cancellato.** In fase di
+progettazione del brief 11 circolava `I/Y = 0.176` per lo scenario headline. **È la
+cella η=0, non l'headline**: a `c0`=1.0, σ=0.5, ρ=0.40 il panel b05 (senza wage
+curve) misura **0.1757**, e la cella η=0 del panel b07 dà lo stesso valore
+(l'annidamento η=0 è byte-identico, brief 07). L'headline è η=0.10 ⇒ **0.1823**.
+I/Y è **monotòno crescente in η** su questa cella (0.1757 / 0.1792 / 0.1823 /
+0.1858 a η = 0 / 0.05 / 0.10 / 0.15): la wage curve alza il salario a `U < U_REF`,
+il che sposta la composizione verso il capitale e alza il tasso di investimento.
+Registrato qui perché un numero orfano senza spiegazione è esattamente il modo in
+cui nascono i "numeri fantasma" (`CLAUDE.md` §4).
+
 **Nota su `I/Y = ρ·α`: non vale più.** L'identità analitica della vecchia sezione
 (0.133 a ρ=0.40) apparteneva al core **Cobb-Douglas senza mercato del lavoro**, dove
 la quota di profitto era pinnata ad α per costruzione. Sul core attuale la quota di
