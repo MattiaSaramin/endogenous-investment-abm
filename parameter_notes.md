@@ -937,15 +937,39 @@ su `viable` 0.008 → 0.047 ±0.052 — entrambi indistinguibili da zero alle CI
 > **La soglia cade a σ≈0.65 — esattamente dove il brief 04/07 colloca σ\* — ma la
 > DIREZIONE è invertita rispetto a come la conclusione è scritta.** I documenti dicono
 > "l'empirico σ 0.40–0.60 sta **sotto** σ\* ⟹ wage-led"; qui sotto 0.65 il wage-led è raro
-> (4–6%) e sopra è frequente (34–38%). **Non lo registro come contraddizione**, perché la
-> spiegazione più probabile è il limite di disegno qui sopra: il brief 07 stima una
-> pendenza **OLS sull'intero supporto** ρ∈[0.35,0.65], io misuro una **corda** [0.35,0.55],
-> e su una `Y(ρ)` a U con svolta **dentro** il supporto le due cose possono avere segno
-> opposto **senza che nessuna delle due sia sbagliata**. Che la *posizione* della soglia
-> si riproduca a σ≈0.65 con due metodi indipendenti è, semmai, un elemento a favore della
-> frontiera; è il **segno** a non essere confrontabile finché la QoI non è ridefinita su
-> ≥3 valori di ρ. **Da risolvere prima della stesura: è il punto su cui la tesi rischia di
-> affermare l'opposto del vero.**
+> (4–6%) e sopra è frequente (34–38%).
+>
+> **DUE CAUSE CANDIDATE, NON ANCORA DISTINTE. Nessuna delle due va scritta come "la"
+> spiegazione finché un esperimento non le separa.**
+>
+> **(a) Corda contro derivata.** Il brief 07 stima una pendenza **OLS sull'intero
+> supporto** ρ∈[0.35,0.65]; qui si misura una **corda** [0.35,0.55]. Su una `Y(ρ)` a U con
+> svolta **dentro** il supporto (brief 05: 19 celle su 22) le due quantità possono avere
+> segno opposto senza che nessuna sia sbagliata. È il limite di disegno dichiarato sopra.
+>
+> **(b) Condizionale contro marginale.** σ\* del brief 04/07 è un enunciato
+> **condizionale**: misurato con *tutti gli altri parametri fissi* ai loro default. La SA
+> misura un effetto **marginale**: ogni punto ha i suoi 15 altri parametri sorteggiati, e
+> il segno che si osserva è mediato su quella distribuzione. Le due cose non devono
+> coincidere, e non c'è ragione a priori perché lo facciano in un modello con `ST ≫ S1`.
+> **Questa ipotesi ha già un riscontro indipendente nei dati di questo brief:**
+> `ST(sigma) = 0.024` sul range stretto — marginalizzando, σ spiega ~2% della varianza,
+> cioè *quasi tutto* ciò che σ sembrava governare nella cella è in realtà governato dagli
+> altri parametri e dalle loro interazioni. Un σ\* condizionale robusto e un σ marginale
+> quasi inerte sono perfettamente compatibili.
+>
+> **Come separarle (esperimento, non argomentazione):** ri-eseguire la corda **e** la
+> pendenza OLS su ≥3 valori di ρ, **a due regimi** — (i) tutti gli altri parametri **fissi
+> ai default del brief 07**, (ii) marginalizzati come qui. Se il segno si ribalta fra
+> corda e OLS a parametri fissi, è (a); se si ribalta fra parametri fissi e marginalizzati
+> a metodo costante, è (b); se entrambi, contribuiscono entrambe e va quantificato il peso.
+> Finché quell'esperimento non esiste, **la contraddizione resta aperta e va riportata come
+> aperta**.
+>
+> Che la *posizione* della soglia si riproduca a σ≈0.65 con due metodi indipendenti resta
+> un elemento a favore della frontiera; è il **segno** a non essere confrontabile. **Da
+> risolvere prima della stesura: è il punto su cui la tesi rischia di affermare l'opposto
+> del vero.**
 
 **Kalecki, replicato sul campione largo:** corr(consumo capitalisti, profitto **livello**)
 = **+0.82** (contro +0.83 sul primario), sulla **quota** +0.00. La conclusione

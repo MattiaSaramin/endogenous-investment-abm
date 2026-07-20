@@ -606,12 +606,21 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   - **Check σ largo (0.30–1.00, N=128, secondario):** viability identica (0.483),
     `P(corda<0|viable)` **raddoppia a 0.201**, concentrata sopra σ≈0.65 (per bin: 0.042 /
     0.057 / **0.338** / **0.380**). **La soglia cade dove il brief 04/07 mette σ\*, ma la
-    DIREZIONE è invertita** rispetto a come la conclusione è scritta. Non registrato come
-    contraddizione: è quasi certamente il difetto corda-vs-derivata qui sopra (brief 07 usa
-    OLS su tutto [0.35,0.65], qui è una corda [0.35,0.55]). Che la **posizione** si riproduca
-    con due metodi indipendenti è evidenza *a favore* della frontiera; è il **segno** a non
-    essere confrontabile finché la QoI non è ridefinita. **È il punto su cui la tesi rischia
-    di affermare l'opposto del vero.**
+    DIREZIONE è invertita** rispetto a come la conclusione è scritta.
+    **DUE CAUSE CANDIDATE, NON DISTINTE — e nessuna va scritta come "la" spiegazione
+    finché un esperimento non le separa.** **(a) corda vs derivata:** il brief 07 usa OLS
+    su tutto [0.35,0.65], qui è una corda [0.35,0.55], e su una `Y(ρ)` a U con svolta dentro
+    il supporto le due possono avere segno opposto. **(b) condizionale vs marginale:** σ\* è
+    misurato con *tutti gli altri parametri fissi*, la SA **marginalizza** su 15 parametri
+    sorteggiati; in un modello con `ST ≫ S1` non c'è ragione perché coincidano, e l'ipotesi
+    ha già riscontro nei dati di questo brief — **`ST(sigma) = 0.024`**, cioè marginalmente
+    σ spiega ~2% della varianza. Un σ\* condizionale robusto e un σ marginale quasi inerte
+    sono compatibili. **Esperimento che le separa:** corda *e* OLS su ≥3 valori di ρ, a due
+    regimi (altri parametri fissi ai default del brief 07 / marginalizzati). Finché non
+    esiste, **la contraddizione resta aperta e va riportata come aperta**. Che la
+    **posizione** si riproduca con due metodi indipendenti è evidenza *a favore* della
+    frontiera; è il **segno** a non essere confrontabile. **È il punto su cui la tesi
+    rischia di affermare l'opposto del vero.**
   - **Sottoprodotti.** **Kalecki: confermato in LIVELLI** — `capitalist_mpc` alto vs basso
     dà consumo capitalisti +10.83 e profitto **+11.56 (+22%)**, corr **+0.83**; sulla
     *quota* −0.06 (l'output cresce più in fretta). È l'**intervento** che il brief 11

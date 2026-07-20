@@ -576,14 +576,35 @@ that in context. Viability is identical (0.483) and `P(chord < 0 | viable)` doub
 **The threshold lands at `sigma ~ 0.65` — exactly where briefs 04 and 07 put `sigma*` — but
 the direction is inverted relative to how the conclusion is written up.** The documents say
 empirical `sigma` sits *below* `sigma*` and is therefore wage-led; here, below 0.65
-wage-led is rare and above it is common. This is **not** recorded as a contradiction: the
-likely cause is the chord-vs-derivative defect above. Brief 07 fits an OLS slope over the
-whole support `rho` in [0.35, 0.65]; this measures a chord over [0.35, 0.55]; on a U-shaped
-`Y(rho)` with the turning point inside the support, the two can differ in sign with neither
-being wrong. That the *location* reproduces at ~0.65 under two independent methods is
-evidence *for* the frontier. It is the **sign** that is not comparable until the QoI is
-redefined over three or more `rho` values — and it is the point where the thesis is most at
-risk of asserting the opposite of the truth.
+wage-led is rare and above it is common.
+
+**Two candidate causes, not yet separated. Neither is written down as the explanation
+until an experiment distinguishes them.**
+
+* **(a) Chord vs derivative.** Brief 07 fits an OLS slope over the whole support `rho` in
+  [0.35, 0.65]; this measures a chord over [0.35, 0.55]. On a U-shaped `Y(rho)` with the
+  turning point inside the support (brief 05: 19 of 22 cells), the two can differ in sign
+  with neither being wrong. This is the design defect declared above.
+* **(b) Conditional vs marginal.** `sigma*` is a **conditional** statement — measured with
+  every other parameter held at its default. The SA measures a **marginal** effect: each
+  point draws its own values for the other fifteen, and the observed sign is averaged over
+  that distribution. There is no reason these should agree in a model where `ST >> S1`.
+  This hypothesis already has independent support in this brief's own numbers:
+  `ST(sigma) = 0.024` on the narrow range, i.e. marginally `sigma` explains ~2% of the
+  variance. A robust *conditional* `sigma*` and a nearly inert *marginal* `sigma` are
+  entirely compatible.
+
+**How to separate them (an experiment, not an argument):** re-run both the chord *and* the
+full-support OLS slope over three or more `rho` values, under two regimes — (i) all other
+parameters **fixed at brief 07's defaults**, (ii) marginalised as here. A sign flip between
+chord and OLS at fixed parameters implicates (a); a flip between fixed and marginalised at
+constant method implicates (b); both flipping means both contribute and the weights need
+quantifying. Until that experiment exists, **the contradiction stays open and is reported
+as open.**
+
+That the *location* reproduces at ~0.65 under two independent methods remains evidence
+*for* the frontier. It is the **sign** that is not comparable — and it is the point where
+the thesis is most at risk of asserting the opposite of the truth.
 
 **Two by-products, no new mechanism.**
 
