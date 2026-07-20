@@ -813,10 +813,47 @@ cella η=0, non l'headline**: a `c0`=1.0, σ=0.5, ρ=0.40 il panel b05 (senza wa
 curve) misura **0.1757**, e la cella η=0 del panel b07 dà lo stesso valore
 (l'annidamento η=0 è byte-identico, brief 07). L'headline è η=0.10 ⇒ **0.1823**.
 I/Y è **monotòno crescente in η** su questa cella (0.1757 / 0.1792 / 0.1823 /
-0.1858 a η = 0 / 0.05 / 0.10 / 0.15): la wage curve alza il salario a `U < U_REF`,
-il che sposta la composizione verso il capitale e alza il tasso di investimento.
-Registrato qui perché un numero orfano senza spiegazione è esattamente il modo in
-cui nascono i "numeri fantasma" (`CLAUDE.md` §4).
+0.1858 a η = 0 / 0.05 / 0.10 / 0.15).
+
+> **Correzione registrata (stessa sessione).** Una prima stesura di questa nota
+> spiegava la monotonìa così: *"la wage curve alza il salario a `U < U_REF`, il che
+> sposta la composizione verso il capitale"*. **Sbagliato, e col segno invertito:**
+> in questa cella `U ≈ 0.52–0.58`, cioè **molto sopra** `U_REF = 0.2605`, quindi la
+> wage curve **abbassa** il salario (`w_t` 0.900 → 0.798 su η = 0 → 0.15).
+> Falsificata anche la spiegazione alternativa ovvia (*salario giù ⇒ profitto
+> residuo su ⇒ `I = ρπ` su*): il **livello** del profitto è **piatto**
+> (45.93 → 46.07, +0.3%) — sale la *quota*, non il livello, perché l'output si
+> contrae.
+
+**Quello che i dati dicono davvero — aritmetica sugli aggregati misurati** (panel
+b07, `c0`=1.0, σ=0.5, ρ=0.40, 20 seed, medie su η = 0 → 0.15):
+
+| | η=0 | η=0.15 | var. |
+|---|---|---|---|
+| `w_t` | 0.900 | 0.798 | −11% |
+| monte salari | 42.8 | 33.2 | **−22%** |
+| profitto (livello) | 45.93 | 46.07 | +0.3% |
+| `I` | 15.59 | 14.72 | **−5.6%** |
+| `Y` | 88.73 | 79.24 | **−10.7%** |
+| I/Y | 0.1757 | 0.1858 | +5.7% |
+
+**I/Y sale come effetto di DENOMINATORE: `I` e `Y` scendono entrambi, `Y` più in
+fretta.** Verificato: `0.1757 · (0.944/0.893) = 0.1857 ≈ 0.1858`. Non c'è nessun
+aumento dell'investimento da spiegare — c'è una contrazione dell'output più rapida
+di quella dell'investimento.
+
+**Limite di questa nota, dichiarato.** Che `Y` si contragga *perché* il monte
+salari crolla (lavoratori cash-constrained al 100%, MPC≈1, regime
+demand-constrained: brief 05 e 09) è **coerente** con tutto ciò che il progetto ha
+misurato, ma **qui non è decomposto**: la tabella sopra stabilisce l'aritmetica del
+rapporto, non il canale causale. La lieve discesa di `I` a profitto piatto è
+compatibile con l'acceleratore in frenata (`u` 0.718 → 0.631, `util_effect` da
+0.909 a 0.866), anch'essa **non decomposta**. Da trattare come puntatore, non come
+meccanismo stabilito.
+
+Registrato — errore incluso — perché un numero orfano senza spiegazione è
+esattamente il modo in cui nascono i "numeri fantasma" (`CLAUDE.md` §4), e una
+spiegazione *plausibile ma non verificata* è il modo in cui ci restano.
 
 **Nota su `I/Y = ρ·α`: non vale più.** L'identità analitica della vecchia sezione
 (0.133 a ρ=0.40) apparteneva al core **Cobb-Douglas senza mercato del lavoro**, dove
