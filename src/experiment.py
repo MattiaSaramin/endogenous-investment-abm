@@ -456,6 +456,19 @@ def run_grid_panels(
 #: the difference.  Both sit inside the canonical viable support (RHO_SWEEP_B05).
 SA_RHO_LO, SA_RHO_HI = 0.35, 0.55
 
+#: **The repaired QoI support (brief 14 §1-§2).**  The brief-13 QoI was a two-point CHORD
+#: between ``SA_RHO_LO`` and ``SA_RHO_HI``.  Brief 05 had already measured that ``Y(rho)``
+#: is U-shaped with the turning point INSIDE the canonical support in 19 of 22 cells, and
+#: on a U the sign of a chord depends on where the chord is taken — so the brief-13
+#: headline was exact about "the chord [0.35, 0.55] is negative" and NOT about "the
+#: derivative is negative".  Brief 14 sweeps four rho values instead.
+#:
+#: The four points are not arbitrary: they span the canonical support ``RHO_SWEEP_B05``
+#: end to end, and they CONTAIN the two brief-13 chord points.  That is what makes the
+#: repair auditable — the chord and the OLS slope are then computed from the *same runs*,
+#: so any difference between them is the estimator and cannot be a different sample.
+SA_RHO_GRID = [0.35, 0.45, 0.55, 0.65]
+
 #: A run counts as collapsed at ``U -> 1`` or ``K -> 0`` (brief 13 §3.2).  Output is not
 #: used as the criterion here: it is the numerator of the QoI, and a viability rule
 #: written on the QoI itself would build in exactly the correlation the SA measures.
@@ -498,8 +511,9 @@ def run_design_points(
     tail=50,
     workers=None,
     metrics=None,
+    rhos=None,
 ):
-    """Evaluate SA design points at both retention ratios, in ONE process pool.
+    """Evaluate SA design points at several retention ratios, in ONE process pool.
 
     ``points`` is a list of ``MacroModel`` kwarg dicts (one per row of the SALib sample).
     Returns the raw per-(point, rho, seed) frame; :func:`qoi_from_runs` reduces it.
@@ -511,12 +525,18 @@ def run_design_points(
     Pairing the seeds cancels the common component, which is why the difference is taken
     per seed and averaged afterwards (see :func:`qoi_from_runs`), never as a difference of
     means over unrelated draws.
+
+    ``rhos`` (brief 14) overrides the two-point support with an arbitrary list — pass
+    :data:`SA_RHO_GRID` for the repaired, four-point QoI.  It defaults to ``None``, which
+    reproduces the brief-13 two-point behaviour EXACTLY, so the committed brief-13
+    artifacts stay regenerable from this same function.
     """
     metrics = list(SA_METRICS) if metrics is None else list(metrics)
+    rhos = (rho_lo, rho_hi) if rhos is None else tuple(rhos)
     jobs = [
         (idx, rho, seed, steps, tail, params, metrics)
         for idx, params in enumerate(points)
-        for rho in (rho_lo, rho_hi)
+        for rho in rhos
         for seed in range(seeds)
     ]
 
@@ -531,7 +551,8 @@ def run_design_points(
 
 
 def qoi_from_runs(runs, rho_lo=SA_RHO_LO, rho_hi=SA_RHO_HI,
-                  u_collapse=SA_U_COLLAPSE, k_collapse=SA_K_COLLAPSE):
+                  u_collapse=SA_U_COLLAPSE, k_collapse=SA_K_COLLAPSE,
+                  rhos=None):
     """Reduce raw SA runs to one row of QoIs per design point.
 
     Returns, per point:
@@ -561,8 +582,34 @@ def qoi_from_runs(runs, rho_lo=SA_RHO_LO, rho_hi=SA_RHO_HI,
         1.0 when ``slope < 0`` (viable points only) — the indicator ``P(dY/drho < 0)``
         averages.
     Levels at both rho values are carried through with ``_lo``/``_hi`` suffixes.
+
+    **Brief 14: the repaired QoI.**  Passing ``rhos`` (e.g. :data:`SA_RHO_GRID`) switches
+    the estimator from the two-point chord to an **OLS slope over the whole support**,
+    which is the estimator brief 07 used to identify ``sigma*`` — so the SA and the
+    frontier finally measure the same thing.  When ``rhos`` is given:
+
+    * ``slope_raw`` / ``slope`` / ``wage_led`` become the **OLS** quantities.  They keep
+      their names on purpose: everything downstream (Morris, Saltelli, the summaries)
+      then reads the repaired QoI through the same column, so the *only* thing that
+      changes between the brief-13 and brief-14 index sets is the QoI itself — which is
+      precisely the comparison brief 14 §3 asks to be able to make.
+    * ``chord_raw`` / ``chord`` / ``wage_led_chord`` carry the brief-13 estimator computed
+      **from the same runs**, so the two can be contrasted without a second simulation.
+    * ``rho_star`` is the turning point of the quadratic fit (brief 05's
+      :func:`quadratic_curvature`) on the seed-mean ``Y(rho)`` curve, with
+      ``rho_star_in_support`` recording whether it lands inside the swept range.  Outside
+      the range the U is *not resolved* there and the value is reported as such rather
+      than extrapolated (brief 14 §2).
+    * ``viable`` is evaluated over ALL swept rho values, so it is **not** comparable to
+      the brief-13 number by construction: a wider support gives collapse more chances.
+      ``viable_chord`` restricts viability to the two brief-13 rho values, which is the
+      column that IS comparable to the committed 0.483.
+
+    With ``rhos=None`` (the default) every one of these is absent and the function
+    reproduces the brief-13 behaviour exactly.
     """
     out = []
+    swept = None if rhos is None else [float(r) for r in rhos]
     for idx, block in runs.groupby("point"):
         lo = block[block["rho"] == rho_lo].set_index("seed").sort_index()
         hi = block[block["rho"] == rho_hi].set_index("seed").sort_index()
@@ -571,19 +618,21 @@ def qoi_from_runs(runs, rho_lo=SA_RHO_LO, rho_hi=SA_RHO_HI,
         if list(lo.index) != list(hi.index):
             raise ValueError(f"point {idx}: seeds do not pair across rho (CRN broken)")
 
-        dead = (
-            (lo["Unemployment_Rate"] >= u_collapse) | (lo["Total_Capital"] < k_collapse)
-            | (hi["Unemployment_Rate"] >= u_collapse) | (hi["Total_Capital"] < k_collapse)
-        )
-        # A point is viable when NO seed collapsed at either rho; the mixed case (some
+        def _dead_at(frame):
+            return ((frame["Unemployment_Rate"] >= u_collapse)
+                    | (frame["Total_Capital"] < k_collapse))
+
+        chord_dead = _dead_at(lo) | _dead_at(hi)
+        # A point is viable when NO seed collapsed at any swept rho; the mixed case (some
         # seeds alive) is recorded rather than rounded, because in this model a mixed
         # point is a basin boundary — the very thing the viability QoI is looking for.
-        frac_dead = float(dead.mean())
+        frac_dead = float(chord_dead.mean())
         viable = frac_dead == 0.0
 
-        per_seed = (hi["Output"].to_numpy() - lo["Output"].to_numpy()) / (rho_hi - rho_lo)
-        raw = float(np.mean(per_seed))
-        raw_sd = (float(np.std(per_seed, ddof=1)) if len(per_seed) > 1 else float("nan"))
+        chord_per_seed = (hi["Output"].to_numpy() - lo["Output"].to_numpy()) / (rho_hi - rho_lo)
+        raw = float(np.mean(chord_per_seed))
+        raw_sd = (float(np.std(chord_per_seed, ddof=1))
+                  if len(chord_per_seed) > 1 else float("nan"))
         row = {
             "point": int(idx),
             "viable": float(viable),
@@ -592,10 +641,64 @@ def qoi_from_runs(runs, rho_lo=SA_RHO_LO, rho_hi=SA_RHO_HI,
             "slope_raw_seed_sd": raw_sd,
             "slope": raw if viable else float("nan"),
             "slope_seed_sd": raw_sd if viable else float("nan"),
-            "n_seeds": int(len(per_seed)),
+            "n_seeds": int(len(chord_per_seed)),
         }
         row["wage_led"] = float(raw < 0.0) if viable else float("nan")
         row["wage_led_raw"] = float(raw < 0.0)
+
+        if swept is not None:
+            # --- brief 14: OLS over the full swept support, same runs as the chord ---
+            frames = []
+            for r in swept:
+                f = block[block["rho"] == r].set_index("seed").sort_index()
+                if list(f.index) != list(lo.index):
+                    raise ValueError(
+                        f"point {idx}: seeds do not pair at rho={r} (CRN broken)")
+                frames.append(f)
+
+            dead_any = chord_dead.copy()
+            for f in frames:
+                dead_any = dead_any | _dead_at(f)
+            frac_dead_all = float(dead_any.mean())
+            viable_all = frac_dead_all == 0.0
+
+            # Y[rho, seed]; the OLS slope is a fixed linear functional of the rho axis, so
+            # it is applied per seed and averaged — the same CRN discipline as the chord,
+            # not a regression on seed-averaged points.
+            Y = np.vstack([f["Output"].to_numpy() for f in frames])
+            w = _ols_weights(swept)
+            ols_per_seed = w @ Y
+            ols = float(np.mean(ols_per_seed))
+            ols_sd = (float(np.std(ols_per_seed, ddof=1))
+                      if ols_per_seed.size > 1 else float("nan"))
+
+            # The turning point of the U, fitted on the seed-mean curve (brief 05's
+            # convention for quadratic_curvature, kept so the two are comparable).
+            quad, quad_se, turn = quadratic_curvature(swept, Y.mean(axis=1))
+            in_support = bool(np.isfinite(turn) and min(swept) <= turn <= max(swept))
+
+            row.update({
+                # the chord, preserved under its own name, from these same runs
+                "chord_raw": raw,
+                "chord": raw if viable else float("nan"),
+                "wage_led_chord": float(raw < 0.0) if viable else float("nan"),
+                "viable_chord": float(viable),
+                # the repaired QoI takes over the primary column names
+                "viable": float(viable_all),
+                "frac_seeds_collapsed": frac_dead_all,
+                "slope_raw": ols,
+                "slope_raw_seed_sd": ols_sd,
+                "slope": ols if viable_all else float("nan"),
+                "slope_seed_sd": ols_sd if viable_all else float("nan"),
+                "wage_led": float(ols < 0.0) if viable_all else float("nan"),
+                "wage_led_raw": float(ols < 0.0),
+                "rho_star": turn,
+                "rho_star_in_support": float(in_support),
+                "quad_coef": quad,
+                "quad_coef_se": quad_se,
+                "n_rho": len(swept),
+            })
+
         for name, frame in (("lo", lo), ("hi", hi)):
             for m in frame.columns:
                 if m in ("point", "rho"):
@@ -928,6 +1031,216 @@ def sigma_star_by_rho(panel, support, column="Output", **kw):
             "P_star_gt_0.40": bs["frac_star_above_0_40"],
         })
     return pd.DataFrame(rows)
+
+
+# ======================================================================
+# Reproducibility criterion for the nesting checks (brief 14, task D)
+# ======================================================================
+
+#: **The retired criterion.** Briefs 07-13 declared a nesting check PASS only at
+#: ``max_abs_dev == 0.0`` — exact byte equality against the committed panels.  Brief 13
+#: §7.3(a) then MEASURED that this criterion is not reproducible across time: the code at
+#: commit ``7c2670f``, whose own check reported *7/7 PASS, dev = 0.0*, deviates by 1 ULP
+#: from its own committed results when re-run later.  Eight hypotheses were excluded by
+#: measurement (reporters, ``u_min``, the pandas reduction, brief-13 edits via checkout,
+#: pool vs main process, ``scipy``, P-core vs E-core scheduling, library versions) and the
+#: cause was NOT identified.  The measured envelope over 160 cells x 24 metrics was
+#: **max 2.1 ULP, non-amplifying, with zero regime flips**.
+#:
+#: The criterion is therefore RETIRED WITH MEASUREMENT BEHIND IT, not loosened for
+#: convenience — and it is replaced here, in a brief that does not itself violate it,
+#: rather than rewritten inside the brief that found it wanting (which would be post hoc).
+#:
+#: The replacement is deliberately two-part, because the two halves answer different
+#: questions and must not be traded off against each other:
+#:
+#: 1. a declared NUMERICAL tolerance, :data:`BYTE_CHECK_ULP`, on the continuous metrics;
+#: 2. a REGIME check at tolerance **exactly zero** (:func:`regime_signature`).  A drift
+#:    that moves a level in the 15th digit is a floating-point fact; a drift that flips a
+#:    cell from viable to collapsed, or changes which constraint binds, is a scientific
+#:    one.  Only the second can move a conclusion, so only the second keeps zero tolerance.
+#:
+#: 8 ULP = ~4x the measured 2.1 ULP envelope.  The margin is a judgement, and it is
+#: declared as one: large enough that the unidentified cause has room to be somewhat worse
+#: on cells brief 13 did not sample, small enough that it cannot absorb a real change (the
+#: smallest genuine perturbation this model produces — one different RNG draw — moves
+#: steady-state metrics by O(1e-3) relative, i.e. ~1e13 ULP).  It is a CONSTANT here, in
+#: the source, so it cannot be chosen per run.
+BYTE_CHECK_ULP = 8
+
+#: Absolute floor, below which a difference is not counted at all.  **This is not padding
+#: — a pure ULP criterion is unusable without it**, and brief 14 measured why.  ULP
+#: distance is a RELATIVE measure, so it blows up wherever the compared value is near
+#: zero: on the brief-13 QoI frame, ``Tax_Rate_hi`` shows 3 460 ULP on an absolute gap of
+#: 1.7e-16, purely because ``rr = 0`` puts many points at a tax rate of exactly 0.  The
+#: same happens to any metric that legitimately rests at zero (``Money_Buffer``, capital
+#: in a collapsed cell at 8e-40).  1e-12 sits far below the O(1e-6) absolute gap that the
+#: smallest REAL divergence in this model produces, and above the ~1e-13 accumulation
+#: noise of the reduction, so it separates the two without straddling either.
+BYTE_CHECK_ATOL = 1e-12
+
+#: **Declared scope, and the limit that comes with it.**  This criterion applies to
+#: MEASURED LEVELS — the panel metrics the b07-b13 nesting checks compare.  It must NOT be
+#: applied to differenced or fitted quantities (a chord, an OLS slope, a curvature): those
+#: subtract numbers of similar size, so catastrophic cancellation makes their relative
+#: error arbitrarily large from a stable input.  Measured, not asserted: on the brief-13
+#: Sobol QoIs ``slope_raw`` deviates by 3 410 ULP while its inputs deviate by 4 ULP and its
+#: own absolute gap is 3.4e-13.  A tolerance able to pass that number would be too loose to
+#: mean anything on the levels.
+#:
+#: Derived quantities are therefore checked by the REGIME limb instead — the sign of the
+#: slope, at tolerance zero — which is the property that can actually move a conclusion.
+BYTE_CHECK_SCOPE = ("levels only; differenced/fitted quantities are checked by sign, "
+                    "not by tolerance (catastrophic cancellation)")
+
+#: Columns whose equality is checked at tolerance ZERO, when present.  These are the
+#: regime facts: does the cell live, and what binds at the margin.  ``Dead_Firms`` is a
+#: brief-10 reporter and only appears in panels that carried it.
+REGIME_EXACT_COLUMNS = ["Dead_Firms"]
+
+
+def ulp_distance(a, b):
+    """Distance between ``a`` and ``b`` in units in the last place, elementwise.
+
+    ``np.spacing`` of the larger magnitude is the width of one ULP there, so dividing the
+    absolute difference by it expresses the gap in representable steps rather than in
+    absolute units — which is the only scale-free way to state a floating-point tolerance
+    across metrics whose magnitudes run from 1e-3 (rates) to 1e3 (capital stocks).
+
+    Exact equality returns 0.0, including at zero (where ``np.spacing`` is subnormal) and
+    for ``NaN`` against ``NaN`` — a metric that is undefined in both frames agrees, and
+    treating that as a difference would fail every check on a collapsed cell.  ``NaN``
+    against a number returns ``inf``: that IS a difference, and a categorical one.
+    """
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    both_nan = np.isnan(a) & np.isnan(b)
+    one_nan = np.isnan(a) ^ np.isnan(b)
+
+    with np.errstate(invalid="ignore"):
+        diff = np.abs(a - b)
+        scale = np.spacing(np.maximum(np.abs(a), np.abs(b)))
+        out = np.where(diff == 0.0, 0.0, diff / np.where(scale > 0.0, scale, 1.0))
+    return np.where(both_nan, 0.0, np.where(one_nan, np.inf, out))
+
+
+def regime_signature(frame, collapse_y=COLLAPSE_Y, zero_tol=BYTE_CHECK_ATOL):
+    """The discrete facts about a panel that a numerical drift must NEVER move.
+
+    Returns a frame of categorical/boolean columns, compared at tolerance zero:
+
+    ``collapsed``
+        ``Output < collapse_y`` — viability, the primary regime fact.
+    ``binding``
+        which of the four constraints has the largest share of periods (the
+        :data:`_BOUND_COLS` argmax) — *which* margin the economy is on.
+    ``sign_*``
+        the sign of every metric present, as -1/0/+1.  A sign flip is qualitative even
+        when the magnitude is tiny — but only once the magnitude is RESOLVABLE.  Values
+        within ``zero_tol`` of zero are signed 0, because a metric that legitimately rests
+        at zero (``Tax_Rate`` at ``rr = 0``, ``Money_Buffer`` every period, capital in a
+        collapsed cell) would otherwise flip between +1 and -1 on 1e-16 of arithmetic
+        noise and fire this limb on every run.  That is the same measured problem
+        :data:`BYTE_CHECK_ATOL` exists for, and it is answered the same way: the regime
+        limb keeps ZERO tolerance on the facts it checks, and simply does not claim a
+        sign it cannot resolve.
+    plus any of :data:`REGIME_EXACT_COLUMNS` the frame carries, verbatim.
+
+    Note what is deliberately NOT here: the sign of ``dY/drho``.  That is a property of a
+    *fitted slope across cells*, not of a row, so it is checked by the callers that have
+    the fit (the drivers' nesting checks), not by this row-wise signature.
+    """
+    out = pd.DataFrame(index=frame.index)
+    if "Output" in frame.columns:
+        out["collapsed"] = frame["Output"] < collapse_y
+
+    bound_cols = [c for c in _BOUND_COLS if c in frame.columns]
+    if bound_cols:
+        out["binding"] = frame[bound_cols].idxmax(axis=1)
+
+    for col in frame.columns:
+        if frame[col].dtype.kind in "fi":
+            v = frame[col].to_numpy(dtype=float)
+            # NaN has no sign; encode it as its own level (-9) rather than letting the
+            # cast to int produce a platform-dependent value.  Unresolvable magnitudes
+            # are signed 0 (see the docstring), not forced to +/-1.
+            s = np.where(np.isnan(v), -9,
+                         np.where(np.abs(np.nan_to_num(v)) <= zero_tol, 0.0,
+                                  np.sign(np.nan_to_num(v)))).astype(int)
+            out[f"sign_{col}"] = s
+    for col in REGIME_EXACT_COLUMNS:
+        if col in frame.columns:
+            out[col] = frame[col]
+    return out
+
+
+def compare_artifacts(mine, ref, ulp_tol=BYTE_CHECK_ULP, atol=BYTE_CHECK_ATOL,
+                      collapse_y=COLLAPSE_Y):
+    """Compare a regenerated frame against a committed one under the brief-14 criterion.
+
+    Both frames must already be aligned (same shape, same column order, same row order):
+    alignment is the caller's job because only the caller knows the key.
+
+    The numerical limb passes an element when ``|a - b| <= atol + ulp_tol * ULP``, i.e. a
+    hybrid absolute/relative tolerance.  Both halves are needed and neither is slack: the
+    relative half is what makes one number comparable across metrics of different
+    magnitude, the absolute half is what stops a metric legitimately sitting at zero from
+    registering thousands of ULP on a gap of 1e-16 (see :data:`BYTE_CHECK_ATOL`).  Read
+    :data:`BYTE_CHECK_SCOPE` before pointing this at anything that is not a level.
+
+    Returns a dict with ``max_ulp`` and ``max_abs_dev`` (both reported whether or not they
+    pass), ``byte_equal`` — **the retired criterion, still computed and recorded** so the
+    change of standard stays visible in every artifact rather than quietly disappearing —
+    ``n_exceed`` (elements failing the numerical limb), the regime limb, and ``ok``.
+
+    ``ok`` requires BOTH limbs: within tolerance on the numbers AND exact on the regime.
+    A regime difference is a FINDING at any ULP distance; a numerical difference beyond
+    tolerance is a FINDING even with the regime intact.
+    """
+    num = [c for c in ref.columns
+           if ref[c].dtype.kind in "fi" and c in mine.columns
+           and mine[c].dtype.kind in "fi"]
+    a = mine[num].to_numpy(dtype=float)
+    b = ref[num].to_numpy(dtype=float)
+
+    ulp = ulp_distance(a, b)
+    with np.errstate(invalid="ignore"):
+        diff = np.abs(a - b)
+        allowed = atol + ulp_tol * np.spacing(np.maximum(np.abs(a), np.abs(b)))
+        exceed = np.where(np.isnan(diff), ulp > 0.0, diff > allowed)
+    n_exceed = int(np.sum(exceed))
+    finite = ulp[np.isfinite(ulp)]
+    max_ulp = float(finite.max()) if finite.size else 0.0
+    max_dev = float(np.nanmax(diff)) if diff.size else 0.0
+
+    # ``max_ulp`` alone is misleading and must never be quoted on its own: it is dominated
+    # by elements sitting at or near zero, where a 1e-16 gap is thousands of ULP and means
+    # nothing.  This is the drift figure that carries information — the worst relative
+    # deviation among elements whose ABSOLUTE gap is big enough to be a real signal — and
+    # it is the one to compare against :data:`BYTE_CHECK_ULP`.
+    with np.errstate(invalid="ignore"):
+        significant = np.isfinite(ulp) & (diff > atol)
+    max_ulp_sig = float(ulp[significant].max()) if significant.any() else 0.0
+
+    sig_a = regime_signature(mine, collapse_y=collapse_y, zero_tol=atol)
+    sig_b = regime_signature(ref, collapse_y=collapse_y, zero_tol=atol)
+    shared = [c for c in sig_b.columns if c in sig_a.columns]
+    n_regime_diff = int((sig_a[shared].to_numpy() != sig_b[shared].to_numpy()).sum())
+
+    return {
+        "max_ulp": max_ulp,
+        "max_ulp_significant": max_ulp_sig,
+        "max_abs_dev": max_dev,
+        "byte_equal": bool(max_dev == 0.0),
+        "n_exceed": n_exceed,
+        "n_compared": int(a.size),
+        "regime_equal": n_regime_diff == 0,
+        "n_regime_diff": n_regime_diff,
+        "n_regime_cols": len(shared),
+        "ulp_tol": ulp_tol,
+        "atol": atol,
+        "ok": bool(n_exceed == 0 and n_regime_diff == 0),
+    }
 
 
 def plot_sign_frontier(grid, deriv, path="ces_sign_frontier.png"):

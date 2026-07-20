@@ -1,0 +1,25 @@
+{
+  "python": "3.14.3",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "cpu_count": 12,
+  "numpy": "2.4.3",
+  "pandas": "3.0.1",
+  "mesa": "3.5.1",
+  "SALib": "1.5.2",
+  "sample_seed": 20260720,
+  "steps": 2000,
+  "tail": 50,
+  "n_seeds": 3,
+  "rho_lo": 0.35,
+  "rho_hi": 0.55,
+  "morris_keep_rule": "top-8 by mu* on at least one QoI, OR mu* >= 0.2 x max(mu*) for that QoI",
+  "brief": 14,
+  "rho_grid": [
+    0.35,
+    0.45,
+    0.55,
+    0.65
+  ],
+  "n_marginal_draws": 32,
+  "verdict_rule": "sign flips between cell 1 and cell 2 (fixed params, different method) => cause (a), the brief-13 QoI is the defect; sign flips between cell 2 and cell 4 (same method, fixed vs marginalised) => cause (b), sigma* is real but LOCAL and must be demoted to a conditional result; both => both contribute and the relative weight is quantified; neither => a new FINDING, to be reported and not forced."
+}

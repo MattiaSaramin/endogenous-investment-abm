@@ -1,8 +1,8 @@
-config,ref,byte_equal,max_abs_dev,n_rows,n_shared_cols,note
-b05_c0=1.0,ces_b05_stage_a_panel.csv,True,0.0,80,25,PASS
-b05_c0=2.0,ces_b05_stage_a_panel.csv,True,0.0,80,25,PASS
-"b07_c0=1.0,eta=0.10",ces_b07_stage_a_panel.csv,True,0.0,80,27,PASS
-"b07_c0=2.0,eta=0.15",ces_b07_stage_a_panel.csv,True,0.0,80,27,PASS
-"b09_c0=1.0,eta=0.10,rr=0.5",ces_b09_stage_a_panel.csv,True,0.0,80,27,PASS
-"b10_S2_headline,spread=0.20",ces_b10_panel.csv,True,0.0,20,27,PASS
-"b10_S3_benefit,spread=0.125",ces_b10_panel.csv,True,0.0,20,27,PASS
+config,ref,n_rows,n_shared_cols,max_ulp,max_ulp_significant,max_abs_dev,byte_equal,n_exceed,n_compared,regime_equal,n_regime_diff,n_regime_cols,ulp_tol,atol,ok,note
+b05_c0=1.0,ces_b05_stage_a_panel.csv,80,25,0.0,0.0,0.0,True,0,2000,True,0,27,8,1e-12,True,PASS
+b05_c0=2.0,ces_b05_stage_a_panel.csv,80,25,0.0,0.0,0.0,True,0,2000,True,0,27,8,1e-12,True,PASS
+"b07_c0=1.0,eta=0.10",ces_b07_stage_a_panel.csv,80,27,0.0,0.0,0.0,True,0,2160,True,0,29,8,1e-12,True,PASS
+"b07_c0=2.0,eta=0.15",ces_b07_stage_a_panel.csv,80,27,0.0,0.0,0.0,True,0,2160,True,0,29,8,1e-12,True,PASS
+"b09_c0=1.0,eta=0.10,rr=0.5",ces_b09_stage_a_panel.csv,80,27,0.0,0.0,0.0,True,0,2160,True,0,29,8,1e-12,True,PASS
+"b10_S2_headline,spread=0.20",ces_b10_panel.csv,20,27,0.0,0.0,0.0,True,0,540,True,0,29,8,1e-12,True,PASS
+"b10_S3_benefit,spread=0.125",ces_b10_panel.csv,20,27,0.0,0.0,0.0,True,0,540,True,0,29,8,1e-12,True,PASS
