@@ -3,7 +3,7 @@
 
 Brief 11 closes three anchoring debts (time unit, I/Y against BEA, ``c0``).  Two of them
 quote MODEL ratios -- I/Y and K/Y at the two reference cells -- which until now existed
-only inside prose.  Rule 5 of ``CLAUDE.md`` says every number in a document is either
+only inside prose.  Rule 5 of ``METHODOLOGY.md`` says every number in a document is either
 measured with a reproducible generator or declared a design target; this script is the
 generator for those two, so the ratios stop being hand-transcribed.
 

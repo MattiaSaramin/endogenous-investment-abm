@@ -1,4 +1,4 @@
-# CLAUDE.md — Istruzioni del progetto
+# METHODOLOGY.md — Istruzioni del progetto
 
 > Questo file è la fonte di verità sul progetto. È stato riscritto dopo una
 > ricognizione che ha allineato la documentazione allo stato reale del codice.
@@ -134,8 +134,8 @@ Leontief ha involontariamente **disattivato il lato offerta** — cioè proprio
 l'oggetto del progetto. Da qui la decisione di §6.
 
 ### Core di offerta — l'ex "Fase 2", ora costruito (`cobb-douglas-core`)
-Fino a poco fa esisteva **solo come specifica di design** (mai implementata) nel
-vecchio `CLAUDE.md`. Ora è **costruita, calibrata e committata**: Cobb-Douglas
+Fino a poco fa esisteva **solo come specifica di design** (mai implementata) in
+una vecchia versione di questo file. Ora è **costruita, calibrata e committata**: Cobb-Douglas
 vera con capitale essenziale, finanziamento interno via utili trattenuti. Il
 capitale è tornato a mordere — a regime esteso l'output è `A·K^α·L^(1−α)` con
 utilizzo ≈0.99, quindi la salita 44→157 è **capacità che cresce con K**, non
@@ -718,8 +718,9 @@ salda questo debito** (i risultati λ_e sono nel README; notebook al consolidame
 
 ## 9. Vincoli / invarianti — DA RIPORTARE ESPLICITAMENTE IN OGNI BRIEF
 
-Claude Code non conosce la storia del progetto e non vede queste conversazioni.
-Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
+Chi implementa non ha accesso alla storia del progetto né alle conversazioni di
+progettazione. Ogni brief deve elencare gli invarianti pertinenti come non
+negoziabili.
 
 - **Stock-flow consistency — su tutto lo spazio dei parametri, e testata lì:**
   nessuna creazione/distruzione di moneta nel settlement. Con il finanziamento a
@@ -766,12 +767,13 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 
 ## 10. Flusso di lavoro e divisione dei ruoli
 
-- **L'implementazione del codice è di Claude Code**, che lavora sul repository.
-- **Queste conversazioni** servono a: progettazione economica e architetturale,
+- **L'implementazione del codice** è un'attività separata, che lavora sul
+  repository a partire dai brief.
+- **La fase di progettazione** serve a: progettazione economica e architetturale,
   ricerca bibliografica e stime dei parametri, analisi e interpretazione dei
   risultati, revisione critica, scrittura. **Non** implementazione.
-- Quando una decisione è matura, l'output è un **brief di implementazione per
-  Claude Code**, autosufficiente: cosa cambiare e dove (file/funzioni), equazioni
+- Quando una decisione è matura, l'output è un **brief di implementazione**,
+  autosufficiente: cosa cambiare e dove (file/funzioni), equazioni
   e parametri con valori e fonti, invarianti da preservare (§9), test da
   aggiungere/aggiornare, criteri di accettazione (benchmark attesi). Niente
   implementazioni complete da copiare a mano: al massimo pseudocodice.
@@ -916,5 +918,5 @@ Ogni brief deve elencare gli invarianti pertinenti come non negoziabili.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di
   ancoraggio per ogni parametro; §"Il sistema congiunto" (α, ρ, δ, K/Y, I/Y).
   **Da estendere a ogni nuova estensione.**
-- `CLAUDE.md` — questo file. **Da rileggere contro il codice a ogni brief**: ha
-  già driftato una volta (§9).
+- `METHODOLOGY.md` — questo file. **Da rileggere contro il codice a ogni brief**:
+  ha già driftato una volta (§9).

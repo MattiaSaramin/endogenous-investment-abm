@@ -290,7 +290,7 @@ serve solo a garantire che il transiente sia esaurito.
   costruzione, punto 9-bis). Non esiste una grandezza empirica di cui `c0` sia una
   stima — quindi **cercarle una fonte sarebbe ancoraggio cosmetico**, cioè
   esattamente il fallimento che questo file esiste per prevenire (i "numeri
-  fantasma", `CLAUDE.md` §4).
+  fantasma", `METHODOLOGY.md` §4).
   - **La sensitivity è già istituzionalizzata:** ogni brief dal 05 in poi riporta
     **entrambi i regimi** `c0` ∈ {1.0, 2.0} — headline e anchor — con i risultati
     separati. Questo *è* il trattamento corretto di un parametro di scala: mostrarne
@@ -744,7 +744,7 @@ serve solo a garantire che il transiente sia esaurito.
 - **Nota metodologica, da tenere:** l'invariante SFC era testato **solo al default**.
   Valeva lì e in nessun altro punto dello spazio dei parametri — ed è esattamente ciò che
   una SA globale avrebbe calpestato in silenzio, producendo indici di sensitivity su un
-  modello che perde moneta. Da qui la riformulazione dell'invariante in `CLAUDE.md` §9:
+  modello che perde moneta. Da qui la riformulazione dell'invariante in `METHODOLOGY.md` §9:
   *SFC su tutto lo spazio dei parametri, testata lì*.
 
 ---
@@ -1165,7 +1165,7 @@ compatibile con l'acceleratore in frenata (`u` 0.718 → 0.631, `util_effect` da
 meccanismo stabilito.
 
 Registrato — errore incluso — perché un numero orfano senza spiegazione è
-esattamente il modo in cui nascono i "numeri fantasma" (`CLAUDE.md` §4), e una
+esattamente il modo in cui nascono i "numeri fantasma" (`METHODOLOGY.md` §4), e una
 spiegazione *plausibile ma non verificata* è il modo in cui ci restano.
 
 #### Identità di Kalecki (`Π = I + C_k`): TENTATA, NON CHIUDIBILE coi reporter attuali
@@ -1373,7 +1373,7 @@ ancoraggio.
    `U≥0.999` né `Y<1`). Il determinismo per seed **regge** dentro la sessione.
    **Conseguenza:** nessuna conclusione economica si muove, ma un criterio di
    uguaglianza esatta che fallisce senza che nulla sia cambiato è un criterio che il
-   progetto smetterà di credere — cioè il drift che §9 di `CLAUDE.md` esiste per
+   progetto smetterà di credere — cioè il drift che §9 di `METHODOLOGY.md` esiste per
    prevenire. **Proposta per il brief successivo, NON applicata qui** (cambiare un
    criterio di accettazione dentro il brief che lo viola sarebbe post-hoc): sostituire
    l'uguaglianza esatta con una **tolleranza ULP dichiarata** (es. ≤4 ULP relativi) più
