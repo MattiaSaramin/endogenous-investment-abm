@@ -588,9 +588,18 @@ class MacroModel(mesa.Model):
         — see the ANCHOR_* note at the top of this module.  ``Y0`` is *derived*
         (``A*K0^pi0*L0^(1-pi0)``), never measured.
     delta, productivity, initial_capital : float
-        Depreciation, A, and K(0) per firm.  ``initial_capital`` is held fixed across
-        any sigma/rho grid: the model has multiple equilibria and a viability
-        threshold near rho = 0.30, so K(0) selects the basin.
+        Depreciation, A, and K(0) **per firm**.  ``initial_capital`` is a **BASIN
+        SELECTOR, not a scale**: the model has multiple equilibria and a viability
+        threshold near rho = 0.30, so K(0) decides *which equilibrium is being talked
+        about*.  Held fixed across every sigma/rho grid, and frozen in the global SA
+        (brief 13) for exactly that reason — sweeping it would confound hysteresis with
+        sensitivity.  Because it is per firm, ``num_firms * initial_capital /
+        num_households`` is capital per worker at t = 0, and **that** is the quantity the
+        basin turns on: measured at seed 7 and rho = 0.40, 1.0 per worker (5 firms, 200
+        households) decapitalises to K -> 0 and U -> 1, while 2.0 per worker (10 firms)
+        settles alive.  So ``num_firms`` and ``num_households`` are not innocuous scale
+        knobs either; they are frozen with it (brief 13 Task 0, which verified that money
+        is nonetheless conserved at every combination tested, collapse included).
     productivity_spread : float
         Half-width of a mean-preserving linear fan of firm productivities around
         ``productivity`` (brief 10 probe): firm ``i`` gets

@@ -1752,3 +1752,86 @@ def test_a_capitalist_may_own_several_firms_or_none():
     idle = next(c for c in _capitalists(many) if not c.owned_firms)
     assert idle.net_worth() == pytest.approx(idle.wealth, abs=1e-12)
     assert idle.marginal_propensity() == many.capitalist_mpc
+
+
+# ----------------------------------------------------------------------
+# Structural scale parameters (brief 13, Task 0)
+# ----------------------------------------------------------------------
+#
+# The global SA FREEZES num_firms, num_households and initial_capital — but "frozen" is
+# not a licence to leave them untested.  Brief 12 showed that an invariant verified only
+# at the default holds only there, so these three get the same reading BEFORE the SA, not
+# during it.  Measured outcome: no accounting defect at any combination below.
+#
+# What the audit DID surface is economic, and is pinned separately below: initial_capital
+# is per FIRM, so num_firms at fixed num_households sets capital per worker at t = 0 —
+# which is the basin selector.  These are not innocuous scale knobs.
+
+SCALES = [(nF, nH) for nF in (5, 10, 20) for nH in (50, 100, 200)]
+
+
+@pytest.mark.parametrize("num_firms,num_households", SCALES)
+def test_money_is_conserved_across_scales(num_firms, num_households):
+    """SFC holds off the default (num_firms, num_households) — including the combinations
+    with num_firms > num_households/10, and including the cell that collapses (money is
+    conserved THROUGH the collapse; a dead economy still may not leak)."""
+    m = MacroModel(num_firms=num_firms, num_households=num_households,
+                   retention_ratio=REF_RHO, seed=7)
+    initial = total_money(m)
+    for _ in range(150):
+        m.step()
+        assert total_money(m) == pytest.approx(initial, abs=1e-7)
+        for f in _firms(m):
+            assert f.money_buffer == pytest.approx(0.0, abs=1e-9)
+
+
+@pytest.mark.parametrize("num_firms,num_households", SCALES)
+def test_ownership_covers_the_firms_at_any_scale(num_firms, num_households):
+    """The brief-12 fix is a property of the ASSIGNMENT, not of the default counts: every
+    firm has exactly one owner whatever the firm/household ratio."""
+    m = MacroModel(num_firms=num_firms, num_households=num_households, seed=0)
+    firms, capitalists = _firms(m), _capitalists(m)
+    assert len(firms) == num_firms
+    assert all(f.owner is not None for f in firms)
+    assert {id(f.owner) for f in firms} == {id(c) for c in capitalists if c.owned_firms}
+    owned = [f for c in capitalists for f in c.owned_firms]
+    assert sorted(id(f) for f in owned) == sorted(id(f) for f in firms)
+    # Round-robin employment leaves no firm without staff at t = 0 in this range.
+    assert all(f.workers for f in firms)
+
+
+@pytest.mark.parametrize("num_firms,num_households", [(5, 50), (20, 100), (10, 200)])
+def test_determinism_across_scales(num_firms, num_households):
+    def final(seed):
+        m = MacroModel(num_firms=num_firms, num_households=num_households,
+                       retention_ratio=REF_RHO, seed=seed)
+        for _ in range(200):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert final(3) == final(3)
+    assert final(1) != final(2)
+
+
+def test_initial_capital_per_worker_selects_the_basin():
+    """DIRECTIONAL, and the reason num_firms/num_households are frozen rather than swept.
+
+    ``initial_capital`` is per FIRM, so aggregate starting capital is
+    ``num_firms * initial_capital`` and capital per worker at t = 0 is
+    ``num_firms * initial_capital / num_households``.  Changing the firm count at a fixed
+    workforce therefore moves the STARTING POINT across the viability threshold, not the
+    scale of the economy: measured at seed 7, 5 firms / 200 households (1.0 per worker)
+    decapitalises to K -> 0 and U -> 1, while 10 firms / 200 households (2.0 per worker)
+    settles alive.  Money is conserved in both (asserted above), so this is an economic
+    outcome, not an accounting failure — the same multiple-equilibria structure the
+    ``rho ~ 0.30`` threshold shows, reached along a different axis.
+    """
+    def steady(num_firms):
+        m = MacroModel(num_firms=num_firms, num_households=200,
+                       retention_ratio=REF_RHO, seed=7)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe().tail(50).mean()
+
+    dead, alive = steady(5), steady(10)
+    assert dead["Unemployment_Rate"] > 0.99 and dead["Total_Capital"] < 1.0
+    assert alive["Unemployment_Rate"] < 0.9 and alive["Total_Capital"] > 100.0
