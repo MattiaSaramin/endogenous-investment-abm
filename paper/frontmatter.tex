@@ -1,0 +1,73 @@
+% !TEX root = main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FRONT MATTER - title, abstract, contents
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{\bfseries Endogenous Investment and Capital Accumulation\\[2pt]
+       in a Disaggregated Keynesian Cross\\[6pt]
+       \large A Normalised-CES Agent-Based Model with an Endogenous
+       Labour Market}
+
+\author{%
+  Mattia \textsc{[Surname]}\thanks{%
+  Correspondence: \texttt{[email]}. This paper documents an exploratory
+  computational model. Every number reported here is either \emph{measured}
+  from a committed, reproducible driver script, or explicitly declared as a
+  design target or convention; the distinction is maintained throughout
+  (\cref{sec:method}). Code, data and figures:
+  \texttt{[repository URL]}.}\\[2pt]
+  \normalsize [Institution]}
+
+\date{\today}
+
+\maketitle
+
+
+\begin{abstract}
+\noindent
+We extend the disaggregated Keynesian cross of \citet{Teglio2025} with
+endogenous investment and capital accumulation, so that both the demand and
+the supply side of a heterogeneous-agent economy are endogenous. Production
+is a \emph{normalised} CES \citep{KlumpDeLaGrandville2000} with elasticity of
+substitution~$\sigma$; firms hire endogenously subject to three limits, the
+wage follows a Blanchflower--Oswald wage curve, investment is financed
+internally out of retained earnings, and the model is stock-flow consistent
+across the whole parameter space. The central question is Kaleckian: does
+higher retention raise output by building capacity (supply), or lower it by
+displacing workers and shrinking the wage bill (demand)?
+
+We find that the answer is governed by~$\sigma$, and we locate a \emph{sign
+frontier} $\sigstar \approx 0.65$ at which $\mathrm{d}Y/\mathrm{d}\rho$
+changes sign. Three separate stabilisation hypotheses --- slower demand
+expectations, a balanced-budget unemployment benefit, and that same benefit
+as a cushion against firm heterogeneity --- are each \emph{falsified} by the
+data they were designed to test, and all three fail through the same channel:
+a wage$\,\to\,$unemployment$\,\to\,$capital-erosion feedback that originates
+in the wage curve and is immune to demand-side instruments. This channel,
+rather than the sign frontier, is the model's most robust finding.
+
+A global sensitivity analysis over sixteen parameters then shows that the
+headline does \emph{not} survive marginalisation: wage-led outcomes are the
+exception ($P \approx 0.095$ conditional on viability), only $48.3\%$ of the
+empirically defensible space is viable at all, and viability is governed
+almost entirely by the depreciation rate $\delta$ ($S_T \approx 1.00$) rather
+than by~$\sigma$ ($S_T = 0.024$). At the depreciation rate the data imply for
+this model's perimeter ($\delta \approx 0.09$), \emph{zero} of 843 sampled
+points survive --- a structural limitation of a capital block without trend
+growth, not a parameter to be tuned. We report the resulting tension between
+the conditional and the marginal reading of $\sigstar$ as \emph{open}, and
+describe the bridging experiment that separates its two candidate causes,
+together with its first, partial results.
+
+\bigskip
+\noindent\textbf{Keywords:} agent-based macroeconomics; stock-flow
+consistency; elasticity of substitution; wage-led growth; global sensitivity
+analysis; capital accumulation.
+
+\smallskip
+\noindent\textbf{JEL:} E11, E12, E22, C63, D31.
+\end{abstract}
+
+\clearpage
+\tableofcontents
+\clearpage

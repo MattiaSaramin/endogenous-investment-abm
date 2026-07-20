@@ -1,0 +1,16 @@
+# LaTeX build artefacts. The PDF is produced by .github/workflows/paper.yml
+# and downloaded from the Actions run, so it is not tracked here.
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.pdf
+*.run.xml
+*.synctex.gz
+*.toc

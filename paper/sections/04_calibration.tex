@@ -1,0 +1,93 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Calibration and anchoring
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Calibration and anchoring}
+\label{sec:calibration}
+
+\Cref{tab:params} lists every parameter with its value and, more importantly,
+its \emph{anchoring tier}. The tiers are not decoration: they record which
+numbers carry empirical content and which are modelling decisions that must
+not be presented as estimates.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Parameters, values and anchoring tiers.}
+\label{tab:params}
+\begin{threeparttable}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+Parameter & Value & Anchoring \\
+\midrule
+\multicolumn{3}{l}{\textit{Anchored to a citable source}}\\
+\addlinespace[2pt]
+$\sigma$ (elasticity of substitution) & swept & $0.40$--$0.60$
+  \citep{Chirinko2008}; $0.45$--$0.87$ and Cobb-Douglas rejected
+  \citep{Knoblach2020}. \textbf{Swept, never chosen.}\\
+$\pi_0$ (base-point capital share) & $1/3$ & standard growth accounting
+  \citep{Gollin2002,Solow1957}\\
+$\eta$ (wage-curve elasticity) & swept, $0$--$0.15$ & $\approx 0.10$
+  \citep{BlanchflowerOswald1994}; $\approx 0.07$ \citep{NijkampPoot2005}\\
+$\lambda$ (wealth effect) & $0.05$ & $\approx 5$ cents, 16-country mean
+  \citep{Slacalek2009}; cf.\ $3$--$4$ cents for housing wealth
+  \citep{CaseQuigleyShiller2005}\\
+$\rho$ (retention ratio) & $0.40$ & anchored \emph{through} $I/Y$, not through
+  payout ratios; see \cref{sec:limits}\\
+$rr$ (benefit replacement rate) & swept, $0$--$0.75$ & OECD net replacement
+  rates $\approx 58\%$ initial \citep{OECD2024}\\
+\addlinespace[4pt]
+\multicolumn{3}{l}{\textit{Declared conventions --- not estimates}}\\
+\addlinespace[2pt]
+$\delta$ (depreciation) & $0.05$ & BEA-implied figure for this perimeter is
+  $\approx 0.090$; structures alone $2$--$3\%$. A defensible midpoint,
+  \textbf{not a measurement}. See \cref{sec:delta}.\\
+$U_{\min}$, $w_{\min}$ & $0.01$, $0.45$ & guards; $w_{\min}$ never stably
+  binds anywhere tested\\
+$\max\tau$ (tax cap) & $0.6$ & guardrail; realised $\tau$ is a measured
+  outcome\\
+$\underline{I}$ (investment floor) & $0.1$ & numerical guardrail\\
+$\bar{u}$ (target utilisation) & $0.90$ & above the observed US average
+  ($\approx 0.80$)\\
+\addlinespace[4pt]
+\multicolumn{3}{l}{\textit{Modelling choices --- measured once, then frozen}}\\
+\addlinespace[2pt]
+$(K_0,L_0)$ & $41.87$, $7.395$ & CES normalisation anchor
+  \citep{KlumpDeLaGrandville2000}; caveat per \citet{Temple2012}\\
+$U_{\mathrm{REF}}$ & $0.26047$ & wage-curve normalisation point.
+  \textbf{Not an estimate of the NAIRU.}\\
+$\bar{w}$ & $0.9$ & demoted to a normalisation point once $\eta$ exists\\
+$K_{\text{init}}$ & $40.0$ & \textbf{selects the basin} (multiple equilibria);
+  held fixed in every sweep\\
+$\beta$ (accelerator) & $0.5$ & no canonical value exists; treated by
+  sensitivity analysis\\
+\addlinespace[4pt]
+\multicolumn{3}{l}{\textit{Declared non-anchorable}}\\
+\addlinespace[2pt]
+$c_0$ (autonomous consumption) & $\{1.0, 2.0\}$ & model units have no exchange
+  rate with data (numéraire $=1$). Its original justification was
+  \emph{falsified}; both regimes are reported everywhere.\\
+\bottomrule
+\end{tabularx}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Note.} One model period $=$ one year. This is a declared
+interpretive convention, chosen as the only one consistent with the already
+anchored parameters: $\delta$ is an annual rate and the Blanchflower--Oswald
+elasticity is estimated on annual data. It follows that the 2{,}000 steps of
+each run are a \emph{convergence device, not 2{,}000 years of simulated
+history} --- every result in this paper is comparative statics across steady
+states, never a time series to be overlaid on data.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+Two entries in \cref{tab:params} deserve emphasis because they cut against
+the project's own convenience. First, $c_0$ is declared \emph{non-anchorable
+by decision}: it is autonomous consumption in model units, and since the
+numéraire is~1 by construction there exists no empirical quantity of which it
+is an estimate. Searching for a citation would be cosmetic anchoring. Its
+sensitivity is instead handled by reporting both regimes $c_0 \in \{1.0,
+2.0\}$ throughout, and by the global analysis of \cref{sec:sa}. Second,
+$\delta = 0.05$ is a convention and not an estimate --- a distinction that
+\cref{sec:delta} shows to be far more consequential than it first appears.

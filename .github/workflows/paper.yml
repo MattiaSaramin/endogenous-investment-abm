@@ -1,0 +1,51 @@
+name: Build paper
+
+# Compiles paper/main.tex to a PDF in a full TeX Live container and attaches
+# the result to the run as a downloadable artifact.
+#
+# Why this exists: the local TeX Live installation is incomplete and Windows
+# Smart App Control blocks unsigned binaries, so compiling on this machine is
+# not currently possible; and Overleaf's free tier enforces a short compile
+# timeout. GitHub-hosted runners have neither restriction.
+
+on:
+  push:
+    paths:
+      - 'paper/**'
+      - '.github/workflows/paper.yml'
+  pull_request:
+    paths:
+      - 'paper/**'
+  workflow_dispatch:      # lets you trigger a build by hand from the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Compile with latexmk (pdfLaTeX + Biber)
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: paper
+          root_file: main.tex
+          # latexmk runs pdflatex/biber/pdflatex as many times as needed, so
+          # cross-references and the bibliography always resolve.
+          args: -pdf -file-line-error -halt-on-error -interaction=nonstopmode
+
+      - name: Upload the PDF (and the log, so failures are diagnosable)
+        uses: actions/upload-artifact@v4
+        if: always()        # runs even when the compile step failed
+        with:
+          name: paper-pdf
+          path: |
+            paper/main.pdf
+            paper/main.log
+          # 'warn', not 'error': on a failed build main.pdf does not exist and
+          # this step must still succeed in order to hand you main.log.
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,130 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Repairing the quantity of interest
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Repairing the quantity of interest}
+\label{sec:bridge}
+
+The contradiction of \cref{sec:inversion} is resolvable only by experiment,
+and the experiment is designed as a $2\times2$: method (chord versus OLS)
+crossed with conditioning (all other parameters fixed at their defaults versus
+marginalised over the sensitivity ranges), on a shared grid of runs. The
+verdict rule was fixed \emph{before} execution: a sign flip across the method
+axis at fixed parameters implicates cause~(a); a flip across the conditioning
+axis at constant method implicates cause~(b); both flipping means both
+contribute and the weights must be quantified; neither flipping is a new
+finding to be reported, not forced.
+
+\subsection{The fixed-parameter arm}
+
+\Cref{tab:bridge} reports the arm that has been executed.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Bridging experiment, fixed-parameter arm. The canonical support is
+the committed one; \emph{grid4} is the four-point grid shared with the
+marginalised arm.}
+\label{tab:bridge}
+\begin{tabular}{llrl}
+\toprule
+Scenario & Method (support) & $\sigstar$ & 95\% CI\\
+\midrule
+\multirow{4}{*}{$\eta = 0$}
+  & OLS (canonical)   & 0.654 & $[0.616,\,0.691]$\\
+  & chord (canonical) & 0.447 & $[0.395,\,0.501]$\\
+  & OLS (grid4)       & 0.643 & $[0.596,\,0.701]$\\
+  & chord (grid4)     & 0.447 & $[0.395,\,0.501]$\\
+\addlinespace[2pt]
+\multirow{2}{*}{$\eta = 0.10$}
+  & OLS (canonical)   & 0.725 & $[0.697,\,0.745]$\\
+  & chord (canonical) & 0.501 & $[0.465,\,0.553]$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The mandatory anchoring control passes: the OLS estimator on the canonical
+support reproduces $\sigstar = 0.654$ with the published interval, so the
+problem is not upstream of both candidate causes.
+
+Cause~(a) is then confirmed as a real and \emph{large} contributor. At
+identical parameters, changing only the estimator moves $\sigstar$ from
+$0.654$ to $0.447$, with non-overlapping intervals: for any $\sigma$ between
+those values, the chord is negative while the OLS slope is positive. The two
+statistics genuinely disagree in sign on the same data.
+
+\paragraph{But cause (a) points the wrong way.} This is the informative part.
+The chord turns negative at a \emph{lower} $\sigma$ than the OLS slope, so at
+fixed parameters the chord finds wage-led outcomes \emph{more} often at low
+$\sigma$, not less. \Cref{tab:widesigma}, by contrast, finds wage-led outcomes
+\emph{rare} below $\sigma \approx 0.65$. The chord/derivative distinction is
+therefore real but insufficient: on its own it would have widened the wage-led
+region at low $\sigma$, whereas the marginalised measurement narrows it.
+Cause~(b) --- conditioning --- must be doing the opposing work.
+
+\begin{declbox}[frametitle={Status: open, and reported as open}]
+The marginalised arm of the design has not yet been executed, so the formal
+verdict is not yet available and we do not state one. What has been measured
+is that (a) contributes materially and in the \emph{opposite} direction to
+the observed inversion, which raises the prior on (b) considerably but does
+not establish it. Until the marginalised arm exists, the correct description
+of $\sigstar$ is a \emph{conditional} result whose marginal counterpart is
+unmeasured --- and that is how it is described in this paper. This is the
+point at which the project is most exposed to asserting the opposite of the
+truth, and it is deliberately left unasserted.
+\end{declbox}
+
+\subsection{A quantity of interest suited to a U-shaped response}
+
+The deeper repair is to stop summarising a U-shaped response with a single
+slope. We therefore report the location of the turning point $\rhostar$ ---
+the argument minimum of the quadratic fit --- alongside the slope, and, most
+usefully, the \emph{side} on which the empirically anchored range of $\rho$
+falls (\cref{tab:turning}).
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Turning point of $Y(\rho)$ and the position of the empirically
+anchored range $\rho \in [0.35, 0.45]$ relative to it, at $\eta = 0$.}
+\label{tab:turning}
+\begin{tabular}{lrrrl}
+\toprule
+$\sigma$ & OLS slope & Chord & $\rhostar$ & Empirical $\rho$ lies\\
+\midrule
+0.30 & $+41.9$ & $+14.6$ & 0.420 & straddling\\
+0.40 & $+26.8$ & $+5.2$  & 0.436 & straddling\\
+0.50 & $+17.8$ & $-5.9$  & 0.462 & left of the turn\\
+0.60 & $+5.6$  & $-20.7$ & 0.489 & left of the turn\\
+0.70 & $-4.8$  & $-18.9$ & 0.513 & left of the turn\\
+0.80 & $-11.7$ & $-33.3$ & 0.527 & left of the turn\\
+1.00 & $-29.6$ & $-51.5$ & 0.569 & left of the turn\\
+1.25 & $-45.3$ & $-68.8$ & 0.592 & left of the turn\\
+1.50 & $-61.1$ & $-83.9$ & 0.640 & left of the turn\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\Cref{tab:turning} reconciles the two statistics mechanically. At
+$\sigma = 0.5$ the turning point sits at $\rhostar = 0.462$, inside the
+support: the OLS slope over $[0.35, 0.65]$ is positive because the rising
+right branch is longer than the falling left branch, while the chord over
+$[0.35, 0.55]$ is negative because it is weighted toward the left branch.
+Neither is wrong; they are answers to different questions.
+
+The economically interpretable statement is the third column. For every
+$\sigma \geq 0.5$, the empirically anchored range of $\rho$ lies \emph{left of
+the turning point} --- on the falling branch. The defensible formulation is
+therefore not ``the economy is wage-led'' or ``profit-led'' but:
+
+\begin{declbox}
+\emph{Retention depresses output while $\rho$ remains below a
+$\sigma$-dependent threshold $\rhostar$, and expands it beyond;
+$\rhostar$ rises with $\sigma$, from $0.46$ at $\sigma = 0.5$ to $0.64$ at
+$\sigma = 1.5$; and the empirically anchored retention rate lies below
+$\rhostar$ for every $\sigma$ at or above $0.5$.}
+\end{declbox}
+
+This statement does not depend on which chord an analyst happens to pick, which
+is exactly the property the original quantity of interest lacked.

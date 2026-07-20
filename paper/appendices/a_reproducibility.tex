@@ -1,0 +1,23 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% APPENDIX - Reproducibility
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Reproducibility}
+\label{app:repro}
+
+Every table in this paper is generated from committed comma-separated output
+files, each of which has a committed generator script; the correspondence is
+recorded in the repository. Runs pin BLAS thread counts before importing
+numerical libraries, because thread-dependent reduction order would otherwise
+break per-seed determinism. The execution environment is recorded alongside
+the sensitivity-analysis outputs, including library versions and the frozen
+sampling seed.
+
+The suite comprises 512 automated tests. Beyond conventional unit coverage
+they assert the model's economic invariants directly: stock-flow consistency
+parametrised over the ownership range rather than at the default alone
+(\cref{sec:ownership}), per-seed determinism, exact nesting at every limiting
+parameter value, the workforce cap that restores diminishing returns
+(\cref{sec:model}), and directional regression pins on the basin-selection
+behaviour of initial capital.

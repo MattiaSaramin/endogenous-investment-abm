@@ -1,0 +1,291 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Four stress tests
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Four stress tests}
+\label{sec:stress}
+
+Each subsection below states a hypothesis that a critic might raise, turns on
+the corresponding mechanism, and reports what was measured. Three of the four
+hypotheses are falsified.
+
+\subsection{Wage flexibility does not overturn the wage-led result --- it
+reinforces it}
+\label{sec:wagecurve}
+
+\paragraph{The objection.} The baseline holds the wage fixed, which suppresses
+an offsetting channel: unemployment should depress the wage, make labour
+cheaper, and slow the substitution toward capital. Turn that channel on and
+the wage-led result should weaken.
+
+\paragraph{What was measured.} It strengthens
+(\cref{tab:wagecurve}, \cref{fig:wagecurve}).
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{$\sigstar(\eta)$ on $Y$ at $c_0 = 1.0$, estimated on the support
+viable at \emph{every} $\eta$ so that the columns are comparable.}
+\label{tab:wagecurve}
+\begin{tabular}{lrlrr}
+\toprule
+$\eta$ & $\sigstar$ & 95\% CI & $P(\sigstar > 0.60)$ & mean $U$\\
+\midrule
+0.00 & 0.654 & $[0.616,\,0.691]$ & 99.8\% & 0.528\\
+0.05 & 0.666 & $[0.634,\,0.692]$ & 99.9\% & 0.543\\
+0.10 & 0.725 & $[0.697,\,0.745]$ & 100\% & 0.565\\
+0.15 & 0.740 & $[0.682,\,0.793]$ & 100\% & 0.579\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$\sigstar$ \emph{rises} with $\eta$, moving further above the empirical range,
+and mean unemployment rises with it ($0.53 \to 0.58$). The reason is that the
+counter-channel the objection invokes is not the only one the wage curve
+activates: a falling wage also shrinks the wage bill and hence demand. This is
+the Kaleckian paradox of costs, and in this model it dominates substitution.
+Wage flexibility does not auto-correct unemployment here; it makes it worse.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.82\textwidth]{ces_b07_sigma_star_eta.png}
+\caption{$\sigstar(\eta)$: wage flexibility moves the frontier \emph{away}
+from the empirical range.}
+\label{fig:wagecurve}
+\end{figure}
+
+\paragraph{A collapse mechanism, discovered here.}
+In the secondary regime $c_0 = 2.0$, wage flexibility \emph{destabilises} the
+economy in the high-$\sigma$, low-$\rho$ corner: at $\sigma = 1.25$, 43\% of
+seeds collapse to $Y \to 0$, $U \to 1$ at $\eta = 0.15$, and $\sigstar$ becomes
+erratic or undefined. Tracing a collapsing trajectory identifies the
+mechanism, which turns out to govern much of the rest of this paper:
+
+\begin{enumerate}
+  \item the wage \emph{oscillates} --- rising above $\bar w$ when $U \to 0$
+  (the $U_{\min}$ guard drives $w$ to $\approx 1.25$) and falling below it when
+  $U$ is high;
+  \item as $\sigma$ rises, $L^{\mathrm{profitmax}}$ becomes more wage-sensitive,
+  so the wage oscillation feeds a widening \emph{employment} oscillation;
+  \item each cycle, investment fails to cover depreciation, so capital
+  \emph{erodes}; at low $\rho$ the economy eventually dies at $U = 1$.
+\end{enumerate}
+
+In the empirically relevant region $\sigma \approx 0.5$ the same curve leaves
+$w \approx \bar w$, produces no oscillation, and capital \emph{grows}. The
+collapse is capital erosion at high $\sigma$, not a monotone wage spiral, and
+the subsistence floor $w_{\min}$ never stably binds --- so this is genuine
+viability failure, not a floor artefact. We name this the
+\textbf{wage\,$\to U \to$\,capital-erosion channel}; \cref{sec:discussion}
+returns to it.
+
+\subsection{Adaptive expectations move neither the frontier nor the collapse}
+\label{sec:expectations}
+
+\paragraph{The hypothesis.} A slower firm expectation should damp the
+oscillation just identified, and might also select a different steady state.
+We generalise the demand expectation from static to adaptive in the
+partial-adjustment form of \citet{Nerlove1958},
+$Y^e_t = Y^e_{t-1} + \lambda_e (D_{t-1} - Y^e_{t-1})$, which is the
+constant-gain case of the adaptive-learning literature
+\citep{EvansHonkapohja2001}. We sweep $\lambda_e$ rather than choosing it: that
+literature supplies the functional form, not a level, and no reliable point
+estimate exists for a firm's demand expectation in a model of this kind.
+
+\paragraph{What was measured.} The frontier is $\lambda_e$-invariant within
+confidence intervals (\cref{tab:expectations}): every point lies inside its
+neighbours' intervals, and the empirical range stays below $\sigstar$ at every
+gain. The wage-led result and its rise with $\eta$ are both robust to the
+expectation gain, and there is no basin-selection effect.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{$\sigstar(\eta;\lambda_e)$ on $Y$, $c_0 = 1.0$, across-configuration
+common support.}
+\label{tab:expectations}
+\begin{tabular}{llrlr}
+\toprule
+$\eta$ & $\lambda_e$ & $\sigstar$ & 95\% CI & $P(\sigstar > 0.60)$\\
+\midrule
+0.00 & 1.00 & 0.654 & $[0.616,\,0.691]$ & 99.8\%\\
+0.00 & 0.50 & 0.686 & $[0.637,\,0.721]$ & 99.9\%\\
+0.00 & 0.25 & 0.674 & $[0.639,\,0.709]$ & 99.9\%\\
+0.10 & 1.00 & 0.725 & $[0.697,\,0.745]$ & 100\%\\
+0.10 & 0.50 & 0.713 & $[0.667,\,0.752]$ & 100\%\\
+0.10 & 0.25 & 0.721 & $[0.684,\,0.754]$ & 100\%\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The stabilisation half of the hypothesis is \textbf{not confirmed}. The
+collapse region is $\lambda_e$-invariant to within grid and seed noise (cells
+with any collapse at $\eta = 0.10$: 16, 15, 14 for $\lambda_e = 1, 0.5, 0.25$,
+with fully collapsed cells flat at 6; non-monotone at $\eta = 0.15$), and the
+reference collapsing cell dies at $K = 0$, $U = 1$ at \emph{every} gain. The
+interpretation is now sharp: \emph{damping the demand expectation cannot
+stabilise an instability that does not originate in demand.}
+
+\subsection{A balanced-budget benefit crowds capital in --- and enlarges the
+collapse}
+\label{sec:government}
+
+In the baseline the unemployed earn nothing, so each unemployed worker leaks
+entirely out of the circular flow. We reinstate a minimal government: a flat
+tax on accrued income funds an equal transfer to the unemployed, indexed to
+the current wage, with the budget balanced every period.
+
+\paragraph{Dose-response: crowding-in.} At the headline demand-constrained
+scenario, the benefit lowers unemployment and raises \emph{both} output and
+capital (\cref{tab:government}).
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Fiscal dose-response at $c_0 = 1.0$, $\sigma = 0.5$, $\eta = 0.10$,
+$\rho = 0.40$.}
+\label{tab:government}
+\begin{tabular}{lrrrrrr}
+\toprule
+$rr$ & $U$ & $Y$ & $K$ & Wage share & Realised tax & Cash-constrained\\
+\midrule
+0.00 & 0.566 & 82.1 & 298.8 & 0.440 & 0.000 & 0.90\\
+0.25 & 0.483 & 98.1 & 359.2 & 0.446 & 0.128 & 0.90\\
+0.50 & 0.427 & 108.7 & 396.6 & 0.452 & 0.206 & 0.90\\
+0.75 & 0.373 & 119.0 & 435.7 & 0.457 & 0.250 & 0.90\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Capital rises from 299 to 436. This is the theoretically interesting point: in
+a demand-constrained regime, redistribution is \emph{crowding-in}, because
+more demand means more profit and hence more investment through $I = \rho\Pi$.
+The cash-constrained fraction stays at $0.90$ --- all ninety workers ---
+invariant to $rr$: the benefit never lifts a worker off the liquidity
+constraint, which is precisely why the balanced-budget multiplier keeps
+delivering across the whole dose.
+
+\paragraph{The benefit eliminates the wage-led region.} At $rr = 0.5$, inside
+the empirically anchored band, $\sigstar$ becomes \emph{undefined}: every
+estimated $\mathrm{d}Y/\mathrm{d}\rho$ turns positive across the tested range
+($+38.7$ at $\sigma = 1$; $+19.3$ at $\sigma = 1.5$), pushing $\sigstar$ above
+$1.5$. The demand floor makes retention expansionary at \emph{every} $\sigma$.
+The unemployment frontier, by contrast, barely moves. \textbf{The sign frontier
+is therefore conditional on fiscal institutions}: the leakage of the unemployed
+is the engine of the paradox of costs, and the benefit closes that leak.
+
+\paragraph{The stabilisation hypothesis is falsified --- the collapse
+enlarges.} The falsifiable guess was that a demand floor would shrink the
+collapse region of \cref{sec:wagecurve}. It does the opposite: cells with any
+collapsed seed rise from 16 to 26 ($\eta = 0.10$) and 16 to 29
+($\eta = 0.15$), and the mean fraction of seeds at $U = 1$ roughly doubles. In
+the reference cell the economy dies at both $rr = 0$ and $rr = 0.5$, but at
+$rr = 0.5$ the tax is \emph{pinned at its cap} in 100\% of periods --- the
+instrument saturates and the economy still dies. Three mechanisms explain it:
+where firms are collapsing the tax base is almost entirely wages, so taxing
+workers to pay workers is MPC-neutral; the benefit is indexed to $w_t$ and is
+therefore \emph{procyclical}, weakest exactly when it is most needed; and the
+demand it does inject \emph{amplifies} the wage$\,\to U \to\,$capital-erosion
+oscillation. \Cref{fig:government} shows both faces of the instrument
+side by side.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}{0.49\textwidth}
+  \includegraphics[width=\linewidth]{ces_b09_dose_response.png}
+  \caption{Dose-response: $U$, $Y$, $K$ against $rr$.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\textwidth}
+  \includegraphics[width=\linewidth]{ces_b09_collapse_map.png}
+  \caption{Collapse map: the demand floor enlarges it.}
+\end{subfigure}
+\caption{The two faces of the balanced-budget benefit.}
+\label{fig:government}
+\end{figure}
+
+\subsection{Firm heterogeneity: a cliff, not a gradient}
+\label{sec:heterogeneity}
+
+All firms share one productivity. That is an assumption, and rather than
+implementing heterogeneity we \emph{measured what would happen if we did},
+using a single experimental dial that fans firm productivities out
+mean-preservingly, changing nothing else --- no selection, no demand
+reallocation, no entry or exit.
+
+The result is a cliff (\cref{tab:heterogeneity}). Below a threshold no firm
+dies; one grid step above it, \emph{every} firm is dead, output is exactly
+zero, unemployment is exactly one, and aggregate capital decays geometrically
+to $3.5\times10^{-34}$ by step 2{,}000.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Aggregates against productivity dispersion (as $U$\,/\,$Y$).}
+\label{tab:heterogeneity}
+\begin{tabular}{lcccr}
+\toprule
+Dispersion & S1 (anchor) & S2 (headline) & S3 ($rr = 0.5$) & Dead firms (S2)\\
+\midrule
+0.000 & 0.258 / 132.1 & 0.566 / 82.1 & 0.427 / 108.7 & 0\\
+0.050 & 0.250 / 133.0 & 0.563 / 82.7 & 0.421 / 109.5 & 0\\
+0.100 & 0.229 / 134.7 & 0.554 / 83.2 & 0.410 / 109.9 & 0\\
+0.125 & \textbf{1.000 / 0.0} & 0.543 / 84.2 & 0.676 / 58.9 & 0\\
+0.150 & 1.000 / 0.0 & \textbf{1.000 / 0.0} & \textbf{1.000 / 0.0} & 10\\
+0.200 & 1.000 / 0.0 & 1.000 / 0.0 & 1.000 / 0.0 & 10\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The domino.} Tracing a collapsing run identifies the cascade: the
+low-productivity firm serves the same network demand with more labour, earns
+less profit, invests below $\delta K$ and decapitalises first (its capital
+falls from 38 to near zero by step 250). Its customers' spending shares remain
+pointed at it --- so that demand is \emph{destroyed} rather than reallocated
+--- and its laid-off workers lose their income, a demand externality. The
+high-productivity firms follow: the strongest firm's capital reaches zero by
+step 500. \textbf{This is precisely what the missing machinery would have
+prevented}: with entry, exit and demand rerouting, that demand would have moved
+to a surviving firm.
+
+\paragraph{The benefit again fails as a cushion.} The hypothesis was that
+keeping income flowing to the laid-off would raise the viability threshold. It
+\emph{lowers} it: at a dispersion of $0.125$ the headline scenario has 0 of 20
+seeds with any dead firm, while the same scenario with $rr = 0.5$ has 18 of 20,
+7 of them fully collapsed. The verified mechanism is the same channel once
+more: the benefit lowers unemployment, the wage curve reads that and
+\emph{raises} the wage, and the low-productivity firm --- whose marginal product
+is scaled down by its own productivity --- is the first pushed below
+$I = \delta K$.
+
+\paragraph{What this licenses us to claim.} Within-industry TFP dispersion is
+large: \citet{Syverson2004} reports a 90/10 ratio near 2:1 in US manufacturing
+(see also \citealp{BartelsmanDoms2000}). The collapse threshold here is a
+max/min productivity ratio of about $1.22$--$1.29$. \emph{The units are not the
+same and no quantitative mapping is claimed} --- a linear fan half-width is not
+a 90/10 log-TFP ratio. The qualitative reading is all that is supported, and it
+suffices: empirically realistic firm heterogeneity lies well outside this
+model's viable range, because the model has no reallocation channel to absorb
+it. Building heterogeneous firms without building reallocation would produce a
+model that dies rather than a model with heterogeneous firms.
+
+A collateral finding sharpens the mean-field question: even at zero dispersion
+firms do \emph{not} stay identical, because consumption links are random. The
+capital share of the largest three firms starts at $0.30$ and settles at
+$0.35$--$0.38$. The defensible statement is that the firm side is
+quasi-representative \emph{in its aggregates}, not in its cross-section.
+\Cref{fig:heterogeneity} shows the cliff and the cascade together.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}{0.49\textwidth}
+  \includegraphics[width=\linewidth]{ces_b10_aggregates_spread.png}
+  \caption{The cliff.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\textwidth}
+  \includegraphics[width=\linewidth]{ces_b10_domino_trace.png}
+  \caption{The domino.}
+\end{subfigure}
+\caption{Firm heterogeneity: aggregates are stable until they are not.}
+\label{fig:heterogeneity}
+\end{figure}

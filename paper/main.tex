@@ -1,0 +1,47 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Endogenous Investment and Capital Accumulation in a Disaggregated
+%  Keynesian Cross
+%
+%  Compile on Overleaf with:  pdfLaTeX + Biber   (Menu > Compiler)
+%
+%  This file is deliberately kept to structure only: every package and macro
+%  lives in preamble.tex, every section in its own file under sections/.
+%  Sections are pulled in with \input (not \include) so that no spurious page
+%  break is introduced between them.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,a4paper]{article}
+
+\input{preamble}
+
+\begin{document}
+
+\input{frontmatter}
+
+\input{sections/01_introduction}
+\input{sections/02_literature}
+\input{sections/03_model}
+\input{sections/04_calibration}
+\input{sections/05_protocol}
+\input{sections/06_baseline}
+\input{sections/07_sign_frontier}
+\input{sections/08_stress_tests}
+\input{sections/09_ownership}
+\input{sections/10_sensitivity}
+\input{sections/11_qoi_repair}
+\input{sections/12_discussion}
+\input{sections/13_limitations}
+\input{sections/14_conclusion}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Bibliography
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\printbibliography[heading=bibintoc,title={References}]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Appendices
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+\input{appendices/a_reproducibility}
+\input{appendices/b_notation}
+
+\end{document}

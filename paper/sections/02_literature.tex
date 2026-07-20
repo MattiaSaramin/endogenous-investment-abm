@@ -1,0 +1,63 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Relation to the literature
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Relation to the literature}
+\label{sec:literature}
+
+\paragraph{Agent-based and stock-flow-consistent macroeconomics.}
+The model belongs to the tradition of macroeconomic ABMs that impose
+stock-flow consistency on a disaggregated economy
+\citep{GodleyLavoie2007,Caiani2016}, and shares with the Schumpeter-meeting-%
+Keynes family \citep{Dosi2010} the ambition of letting aggregate regularities
+emerge from interacting heterogeneous agents rather than from a
+representative optimiser. It is deliberately smaller than those models: there
+is one good, one price (the numéraire), no credit and no entry or exit. The
+purpose is not to reproduce a full macroeconomy but to isolate a single
+mechanism --- endogenous capital accumulation inside a demand-driven
+economy --- with enough structure to make its sign an empirical question.
+
+\paragraph{The elasticity of substitution.}
+Comparing economies that differ in $\sigma$ is not straightforward: in the
+textbook CES, varying $\sigma$ at fixed distribution and efficiency parameters
+also moves the implied factor shares, so any behavioural difference is
+unattributable. We therefore use the \emph{normalised} CES
+\citep{KlumpDeLaGrandville2000,KlumpSaam2008,Klump2012}, which fixes a common
+base point through which every $\sigma$-variant passes with the same factor
+shares. We follow \citet{Temple2012} in reporting, rather than suppressing,
+the caveat that normalisation is a comparison device and not an
+identification strategy: it makes $\sigma$-variants commensurable, it does not
+make $\sigma$ a deep parameter. \Cref{sec:frontier} accordingly reports the
+sensitivity of our central estimate to the choice of anchor.
+
+Empirically, the literature places $\sigma$ below unity: \citet{Chirinko2008}
+weighs the evidence at $0.40$--$0.60$; \citet{ChirinkoMallick2017} estimate
+$\approx 0.40$; the meta-regression of \citet{Knoblach2020}, covering 2{,}419
+estimates from 77 studies, gives $0.45$--$0.87$ and rejects the
+Cobb-Douglas hypothesis --- a rejection consistent with earlier direct tests
+of the aggregate specification \citep{DuffyPapageorgiou2000,Antras2004}. A
+dissenting macro literature requires $\sigma > 1$
+to explain the global decline of the labour share
+\citep{KarabarbounisNeiman2014}. We treat this disagreement as a reason to
+\emph{sweep} $\sigma$ rather than choose it.
+
+\paragraph{The wage curve.}
+Wages are endogenised through the wage curve of
+\citet{BlanchflowerOswald1994}, a \emph{level} relation between the local wage
+and local unemployment with an elasticity near $-0.10$ ($\approx -0.07$ in the
+meta-analysis of \citealp{NijkampPoot2005}). We use a level relation rather
+than a Phillips-type change relation deliberately: without trend inflation, a
+change relation produces perpetual wage drift at any $U \neq U^{\ast}$ and has
+no steady state, which would make the comparative-statics design of this
+paper impossible.
+
+\paragraph{Distribution and effective demand.}
+The question the model is built to answer is Kaleckian
+\citep{Kalecki1971,BhaduriMarglin1990}: whether a redistribution toward
+profits is expansionary or contractionary depends on whether the induced
+investment exceeds the lost consumption. Our contribution is not a new theory
+of that trade-off but a measurement of where its sign turns inside an
+explicit, stock-flow-consistent, disaggregated economy --- and, more
+importantly, a measurement of how little of that sign survives when the rest
+of the parameter space is allowed to move.

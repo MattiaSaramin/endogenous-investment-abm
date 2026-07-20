@@ -1,0 +1,48 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Limitations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Limitations}
+\label{sec:limits}
+
+We state these as declared limitations rather than as caveats, because several
+of them are consequences of design decisions taken deliberately.
+
+\begin{itemize}
+  \item \textbf{No growth, and the capital block cannot fit the data without
+  it.} With $g = 0$, the model cannot match business-sector $I/Y$ and $K/Y$
+  simultaneously, and at the empirically implied $\delta$ it is not viable at
+  all (\cref{sec:delta}). This is a structural limitation with a known repair
+  (trend productivity growth) that is out of scope here.
+  \item \textbf{Unemployment is out of scale.} At the anchored retention rate
+  and empirical $\sigma$ the model runs at roughly 50\% ($c_0 = 1.0$) or 31\%
+  ($c_0 = 2.0$) unemployment. No tested value of $c_0$ brings it into a
+  plausible band. This is a structural tension of the labour-market design,
+  reported as an open question rather than calibrated away. The
+  \cref{sec:government} benefit is a genuine lever here --- it lowers headline
+  unemployment from $0.57$ to $0.37$ --- but it is a policy instrument, not a
+  fix for the tension.
+  \item \textbf{The wage share sits below its empirical range} ($0.35$--$0.61$
+  across viable cells against an empirical $0.60$--$0.68$), touching it only at
+  high $\sigma$ and low $\rho$.
+  \item \textbf{Multiple equilibria.} Initial capital selects the basin, so it
+  is held fixed across every experiment and reported. Cells that collapse are
+  an \emph{outcome}, not an error.
+  \item \textbf{No reallocation, so no genuine heterogeneity.}
+  \Cref{sec:heterogeneity} closes the firm-heterogeneity question by measuring
+  that the model cannot absorb empirically realistic dispersion; entry, exit
+  and demand rerouting are declared future work.
+  \item \textbf{No credit, no endogenous prices.} Internal financing is a
+  design choice to be defended as such, not an omission; with the numéraire
+  fixed at one, the implicit markup is already an outcome rather than a
+  parameter. Endogenising it would require markup data of the kind assembled
+  by \citet{DeLoecker2020}, and is declared future work.
+  \item \textbf{Sampling limits in the global analysis.} Three seeds leave
+  roughly 4.3\% of the quantity's variance as seed noise, which lands in the
+  residual, depressing first-order indices and inflating apparent interaction.
+  With $N = 256$ over eleven parameters, several first-order indices are
+  indistinguishable from zero.
+  \item \textbf{The open contradiction.} \Cref{sec:bridge} is incomplete: the
+  marginalised arm is unexecuted, and no verdict is claimed.
+\end{itemize}

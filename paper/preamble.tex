@@ -1,0 +1,99 @@
+% !TEX root = main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PREAMBLE - packages, layout, macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%------------------------------------------------------------ math etc.
+% NOTE: amsmath/mathtools MUST be loaded before newtxmath, and amssymb must
+% NOT be loaded alongside it (newtxmath already provides the AMS symbols).
+\usepackage{amsmath,mathtools}
+
+%---------------------------------------------------------------- fonts
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{newtxtext,newtxmath}   % Times-like text and matching math
+\usepackage{microtype}
+
+%--------------------------------------------------------------- layout
+\usepackage[a4paper,margin=2.7cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+%--------------------------------------------------------------- tables
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{threeparttable}
+
+%----------------------------------------------------------- draft speed
+% Set \fastdrafttrue to skip rendering the figures: they become empty frames
+% of the right size and compilation gets much faster while you edit prose.
+% Set it back to \fastdraftfalse for the final PDF.
+\newif\iffastdraft
+\fastdraftfalse
+
+%-------------------------------------------------------------- figures
+\iffastdraft
+  \usepackage[draft]{graphicx}
+\else
+  \usepackage{graphicx}
+\fi
+\usepackage[labelfont=bf,font=small]{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\graphicspath{{figures/}{results/}{./}}
+
+%--------------------------------------------------------------- floats
+\usepackage[section]{placeins}
+
+%---------------------------------------------------------------- lists
+\usepackage{enumitem}
+\setlist{noitemsep,topsep=4pt}
+
+%------------------------------------------------------------ algorithm
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+%----------------------------------------------------------- boxes/misc
+\usepackage{xcolor}
+% mdframed rather than tcolorbox: tcolorbox pulls in the whole of TikZ/PGF,
+% which is by far the most expensive thing this document could load and is
+% the usual cause of a timeout on Overleaf's free tier. mdframed with
+% framemethod=default draws the same boxes with no TikZ at all.
+\usepackage{mdframed}
+\mdfdefinestyle{declstyle}{%
+  linecolor=gray!55, linewidth=0.5pt,
+  backgroundcolor=gray!5,
+  frametitlebackgroundcolor=gray!12,
+  frametitlefont=\bfseries\small,
+  innerleftmargin=8pt, innerrightmargin=8pt,
+  innertopmargin=6pt, innerbottommargin=6pt}
+\newenvironment{declbox}[1][]
+  {\begin{mdframed}[style=declstyle,#1]}
+  {\end{mdframed}}
+
+%----------------------------------------------------- bibliography
+\usepackage[backend=biber,style=authoryear,natbib=true,maxcitenames=2,
+            maxbibnames=9,uniquelist=false,giveninits=true,
+            doi=false,isbn=false,url=false,eprint=false]{biblatex}
+\addbibresource{references.bib}
+
+%------------------------------------------------------------- hyperref
+\usepackage[colorlinks=true,allcolors=blue!55!black,
+            pdftitle={Endogenous Investment and Capital Accumulation in a
+                      Disaggregated Keynesian Cross},
+            pdfsubject={Agent-based macroeconomics}]{hyperref}
+\usepackage[nameinlink,capitalise]{cleveref}
+
+%------------------------------------------------------ custom commands
+\newcommand{\sigstar}{\sigma^{\ast}}
+\newcommand{\rhostar}{\rho^{\ast}}
+\newcommand{\Ka}{K}
+\newcommand{\Ystar}{Y^{\ast}}
+\DeclareMathOperator{\clip}{clip}
+
+% A box for the "declared" methodological statements that carry the paper
+\newtcolorbox{declbox}[1][]{
+  enhanced, breakable, colback=gray!5, colframe=gray!55,
+  boxrule=0.5pt, arc=1.5pt, left=8pt, right=8pt, top=6pt, bottom=6pt,
+  fonttitle=\bfseries\small, #1}

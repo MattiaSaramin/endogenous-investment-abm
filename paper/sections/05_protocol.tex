@@ -1,0 +1,70 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Experimental protocol
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Experimental protocol}
+\label{sec:method}
+
+\paragraph{Steady states, not histories.}
+Unless stated otherwise, every reported figure is a mean over 20 random seeds
+of the last 50 observations of a 2{,}000-step run. Runs are long because the
+transient must be exhausted, not because 2{,}000 periods of history are
+meaningful.
+
+\paragraph{The sign frontier estimator.}
+The quantity of interest is the sign of $\mathrm{d}Y/\mathrm{d}\rho$. We
+estimate an OLS slope of $Y$ on $\rho$ over the \emph{common viable support}
+(the set of $\rho$ values at which every configuration being compared
+survives), and define $\sigstar$ as the value of $\sigma$ at which that slope
+crosses zero. Confidence intervals come from a percentile bootstrap over
+2{,}000 resamples \emph{of the seeds}. Restricting to a common support matters:
+comparing slopes estimated on different supports would confound the effect
+under study with differential survival.
+
+\paragraph{Nesting checks as anti-drift sentinels.}
+Every extension introduces a parameter whose null value must reproduce the
+previous model exactly: $\sigma = 1$ (Cobb-Douglas), $\eta = 0$ (fixed wage),
+$\lambda_e = 1$ (static expectations), $rr = 0$ (no government),
+$\mathit{spread} = 0$ (homogeneous firms). Each is implemented as an explicit
+branch and verified \emph{artifact-against-artifact} on committed panels. All
+such checks passed with zero deviation at the time of their respective runs.
+
+\begin{declbox}[frametitle={A methodological finding about the checks themselves}]
+The criterion ``deviation $= 0.0$'' proved \emph{not reproducible over time}.
+Code that had recorded 7/7 exact reproductions later deviated by 1 unit in the
+last place (ULP) on the same cells. Eight hypotheses were excluded by
+measurement (reporters, library versions, pandas reduction order, process
+pool versus main process, performance versus efficiency cores, and others);
+the cause remains unidentified. The magnitude across 160 cells and 24 metrics
+is at most 2.1 ULP, does not amplify, and produces \emph{zero} regime flips,
+so no economic conclusion moves --- and within a session, per-seed determinism
+is intact. We report this rather than silently relaxing the criterion, and the
+replacement (a declared ULP tolerance for levels, plus a \emph{zero}-tolerance
+check on regime indicators, where drift would actually matter) is scheduled in
+the work that follows.
+\end{declbox}
+
+\paragraph{Global sensitivity design.}
+For \cref{sec:sa}, $\rho$ is a \emph{treatment} rather than a swept parameter:
+each design point is evaluated at two values of $\rho$ under common random
+numbers (the same seeds at both, differenced per seed, then averaged). Without
+common random numbers the quantity of interest is a difference of two noisy
+numbers, and the sensitivity indices would decompose the variance of the seed
+draw rather than of the model. Uniform ranges over 16 parameters are a
+declared \emph{choice of ignorance}. Screening uses the elementary-effects
+method of \citet{Morris1991} with a pruning rule frozen in the source before
+any output existed; the survivors go to Sobol' estimation
+\citep{Sobol2001,Saltelli2010} with bootstrap confidence intervals, computed
+with SALib \citep{HermanUsher2017}. The number of seeds was fixed on evidence
+by a pilot: the noise-to-signal ratio measured $0.207$, $0.170$ and $0.111$ at
+3, 5 and 10 seeds, scaling as $1/\sqrt{n}$ as expected.
+
+\paragraph{Implementation.}
+The model is implemented in Python on the Mesa framework
+\citep{Kazil2020}, with 512 automated tests covering stock-flow consistency
+(parametrised over the ownership range), per-seed determinism, labour
+accounting, every nesting limit, and directional regression pins. Each
+committed data file has a committed generator script;
+\cref{app:repro} gives the details, and \cref{app:notation} collects the
+notation.

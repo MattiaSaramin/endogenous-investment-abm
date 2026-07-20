@@ -1,0 +1,176 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The model
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{The model}
+\label{sec:model}
+
+The economy is closed, single-good and fixed-price (the numéraire is~1). It
+is populated by $n_f = 10$ firms and $N = 100$ households, of which a share
+$\pi_{c} = 0.10$ are \emph{capitalists} who own firms and receive dividends;
+the remainder supply labour. Time is discrete and one period is interpreted
+as one year (\cref{sec:calibration}).
+
+\subsection{Production: a normalised CES}
+
+Each firm $i$ has a potential output given by a normalised CES in capital and
+labour,
+\begin{equation}
+  \Ystar_i \;=\; Y_0 \Big[\, \pi_0 \big(K_i/K_0\big)^{r}
+                    \;+\; (1-\pi_0)\big(L_i/L_0\big)^{r} \Big]^{1/r},
+  \qquad r=\frac{\sigma-1}{\sigma},
+  \label{eq:ces}
+\end{equation}
+with realised output rationed by demand,
+$Y_i = \min\{\,D_i,\;\Ystar_i\,\}$. Here $(K_0,L_0)$ is the \emph{base point}
+and $\pi_0$ the base-point capital share. Two properties matter.
+
+\begin{enumerate}
+  \item \textbf{Nesting.} \Cref{eq:ces} nests Cobb-Douglas at $\sigma = 1$
+  and Leontief as $\sigma \to 0$. Because $Y_0$ is \emph{derived}
+  ($Y_0 = A K_0^{\pi_0} L_0^{1-\pi_0}$) rather than measured, the $\sigma = 1$
+  branch reproduces Cobb-Douglas exactly, for any base point.
+  \item \textbf{Comparability.} $(K_0, L_0, \pi_0)$ are measured once, at
+  $\sigma = 1$ and $\rho = 0.40$, and then \emph{frozen} across every
+  experiment in the paper. Every $\sigma$-variant therefore passes through the
+  same point with the same factor shares, so two economies differ \emph{only}
+  by $\sigma$. This is a declared modelling choice, not an estimate.
+\end{enumerate}
+
+\subsection{The labour market: three limits}
+
+Employment at firm $i$ is the minimum of three distinct constraints:
+\begin{equation}
+  L_i \;=\; \min\big\{\; L^{\mathrm{demand}}_i,\;\;
+                        L^{\mathrm{profitmax}}_i,\;\;
+                        N \;\big\},
+  \label{eq:labour}
+\end{equation}
+where $L^{\mathrm{demand}}_i$ is the labour needed to serve expected demand,
+$L^{\mathrm{profitmax}}_i$ is the point at which the marginal product of
+labour equals the wage, and $N$ is the aggregate workforce. Which limit binds
+identifies the regime: Keynesian (involuntary) unemployment, classical
+unemployment, or full employment respectively.
+
+\begin{declbox}[frametitle={Structural invariant: the workforce cap restores
+diminishing returns}]
+With a wage set outside the firm and an unbounded labour supply,
+$L^{\mathrm{profitmax}}_i \propto K_i$, hence $\Ystar_i \propto K_i$: the
+model becomes an $AK$ economy with constant returns to capital, unbounded
+growth and no steady state. The cap $L \le N$ is therefore not a realism
+detail but the structural feature that restores diminishing returns, and it
+is asserted as such in the test suite.
+\end{declbox}
+
+Firms fire excess workers into an unemployed pool and fill vacancies by
+random matching; the discreteness of hiring and the randomness of matching are
+what give the model genuinely non-degenerate inter-seed variation.
+
+\subsection{Wages: a Blanchflower--Oswald wage curve}
+
+The wage is common to all firms and is set at the start of the period on the
+\emph{previous} period's unemployment, which avoids a within-period
+simultaneity between $w$ and $U$:
+\begin{equation}
+  w_t \;=\; \max\!\left\{\, w_{\min},\;
+    \bar{w}\left(\frac{\max\{U_{t-1},\,U_{\min}\}}{U_{\mathrm{REF}}}
+    \right)^{\!-\eta} \right\}.
+  \label{eq:wagecurve}
+\end{equation}
+The elasticity $\eta$ is the parameter with empirical content;
+$U_{\mathrm{REF}}$ is the unemployment level at which $w = \bar{w}$, measured
+once at the anchor scenario and frozen; $U_{\min}$ and $w_{\min}$ are declared
+conventions (guards against $w \to \infty$ at full employment and against a
+deflationary spiral). At $\eta = 0$ the wage is constant at $\bar w$ and the
+model reduces \emph{bit-for-bit} to its fixed-wage predecessor.
+
+Profit is the residual, $\Pi_i = \text{sales}_i - w_t L_i$. There is no markup
+parameter: with a fixed price and a parametric wage, distribution is
+determined by $w_t$ alone, and the wage share is a \emph{measured outcome},
+bounded above by the $\sigma$-dependent profit-max wage share.
+
+\subsection{Investment and internal financing}
+
+Firms finance investment entirely from retained earnings --- there is no
+credit. Planned investment applies a retention ratio $\rho$ to last period's
+profit, modulated by a capacity-utilisation accelerator:
+\begin{align}
+  \phi_t      &= \max\{0,\; 1 + \beta (u_{t-1} - \bar{u})\},
+  \label{eq:accelerator}\\
+  I^{p}_{t}   &= \clip\big(\rho\, \Pi_{t-1}\, \phi_t,\;
+                  \underline{I},\; \Pi_{t}\big),
+  \label{eq:investment}\\
+  K_{t+1}     &= (1-\delta) K_t + I_t .
+  \label{eq:capital}
+\end{align}
+The firm retains exactly what it invests and distributes the remainder as
+dividends. Utilisation $u$ is measured against \emph{profit-max} capacity, not
+against realised output: with $L$ chosen to serve expected demand, $\Ystar$
+would otherwise track $Y$ by construction and the accelerator would receive a
+dead signal.
+
+\subsection{Households, government and stock-flow consistency}
+
+Households consume out of income and wealth, subject to a liquidity
+constraint,
+\begin{equation}
+  C_h = \min\big\{\, c_0 + c_1 y_h + \lambda a_h,\;\; a_h + y_h \,\big\},
+  \label{eq:consumption}
+\end{equation}
+with workers' $c_1$ above capitalists'. An optional minimal government
+(\cref{sec:government}) levies a flat tax on accrued income to fund an equal
+transfer to the unemployed, indexed to the current wage, with the budget
+balanced every period by construction; a replacement rate of zero reproduces
+the no-government model bit-for-bit.
+
+\begin{declbox}[frametitle={Stock-flow consistency, and where it is tested}]
+The conserved quantity is
+$\sum_h (\text{wealth}_h + \text{income}_h) + \sum_i \text{buffer}_i$, and it
+is constant to within $10^{-9}$. The firm cash account is an
+\emph{intra-period pass-through} that returns to zero every period: an earlier
+design in which retained earnings accumulated as a stock between periods
+sequestered money and produced a spurious demand spiral.
+
+Crucially, the invariant is tested \emph{across the parameter range a sweep
+will reach}, not only at the default configuration. \Cref{sec:ownership}
+reports why: an ownership defect meant the invariant held at the default and
+nowhere else, destroying up to 97\% of the money stock in 200 periods at
+$\pi_c = 0.05$, while the tests --- run only at the default --- stayed green.
+\end{declbox}
+
+\subsection{Period sequence}
+
+The order of events is load-bearing and is stated explicitly
+(\cref{alg:sequence}). Employment is set \emph{before} households form demand,
+because expected income depends on employment; investment settlement precedes
+household settlement; and the government step sits between them so that the
+tax falls on fully accrued income and the benefit arrives with the same
+one-period lag as a wage.
+
+\begin{algorithm}[H]
+\caption{One period of the model}
+\label{alg:sequence}
+\begin{algorithmic}[1]
+\State \textbf{wage determination:} set $w_t$ from \cref{eq:wagecurve} on
+       $U_{t-1}$
+\State \textbf{labour market:} firms plan employment via \cref{eq:labour};
+       fire into pool; random matching fills vacancies
+\State \textbf{demand formation:} households compute $C_h$
+       (\cref{eq:consumption}); income is $w_t$ if employed, else $0$, plus
+       dividends for capitalists
+\State \textbf{investment plans:} firms apply \cref{eq:accelerator}--%
+       \cref{eq:investment}
+\State \textbf{demand registration:} consumption $+$ investment orders
+\State \textbf{production:} $Y_i = \min\{D_i, \Ystar_i\}$; goods market
+       rations; utilisation measured against profit-max capacity
+\State \textbf{firm accounting:} wages paid, retention set aside, residual
+       dividends declared
+\State \textbf{investment settlement:} capital goods paid for,
+       \cref{eq:capital} applied, residual returned as dividends
+       (buffer $\to 0$)
+\State \textbf{government:} balanced-budget tax and transfer (skipped at
+       $rr = 0$)
+\State \textbf{household settlement:} income credited, goods paid for
+\end{algorithmic}
+\end{algorithm}
