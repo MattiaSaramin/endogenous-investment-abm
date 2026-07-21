@@ -29,6 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Compile with latexmk (pdfLaTeX + Biber)
+        id: compile
         uses: xu-cheng/latex-action@v3
         with:
           working_directory: paper
@@ -36,6 +37,38 @@ jobs:
           # latexmk runs pdflatex/biber/pdflatex as many times as needed, so
           # cross-references and the bibliography always resolve.
           args: -pdf -file-line-error -halt-on-error -interaction=nonstopmode
+
+      # Downloading run logs or artifacts needs admin rights on the repository, so a
+      # failed build was previously opaque to anyone without them: the only public signal
+      # was "exit code 12". Annotations ARE public, so the LaTeX diagnostics are promoted
+      # into them here. Also surfaces undefined references and bad boxes on success.
+      - name: Surface LaTeX diagnostics as annotations
+        if: always()
+        working-directory: paper
+        run: |
+          if [ ! -f main.log ]; then
+            echo "::error::main.log not produced - the compile step never started TeX"
+            exit 0
+          fi
+
+          # Hard errors: '! ...' and file:line:message lines from -file-line-error.
+          grep -nE '^(!|.+\.tex:[0-9]+:)' main.log | head -40 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
+
+          # Context after the first error is usually what identifies the construct.
+          if grep -qE '^!' main.log; then
+            echo "----- first error, with context -----"
+            grep -A 12 -m 1 -E '^!' main.log
+          fi
+
+          # Warnings worth seeing even when the build passes.
+          grep -nE 'LaTeX Warning: (Reference|Citation).*undefined' main.log |
+            head -20 | while IFS= read -r line; do echo "::warning::${line}"; done
+          grep -cE 'Overfull \\hbox' main.log |
+            xargs -I{} echo "::notice::Overfull hbox count: {}"
+          grep -nE 'Overfull \\hbox \([0-9]{2,}\.[0-9]+pt' main.log |
+            head -10 | while IFS= read -r line; do echo "::warning::severe ${line}"; done
 
       - name: Upload the PDF (and the log, so failures are diagnosable)
         uses: actions/upload-artifact@v4
