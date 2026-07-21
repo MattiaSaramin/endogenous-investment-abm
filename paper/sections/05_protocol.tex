@@ -27,51 +27,27 @@ Every extension introduces a parameter whose null value must reproduce the
 previous model exactly: $\sigma = 1$ (Cobb-Douglas), $\eta = 0$ (fixed wage),
 $\lambda_e = 1$ (static expectations), $rr = 0$ (no government),
 $\mathit{spread} = 0$ (homogeneous firms). Each is implemented as an explicit
-branch and verified \emph{artifact-against-artifact} on committed panels. All
-such checks passed with zero deviation at the time of their respective runs.
+branch and verified \emph{artifact-against-artifact} on committed panels. The
+criterion under which those checks pass or fail is itself a measured object,
+and is reported in \cref{app:bytecheck}: exact bit equality turned out not to
+be reproducible over time, and the replacement declares a tolerance on levels
+and zero tolerance on regime.
 
-\begin{declbox}[frametitle={A methodological finding about the checks themselves}]
-The criterion ``deviation $= 0.0$'' proved \emph{not reproducible over time}.
-Code that had recorded 7/7 exact reproductions later deviated by 1 unit in the
-last place (ULP) on the same cells. Eight hypotheses were excluded by
-measurement (reporters, library versions, pandas reduction order, process
-pool versus main process, performance versus efficiency cores, and others);
-the cause remains unidentified. The magnitude across 160 cells and 24 metrics
-is at most 2.1 ULP, does not amplify, and produces \emph{zero} regime flips,
-so no economic conclusion moves --- and within a session, per-seed determinism
-is intact. We report this rather than silently relaxing the criterion.
-
-The replacement has since been implemented and the baseline re-fixed. It has
-two limbs that cannot compensate for each other: a declared tolerance on
-\emph{levels} (8 ULP with an absolute floor, roughly four times the measured
-envelope), and a check on \emph{regime} indicators --- viability, which
-constraint binds, the sign of every resolvable metric --- at tolerance exactly
-zero, since that is where a drift would become scientific rather than
-numerical. Two limits emerged while constructing it and are declared in the
-source. A pure ULP criterion is unusable near zero: a metric legitimately
-resting at zero registers thousands of ULP on a gap of $10^{-16}$, which is
-why the absolute floor exists and why the regime limb declines to assert a
-sign it cannot resolve. And the criterion must \emph{not} be applied to
-differenced or fitted quantities --- a chord, a slope, a curvature --- because
-catastrophic cancellation makes their relative error arbitrary even from
-stable inputs; measured, the sensitivity analysis's slope deviates by 3410 ULP
-while its own inputs deviate by 4. Those quantities are checked by sign
-instead. Re-running the reference slice under the new criterion gives 7/7 with
-a worst significant drift of $0.00$ ULP --- that is, it reproduces
-\emph{exactly} today, where the earlier measurement found 2.1 ULP on the same
-code. The drift is therefore intermittent, which is the strongest argument for
-retiring exact equality: a criterion that passes or fails by the day carries
-no information about what changed in the model.
-\end{declbox}
+\paragraph{The reported numbers, and what may be quoted.}
+Every figure in this paper is either measured from a committed driver script or
+labelled as a design target or convention. The rule is stated because it was
+adopted after an audit found previously recorded ``results'' that had never
+been measured, and because it has teeth: it is what required the withdrawals of
+\cref{app:retractions}, and what forbids quoting an analytical identity in
+place of a measured ratio when the identity's derivation no longer applies.
 
 \paragraph{Global sensitivity design.}
 For \cref{sec:sa}, $\rho$ is a \emph{treatment} rather than a swept parameter:
 each design point is evaluated at several values of $\rho$ under common random
 numbers (the same seeds at each, differenced or regressed per seed, then
-averaged). \Cref{sec:sa} uses two values and \cref{sec:sarepaired} four, the
-four containing the two, so that the chord and the whole-support slope are
-computed from the \emph{same runs} and their difference cannot be a different
-sample. Without
+averaged). The reported analysis uses four values of $\rho$, and they contain
+the two of the superseded chord, so that both estimators are computed from the
+\emph{same runs} and their difference cannot be a different sample. Without
 common random numbers the quantity of interest is a difference of two noisy
 numbers, and the sensitivity indices would decompose the variance of the seed
 draw rather than of the model. Uniform ranges over 16 parameters are a
@@ -85,9 +61,10 @@ by a pilot: the noise-to-signal ratio measured $0.207$, $0.170$ and $0.111$ at
 
 \paragraph{Implementation.}
 The model is implemented in Python on the Mesa framework
-\citep{Kazil2020}, with 512 automated tests covering stock-flow consistency
-(parametrised over the ownership range), per-seed determinism, labour
-accounting, every nesting limit, and directional regression pins. Each
+\citep{Kazil2020}. The automated suite --- counted and described in
+\cref{app:repro} --- covers stock-flow consistency (parametrised over the
+ownership range), per-seed determinism, labour accounting, every nesting
+limit, and directional regression pins. Each
 committed data file has a committed generator script;
 \cref{app:repro} gives the details, and \cref{app:notation} collects the
 notation.

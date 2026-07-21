@@ -1,0 +1,96 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Results III - fiscal conditionality
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Results III: the sign region is conditional on fiscal institutions}
+\label{sec:government}
+
+The results so far describe an economy with no public sector, in which the
+unemployed earn nothing and therefore leak entirely out of the circular flow.
+That is a modelling choice, not a neutral baseline, and this section shows it
+carries the sign structure of \cref{sec:shape} with it. We reinstate a minimal
+government: a flat tax on accrued income funds an equal transfer to the
+unemployed, indexed to the current wage, with the budget balanced every
+period. One economic parameter is added, the replacement rate $rr$, whose
+range is anchored to OECD net replacement rates (\cref{tab:params}).
+
+\paragraph{Dose-response: crowding-in.} At the headline demand-constrained
+scenario the benefit lowers unemployment and raises \emph{both} output and
+capital (\cref{tab:government}).
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Fiscal dose-response at $c_0 = 1.0$, $\sigma = 0.5$, $\eta = 0.10$,
+$\rho = 0.40$.}
+\label{tab:government}
+\begin{tabular}{lrrrrrr}
+\toprule
+$rr$ & $U$ & $Y$ & $K$ & Wage share & Realised tax & Cash-constrained\\
+\midrule
+0.00 & 0.566 & 82.1 & 298.8 & 0.440 & 0.000 & 0.90\\
+0.25 & 0.483 & 98.1 & 359.2 & 0.446 & 0.128 & 0.90\\
+0.50 & 0.427 & 108.7 & 396.6 & 0.452 & 0.206 & 0.90\\
+0.75 & 0.373 & 119.0 & 435.7 & 0.457 & 0.250 & 0.90\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Capital rises from 299 to 436. In a demand-constrained regime redistribution
+is \emph{crowding-in}, because more demand means more profit and hence more
+investment through $I = \rho\Pi$ --- the opposite of the crowding-out a
+loanable-funds account would predict, and a direct consequence of financing
+investment out of retained earnings rather than out of saving. The
+cash-constrained fraction stays at $0.90$, all ninety workers, invariant to
+$rr$: the benefit never lifts a worker off the liquidity constraint, which is
+precisely why the balanced-budget multiplier keeps delivering across the whole
+dose.
+
+\paragraph{The benefit eliminates the wage-led region.} At $rr = 0.5$, inside
+the empirically anchored band, $\sigstar$ becomes \emph{undefined}: every
+estimated $\mathrm{d}Y/\mathrm{d}\rho$ turns positive across the tested range
+($+38.7$ at $\sigma = 1$; $+19.3$ at $\sigma = 1.5$), pushing $\sigstar$ above
+$1.5$. The demand floor makes retention expansionary at \emph{every}
+elasticity tested. The unemployment frontier, by contrast, barely moves.
+
+\begin{declbox}
+The region in which retention depresses output is not a property of the
+technology alone. It exists because the unemployed leak out of the circular
+flow, and a balanced-budget benefit at a replacement rate inside the OECD band
+closes that leak and removes the region. \textbf{The sign is conditional on
+fiscal institutions}, and any statement of it that omits the institutional
+setting is incomplete.
+\end{declbox}
+
+\paragraph{The same instrument fails on the collapse.} The falsifiable guess
+was that a demand floor would also shrink the collapse region of
+\cref{sec:wagecurve}. It does the opposite: cells with any collapsed seed rise
+from 16 to 26 ($\eta = 0.10$) and 16 to 29 ($\eta = 0.15$), and the mean
+fraction of seeds at $U = 1$ roughly doubles. In the reference cell the economy
+dies at both $rr = 0$ and $rr = 0.5$, but at $rr = 0.5$ the tax is \emph{pinned
+at its cap} in 100\% of periods --- the instrument saturates and the economy
+still dies. Three mechanisms explain it: where firms are collapsing the tax
+base is almost entirely wages, so taxing workers to pay workers is
+MPC-neutral; the benefit is indexed to $w_t$ and is therefore
+\emph{procyclical}, weakest exactly when it is most needed; and the demand it
+does inject \emph{amplifies} the wage$\,\to U \to\,$capital-erosion
+oscillation. That the same instrument can close the leak that produces the
+wage-led region and yet enlarge the collapse is the sharpest available
+statement of the boundary drawn in \cref{sec:discussion}: it acts on demand,
+and only one of the two phenomena is a demand phenomenon. \Cref{fig:government}
+shows the two faces side by side.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}{0.49\textwidth}
+  \includegraphics[width=\linewidth]{ces_b09_dose_response.png}
+  \caption{Dose-response: $U$, $Y$, $K$ against $rr$.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\textwidth}
+  \includegraphics[width=\linewidth]{ces_b09_collapse_map.png}
+  \caption{Collapse map: the demand floor enlarges it.}
+\end{subfigure}
+\caption{The two faces of the balanced-budget benefit.}
+\label{fig:government}
+\end{figure}

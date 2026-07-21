@@ -3,13 +3,32 @@
 % Calibration and anchoring
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Calibration and anchoring}
+\section{Anchoring and calibration}
 \label{sec:calibration}
 
-\Cref{tab:params} lists every parameter with its value and, more importantly,
-its \emph{anchoring tier}. The tiers are not decoration: they record which
-numbers carry empirical content and which are modelling decisions that must
-not be presented as estimates.
+A model of this kind can be calibrated in two quite different senses, and
+conflating them is how design targets come to be reported as results. We
+therefore assign every parameter to one of three \emph{anchoring tiers}, and
+state the tier wherever the parameter is used.
+
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item \textbf{Anchored.} There exists an empirical quantity of which the
+  parameter is an estimate, a citable source for it, and a comparator defined
+  on the same perimeter as the model. $\sigma$, $\pi_0$, $\eta$, $\lambda$ and
+  the replacement rate are in this tier.
+  \item \textbf{Declared convention.} A value is needed, the literature offers
+  a range rather than a point, and the choice within that range is ours. These
+  are not estimates and are never described as such. $\delta$ is the
+  consequential case.
+  \item \textbf{Non-anchorable by decision.} No empirical quantity corresponds
+  to the parameter at all, so searching for a citation would be cosmetic.
+  $c_0$ is the case, and it is handled by reporting both regimes throughout
+  rather than by choosing.
+\end{enumerate}
+
+\Cref{tab:params} lists every parameter with its value and its tier. The tiers
+are not decoration: they record which numbers carry empirical content and which
+are modelling decisions that must not be presented as estimates.
 
 \begin{table}[htbp]
 \centering
@@ -82,12 +101,49 @@ states, never a time series to be overlaid on data.
 \end{threeparttable}
 \end{table}
 
-Two entries in \cref{tab:params} deserve emphasis because they cut against
-the project's own convenience. First, $c_0$ is declared \emph{non-anchorable
-by decision}: it is autonomous consumption in model units, and since the
-numéraire is~1 by construction there exists no empirical quantity of which it
-is an estimate. Searching for a citation would be cosmetic anchoring. Its
-sensitivity is instead handled by reporting both regimes $c_0 \in \{1.0,
-2.0\}$ throughout, and by the global analysis of \cref{sec:sa}. Second,
-$\delta = 0.05$ is a convention and not an estimate --- a distinction that
-\cref{sec:delta} shows to be far more consequential than it first appears.
+\subsection{The capital block, anchored flows first}
+
+The capital block is anchored \emph{flows first}: $\rho$ is anchored through
+the investment rate it produces rather than through corporate payout ratios,
+because $\rho$ is what fixes $I/Y$ here. The comparator is declared and held on
+both sides of the ratio --- private \emph{non-residential} fixed capital ---
+since mixing perimeters is exactly how an earlier version of these notes
+derived a $\delta$ that appeared anchored and was not.
+
+Against the BEA series for that perimeter, $I/Y$ is $0.138$--$0.141$
+\citep{FRED_PNFI}. The model \emph{measured} at $\rho = 0.40$ gives $0.158$ in
+the anchor scenario and $0.182$ in the headline scenario --- above the anchor by
+two and four points. We quote the measured figure and never an analytical one:
+the relation $I/Y = \rho\alpha$ belongs to an earlier Cobb-Douglas core without
+a labour market and no longer holds once profit is a residual
+(\cref{app:retractions}).
+
+$\delta$ is the clearest case of tier~(2). The depreciation rate implied by the
+BEA data for this perimeter is $\approx 0.090$ \citep{FRED_Depreciation},
+inflated by intellectual
+property products; structures alone sit at $2$--$3\%$, so the defensible
+empirical band spans roughly $0.02$--$0.09$ and $\delta = 0.05$ is a midpoint
+chosen within it. It is not a measurement, and it must not be recalibrated
+``toward the centre of the literature'' late in a project: doing so would move
+every canonical number without buying any anchoring.
+
+That decision has a structural consequence which \cref{sec:delta} makes
+quantitative. The steady-state closure is $I/K = \delta + g$. This model has
+$g = 0$, so $K/Y$ is not an anchor at all but a \emph{mechanical outcome}:
+$K/Y = (I/Y)/\delta$, and measured $I/K$ is $0.0500$, exactly $\delta$. Model
+$K/Y$ is therefore $3.17$--$3.64$ against a business-sector $1.23$
+\citep{FRED_NetStock}, and no choice of $\rho$ reconciles the two. \emph{The model cannot match business
+$I/Y$ and $K/Y$ simultaneously without trend growth} --- a declared structural
+limitation, not a calibration failure to be tuned away.
+
+\subsection{What is deliberately not anchored}
+
+$c_0$ is declared \emph{non-anchorable by decision}: it is autonomous
+consumption in model units, and since the numéraire is~1 by construction there
+exists no empirical quantity of which it is an estimate. Searching for a
+citation would be cosmetic anchoring. Its sensitivity is instead handled by
+reporting both regimes $c_0 \in \{1.0, 2.0\}$ throughout, and by the global
+analysis of \cref{sec:sa}. This does not close the model's most visible
+quantitative gap --- unemployment rates far above anything observed --- which is
+a consequence of design decisions listed in \cref{sec:limits}, not of an
+unanchored parameter.

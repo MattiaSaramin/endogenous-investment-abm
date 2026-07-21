@@ -1,0 +1,268 @@
+% !TEX root = ../main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Results IV - global sensitivity analysis
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Results IV: global sensitivity}
+\label{sec:sa}
+
+Every result so far is measured at a \emph{cell}: a chosen $\sigma$, a chosen
+$c_0$, everything else at its default. We now ask what survives when all
+sixteen defensible parameters move at once. The quantity of interest is the
+one established in \cref{sec:turning} --- an OLS slope of $Y$ on $\rho$ over
+four values of the retention ratio, evaluated under common random numbers ---
+and not the two-point chord with which this analysis was first run. Why that
+distinction is worth a subsection of its own, rather than a footnote, is the
+subject of \cref{sec:estimator}.
+
+\subsection{The headline does not survive marginalisation}
+
+\begin{declbox}
+\textbf{$P(\text{wage-led} \mid \text{viable}) = 0.026$} under the whole-support
+slope, on the empirically anchored band $\sigma \in [0.40, 0.60]$.
+\textbf{Fraction viable $= 0.480$.}
+
+\smallskip
+Over the empirically defensible space, retention depressing output is rare ---
+and half of that space does not sustain an economy at all.
+\end{declbox}
+
+The conditional structure of \cref{sec:shape} does not generalise. It was
+measured with fifteen other parameters held at their defaults, and marginalising
+over them removes most of it. \Cref{tab:repaired} places the headline beside the
+chord-based figures the same runs produce, since both estimators are computed
+from the identical design points.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{The sensitivity headline under both estimators, computed on the same
+runs. $P(\text{wl})$ abbreviates $P(\text{wage-led} \mid \text{viable})$. The
+first row is the superseded chord-only analysis, retained for comparison.}
+\label{tab:repaired}
+\begin{tabular}{lrrr}
+\toprule
+Analysis & Fraction viable & $P(\text{wl})$ chord & $P(\text{wl})$ OLS\\
+\midrule
+Chord-only, as first run             & 0.483 & 0.095 & ---\\
+Primary, $\sigma \in [0.40, 0.60]$   & 0.480 & 0.094 & \textbf{0.026}\\
+Wide, $\sigma \in [0.30, 1.00]$      & 0.468 & 0.202 & \textbf{0.098}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The chord column reproduces the original analysis ($0.094$ against $0.095$;
+$0.202$ against $0.201$), the residual being a changed survivor set at the
+screening stage rather than the estimator: under the identical keep rule and
+seed, $\mathtt{target\_utilization}$ enters the surviving set and
+$\mathtt{benefit\_replacement\_rate}$ leaves it. A different quantity of
+interest genuinely selects different parameters, which is also why the earlier
+runs could not simply be recycled.
+
+\subsection{What actually governs the outcome}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Sobol' indices. $S_1$ is the first-order index, $S_T$ the total
+index; $N = 256$, bootstrap confidence intervals.}
+\label{tab:sobol}
+\begin{tabular}{lrrrr}
+\toprule
+& \multicolumn{2}{c}{Viability} & \multicolumn{2}{c}{Slope}\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Parameter & $S_1$ & $S_T$ & $S_1$ & $S_T$\\
+\midrule
+$\delta$        & \textbf{0.718} & \textbf{1.002} & \textbf{0.331} & \textbf{0.966}\\
+$\pi_0$         & 0.116 & 0.290 & 0.001 & 0.562\\
+$c_0$           & 0.069 & 0.086 & $-0.030$ & 0.277\\
+$\lambda$       & 0.038 & 0.086 & 0.040 & 0.264\\
+$\sigma$        & 0.008 & \textbf{0.008} & 0.030 & \textbf{0.024}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two facts in \cref{tab:sobol} overturn the project's own narrative. First,
+$S_T \gg S_1$ throughout: the model is dominated by \emph{interactions}, as one
+should expect of a wage$\,\to U \to\,$capital channel that is interactive by
+construction. Second, and more uncomfortably, \textbf{$\sigma$ is close to
+irrelevant} inside the empirical band, with a total index of $0.024$ and a
+first-order index indistinguishable from zero. The depreciation rate and the
+base-point capital share do the work the project had attributed to the
+elasticity of substitution.
+
+\paragraph{The decomposition is robust to the estimator.} \Cref{tab:sobol} is
+computed on the chord, and repeating it on the repaired quantity barely moves
+it: on the slope, $\delta$ goes from $0.966$ to $0.900$, $\pi_0$ from $0.562$
+to $0.561$, $\sigma$ from $0.024$ to $0.021$; on viability, $\delta$ from
+$1.002$ to $0.916$. \emph{Which} parameters generate the variance is robust to
+the choice of estimator; the \emph{level} of the headline probability, as
+\cref{tab:repaired} shows, is not. These are different questions, and the
+answer to the first one stands under either quantity of interest.
+
+\subsection{The depreciation cliff}
+\label{sec:delta}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Viability by depreciation rate.}
+\label{tab:delta}
+\begin{tabular}{lrrr}
+\toprule
+$\delta$ & Points & Fraction viable & $P(\text{wage-led} \mid \text{viable})$\\
+\midrule
+0.030--0.045 & 832 & \textbf{0.992} & 0.044\\
+0.045--0.060 & 832 & 0.758 & 0.111\\
+0.060--0.075 & 821 & 0.183 & 0.313\\
+\textbf{0.075--0.090} & \textbf{843} & \textbf{0.000} & ---\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$\delta$ alone governs survival: its total index on viability is $1.00$, and no
+other parameter approaches it. \Cref{tab:delta} is not a robustness note but a
+structural limitation, and it becomes one only when combined with the anchoring
+exercise of \cref{sec:calibration}. The depreciation rate \emph{implied by the
+data for this model's perimeter} --- private non-residential fixed capital on
+both sides of the ratio --- is $\approx 0.090$. In that band, \textbf{zero of
+843 sampled points survive}.
+
+\begin{declbox}[frametitle={Why this cannot be recalibrated away}]
+The tempting reading is that the analysis \emph{confirms} $\delta = 0.05$. It
+does the opposite, and the reason is the steady-state accounting identity
+$I/K = \delta + g$. The data satisfy it with $g \approx 0.022$; this model has
+$g = 0$, because technical change is out of scope. With $g = 0$, steady-state
+investment must cover \emph{all} depreciation and nothing else. Raising
+$\delta$ toward the data without adding growth asks the capital block to
+finance a growing economy's depreciation out of a stationary economy's
+investment flow: capital erodes every period and the economy dies.
+
+$\delta = 0.05$ is therefore \emph{not} where the data put it. It is where
+$g = 0$ forces it to sit for the model to exist at all. The repair is a
+mechanism --- trend productivity growth --- not a calibration.
+\end{declbox}
+
+This is the same structural signature as the model's other declared failure of
+fit. Measured $I/Y$ ($0.158$--$0.182$ at $\rho = 0.40$) sits above the BEA
+anchor of $0.138$--$0.141$, and measured $K/Y$ ($3.17$--$3.64$) sits far above
+the data's $1.23$. The second follows mechanically from the first: with
+$g = 0$, $I = \delta K$ and hence $K/Y = (I/Y)/\delta$; measured $I/K$ is
+$0.0500$, exactly $\delta$. \emph{The model cannot match business $I/Y$ and
+$K/Y$ simultaneously without growth.} Seen from the level side, $K/Y$ does not
+fit; seen from the viability side, the empirical $\delta$ kills the economy.
+One cause, two symptoms.
+
+\subsection{The estimator is part of the result}
+\label{sec:estimator}
+
+The gap between the chord and OLS columns of \cref{tab:repaired} is not a
+rounding detail, and it is not diffuse. It was measured by a $2\times2$
+experiment --- method crossed with conditioning, under a verdict rule fixed
+before execution --- whose full design, intervals and anchoring control are
+reported in \cref{app:bridge}. The result of that experiment is that the
+quantity of interest was itself carrying part of the answer.
+
+At identical parameters, changing only the estimator moves $\sigstar$ from
+$0.643$ to $0.447$ with \emph{non-overlapping} intervals: for any $\sigma$
+between those values the chord is negative while the whole-support slope is
+positive. The two statistics genuinely disagree in sign on the same committed
+data. Conditioning moves the frontier further still --- to $0.962$ --- but it
+moves it \emph{away} from the empirical band rather than across it, so under
+the declared rule the estimator is what the verdict turns on.
+
+\paragraph{The difference is individually accounted for.} Chord and OLS
+disagree in sign on $112$ of the $1{,}596$ viable design points; $110$ of those
+are ``chord negative, slope positive'' and $2$ are the reverse, for a net of
+$108$. The headline gap is $(0.0940 - 0.0263) \times 1596 = 108$ points. The
+accounting closes exactly, and what distinguishes the disagreeing points is
+precisely the mechanism of \cref{tab:turning}: where the two estimators
+disagree the mean turning point is $\rhostar = 0.473$, \emph{inside} the
+chord's $[0.35, 0.55]$ window; where they agree it is $0.820$, outside the
+support, where $Y(\rho)$ is monotone and every estimator sees the same thing.
+A chord fixed while the response was assumed monotone kept returning answers
+about a curve it could not represent.
+
+\paragraph{A limit on the turning point itself, declared.} In the marginalised
+space $\rhostar$ falls inside the swept support in only $37.7\%$ of viable
+points (median $0.323$; below the support in $58.7\%$ of cases), against 10 of
+11 in the conditional cells of \cref{tab:turning}. Where the turn falls outside
+the support the U is \emph{not resolved there}, and it is reported as such
+rather than extrapolated. The statement of \cref{sec:turning} is a statement
+about the conditional cells, and it is not silently promoted to the whole
+space.
+
+\subsection{The wide-\texorpdfstring{$\sigma$}{sigma} check}
+\label{sec:widesigma}
+
+Widening the $\sigma$ range to $0.30$--$1.00$ leaves viability nearly
+unchanged but raises the wage-led fraction under both estimators, and the
+change is concentrated at high $\sigma$ (\cref{tab:widesigma}).
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{$P(\text{wage-led} \mid \text{viable})$ by $\sigma$ bin under both
+estimators, on the same runs, $\sigma \in [0.30, 1.00]$.}
+\label{tab:widesigma}
+\begin{tabular}{lrrr}
+\toprule
+$\sigma$ bin & $n$ viable & OLS & chord\\
+\midrule
+0.301--0.475 & 191 & 0.000 & 0.016\\
+0.475--0.649 & 197 & 0.025 & 0.127\\
+0.649--0.823 & 201 & 0.154 & 0.299\\
+0.823--0.998 & 190 & 0.211 & 0.363\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Wage-led outcomes become more common as $\sigma$ rises, under both estimators
+--- the same direction as \cref{sec:frontier}, which places the empirical band
+below $\sigstar$ and therefore on the side where retention raises output. The
+two analyses agree in direction; they differ in level, and the difference is
+the estimator. Note also that the probability never crosses $0.5$ at any
+$\sigma$ tested, topping out at $0.363$: there is no threshold in the
+marginalised space at which wage-led outcomes become the majority.
+
+\Cref{fig:sa} shows the screening step and the variance decomposition that
+underlie \cref{tab:sobol,tab:delta}.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}{0.48\textwidth}
+  \includegraphics[width=\linewidth]{ces_b13_morris_mu_sigma.png}
+  \caption{Morris screening.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.48\textwidth}
+  \includegraphics[width=\linewidth]{ces_b13_sobol_indices.png}
+  \caption{Sobol' indices with bootstrap CIs.}
+\end{subfigure}
+\caption{Screening and decomposition over the sixteen-parameter space.}
+\label{fig:sa}
+\end{figure}
+
+\subsection{Two by-products}
+
+\paragraph{Kalecki, confirmed in levels.} Within this model the relation
+$\Pi - I = C - W$ is a tautology and cannot settle causation. Sobol' sampling,
+however, varies the capitalists' propensity to consume \emph{independently of
+everything else}, which makes the comparison interventional. Moving from the
+lowest to the highest quartile of capitalist MPC raises capitalist consumption
+by $10.83$ and profit by $11.56$ --- near one-for-one, with a correlation of
+$+0.83$ on levels. Capitalists do earn what they spend. The profit \emph{share}
+falls slightly, because output rises faster; Kalecki's claim is about levels,
+and it is the levels that hold.
+
+\paragraph{The accelerator produces the sign.} Wage-led outcomes are
+overwhelmingly concentrated at high accelerator reactivity. In the lowest
+quartile of $\beta$ ($[0.002, 0.251]$) only $0.6\%$ of viable points are
+wage-led (2 of 353); in the highest ($[0.750, 0.999]$) the figure is $22.1\%$,
+and viability itself is higher ($0.523$ against $0.423$). The wage-led sign is
+therefore substantially \emph{produced by} investment reactivity rather than
+being an intrinsic property of the technology, and $\beta$ --- a parameter with
+no canonical empirical value (\cref{tab:params}) --- governs both the sign and
+survival. This reverses the expectation that the instability would prove
+independent of investment reactivity, and it is an uncomfortable result: the
+headline depends on the one parameter in the model with the weakest empirical
+claim.

@@ -8,28 +8,33 @@ brief-14 bridging experiment).
 `main.tex` holds structure only — no packages, no prose. Everything else is a
 separate file, so two sections can be edited without touching each other.
 
+The order is **argumentative, not chronological**: results are grouped by claim,
+and everything methodological is gathered in Appendix A rather than left where
+it happened to be discovered.
+
 ```
-main.tex                  \input lines only (47 lines)
+main.tex                  \input lines only
 preamble.tex              packages, layout, macros
-frontmatter.tex           title, abstract, table of contents
-references.bib            34 entries, all cited
+frontmatter.tex           title, abstract (249 words), table of contents
+references.bib            37 entries, all cited
 sections/
-  01_introduction.tex
+  01_introduction.tex     the three contributions
   02_literature.tex       relation to the literature
   03_model.tex            equations + period sequence
-  04_calibration.tex      parameter table and anchoring tiers
+  04_calibration.tex      the three anchoring tiers; the capital block
   05_protocol.tex         experimental protocol
-  06_baseline.tex         wage-led at sigma = 1
-  07_sign_frontier.tex    sigma*, and why it is a frontier not a number
-  08_stress_tests.tex     wage curve, expectations, government, heterogeneity
-  09_ownership.tex        the invariant that held only at the default
-  10_sensitivity.tex      global SA, the delta cliff, the inversion
-  11_qoi_repair.tex       the bridging experiment (partial)
-  12_discussion.tex
-  13_limitations.tex
-  14_conclusion.tex
+  06_shape.tex            RESULTS I  - Y(rho) is U-shaped; rho*; sigma*
+  07_stress.tex           RESULTS II - wage curve, expectations, heterogeneity
+  08_fiscal.tex           RESULTS III- the sign is conditional on fiscal policy
+  09_sensitivity.tex      RESULTS IV - global SA, delta cliff, the estimator
+  10_discussion.tex
+  11_limitations.tex
+  12_conclusion.tex
 appendices/
-  a_reproducibility.tex
+  a_validation.tex        validation record: the invariant that held only at
+                          the default, the reproducibility criterion and its
+                          two limits, the 2x2 in full, withdrawn claims,
+                          reproducibility
   b_notation.tex
 figures/                  15 PNGs, copied from results/ and the repo root
 ```
@@ -130,8 +135,9 @@ Every table traces to a committed CSV in `results/`:
 | `tab:government` | `ces_b09_dose_response.csv` |
 | `tab:heterogeneity` | `ces_b10_*` |
 | `tab:ownership` | brief-12 measurements (README §8) |
-| `tab:sobol`, `tab:delta`, `tab:widesigma` | `ces_b13_sobol_indices.csv`, `ces_b13_sobol_byproducts.csv`, `ces_b13_summary.csv` |
+| `tab:sobol`, `tab:delta` | `ces_b13_sobol_indices.csv`, `ces_b13_sobol_byproducts.csv`, `ces_b13_summary.csv` |
 | `tab:bridge`, `tab:turning` | `ces_b14_bridge_fixed.csv`, `ces_b14_taskB_slopes.csv` |
+| `tab:repaired`, `tab:widesigma` | `ces_b14_summary.csv`, `ces_b14_wide_design.csv` |
 
 Two discrepancies found while writing, both worth reconciling in the repo:
 
@@ -151,8 +157,8 @@ Two discrepancies found while writing, both worth reconciling in the repo:
 
 ## Status note
 
-Brief 14 is **incomplete** at the time of writing: the fixed-parameter arm of
-the bridging experiment has run, the marginalised arm has not. The paper
-reports the open contradiction *as open* and claims no verdict
-(§"Repairing the quantity of interest"). When the marginalised arm lands, that
-section and the discussion need updating — not the rest of the paper.
+Brief 14 is **complete**: both arms of the bridging experiment have run, the
+verdict is reported in §9 ("The estimator is part of the result") with the full
+2×2 in Appendix A, and the apparent contradiction that motivated the experiment
+turned out never to have existed — it is recorded among the withdrawn claims
+rather than narrated as an open tension.
