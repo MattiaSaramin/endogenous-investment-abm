@@ -65,9 +65,13 @@ jobs:
           # Warnings worth seeing even when the build passes.
           grep -nE 'LaTeX Warning: (Reference|Citation).*undefined' main.log |
             head -20 | while IFS= read -r line; do echo "::warning::${line}"; done
-          grep -cE 'Overfull \\hbox' main.log |
-            xargs -I{} echo "::notice::Overfull hbox count: {}"
-          grep -nE 'Overfull \\hbox \([0-9]{2,}\.[0-9]+pt' main.log |
+          # NOTE: match the backslash in "Overfull \hbox" with '.', not with an escape.
+          # A backslash here passes through YAML and the shell before grep sees it, and
+          # the earlier '\\hbox' silently matched nothing - reporting a reassuring zero
+          # on a log that had plenty. Verified against a synthetic log before use.
+          echo "::notice::Overfull hbox count: $(grep -cE 'Overfull .hbox' main.log || true)"
+          echo "::notice::Underfull hbox count: $(grep -cE 'Underfull .hbox' main.log || true)"
+          grep -nE 'Overfull .hbox \([0-9]{2,}\.[0-9]+pt' main.log |
             head -10 | while IFS= read -r line; do echo "::warning::severe ${line}"; done
 
       - name: Upload the PDF (and the log, so failures are diagnosable)
