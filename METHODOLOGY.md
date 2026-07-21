@@ -647,6 +647,111 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     ricalibrare qualunque parametro sulla base della SA (sarebbe calibrazione mascherata
     da robustezza); consolidamento del notebook (b07–b13, subito dopo).
 
+- **Brief 14 — RIPARAZIONE DELLA QoI: le due cause del brief 13, separate per
+  esperimento.** Il brief 13 si era chiuso con una contraddizione dichiarata e due cause
+  candidate che non sapeva distinguere. Qui vengono separate **su una sola griglia di run**,
+  sotto una **regola di verdetto congelata nel sorgente** (`VERDICT_RULE` in
+  `scripts/run_brief14.py`) **prima** di qualunque esecuzione.
+  - **Task A — il ponte (2×2: metodo × condizionamento).** Le celle 1 e 2 **non costano
+    simulazione**: i panel committati b05/b07 portano già la griglia σ canonica × supporto ρ
+    × 20 seed ai default del brief 07, quindi corda e pendenza OLS sono **due funzionali
+    lineari degli stessi dati**. Controllo di ancoraggio **a 14 cifre**
+    (σ\* = 0.6540142777288407 contro il canonico 0.654).
+    | cella | parametri | metodo | σ\* | CI 95% | banda empirica |
+    |---|---|---|---|---|---|
+    | 1 | fissi | corda | **0.447** | [0.395, 0.501] | a cavallo |
+    | 2 | fissi | OLS | **0.643** | [0.596, 0.701] | sotto |
+    | 3 | marginalizzati | corda | 0.938 | [0.573, 0.976] | sotto |
+    | 4 | marginalizzati | OLS | **0.962** | [0.723, 0.985] | sotto |
+    **VERDETTO: causa (a)** — a parametri identici il solo cambio di stimatore muove σ\* con
+    **CI non sovrapposte**. Riportato accanto al verdetto, perché la regola meccanica lo
+    sotto-descrive: **marginalizzare muove σ\* PIÙ di quanto faccia lo stimatore**
+    (0.643→0.962, anch'esse non sovrapposte), solo che lo muove **lontano** dalla banda
+    invece che **attraverso**. Entrambi gli spostamenti spingono nello stesso verso: la banda
+    empirica è profit-led **più robustamente** di quanto il brief 07 da solo affermasse.
+  - **REPERTO — la premessa della contraddizione non regge.** Il README §2 enunciava la
+    convenzione correttamente (sotto σ\* è profit-led) e il wide check del brief 13 trovava
+    il wage-led raro sotto 0.65 e comune sopra: **è la STESSA direzione, non l'opposta**. La
+    stesura aveva **mal letto i documenti di questo repo**. Corretto nel README con la
+    misura a supporto.
+    > **⚠️ Errata sul messaggio di commit `67d4a80`, verificata contro gli artifact
+    > (2026-07-21).** Quel messaggio afferma che «`P(wage-led)` supera 0.5 sopra σ≈0.82, non
+    > a 0.65». **È falso, e contraddice sia il commit successivo `4728117` sia il paper**,
+    > che dicono entrambi che non supera 0.5 da nessuna parte. Misurato su
+    > `ces_b14_wide_design.csv` e `ces_b13_wide_design.csv`, a 4 e a 8 bin, su entrambi gli
+    > stimatori: il massimo è **0.434** (b13, 8 bin) e **0.404** (b14 corda, 8 bin) —
+    > `P(wage-led|viable)` **non attraversa mai 0.5** in nessun sotto-intervallo di σ. La
+    > formulazione corretta è quella del paper: *non c'è soglia a 0.65 né altrove*.
+    > L'affermazione **non è mai entrata** in README, paper o notebook (verificato per grep):
+    > vive solo nel messaggio di commit, che è storia e non si riscrive. È il **terzo**
+    > episodio della stessa famiglia — una claim in prosa smentita dalle tabelle del progetto
+    > stesso — e per questo è registrata, non cancellata.
+    Secondo errore di formulazione corretto in §4: σ\* che sale con η
+    **non "rafforza"** il wage-led per la banda empirica, la spinge **più a fondo nel
+    profit-led** (vedi la nota già inserita nella voce del brief 08).
+  - **Task B — tre quantità al posto di "la pendenza":** pendenza OLS, **la svolta ρ\***, e
+    **da che lato della svolta cade il ρ ancorato**. ρ\* **cresce monotonicamente in σ** ed è
+    risolto dentro il supporto in **10 celle su 11** — che è esattamente ciò che produceva il
+    disaccordo corda/OLS. Al ρ ancorato l'economia sta **a SINISTRA della svolta per ogni
+    σ ≥ 0.5**.
+  - **Task C — la SA rifatta sulla QoI riparata.** Morris e Sobol ri-eseguiti con la pendenza
+    OLS su **quattro** ρ al posto della corda a due punti; parametri, range, valori congelati
+    e seed di campionamento **importati** da `run_brief13.py` anziché ricopiati, così la QoI è
+    **dimostrabilmente l'unica cosa che cambia**, ed entrambi gli stimatori sono calcolati
+    **sulle stesse run**. **Lo screening cambia** (stessa keep rule, stesso seed):
+    `target_utilization` **entra** nel set dei sopravvissuti, `benefit_replacement_rate`
+    **esce** — il che chiude retroattivamente anche la questione del riuso: *un set di
+    sopravvissuti diverso è una design matrix diversa*, quindi le run del brief 13 non erano
+    riusabili nemmeno in linea di principio.
+    | analisi | frazione viable | P(wl\|viable) corda | P(wl\|viable) OLS |
+    |---|---|---|---|
+    | brief 13 (sola corda) | 0.483 | 0.095 | — |
+    | primaria, σ 0.40–0.60 | 0.480 | 0.094 | **0.026** |
+    | wide, σ 0.30–1.00 | 0.468 | 0.202 | **0.098** |
+    La colonna corda **riproduce** il brief 13 (0.094 vs 0.095; 0.202 vs 0.201), col residuo
+    imputabile al set di sopravvissuti e non allo stimatore. **Il conto chiude esatto:** corda
+    e OLS discordano di segno su **112 punti viable su 1596**, **110** «corda negativa, OLS
+    positiva» e **2** l'inverso ⇒ netto **108**, e `(0.0940 − 0.0263) × 1596 = 108`. **Il
+    discriminante è quello predetto:** dove discordano la svolta media è **ρ\* = 0.473**,
+    *dentro* la finestra [0.35, 0.55] della corda; dove concordano è **0.820**, fuori dal
+    supporto, dove `Y(ρ)` è monotòna e ogni stimatore vede la stessa cosa.
+    **Ma la decomposizione non si muove:** δ `ST` 0.900 vs 0.966, π0 0.561 vs 0.562, σ 0.021
+    vs 0.024; sulla viability δ 0.916 vs 1.002. **QUALI** parametri generano la varianza è
+    robusto allo stimatore, il **LIVELLO** della probabilità wage-led no: la risposta del
+    brief 13 alla prima domanda **resta in piedi**.
+    **Wide check ripetuto** (il test diretto), `P(wage-led|viable)` per bin di σ:
+    0.000 / 0.025 / 0.154 / 0.211 sotto OLS, 0.016 / 0.127 / 0.299 / 0.363 sotto corda — il
+    wage-led diventa **più** comune al crescere di σ **sotto entrambi**, stessa direzione
+    della sign frontier, e **non supera mai 0.5** in tutto il range. **La contraddizione è
+    chiusa perché non è mai esistita.**
+    **Limite dichiarato sul task B nello spazio marginalizzato:** ρ\* è risolto dentro il
+    supporto solo nel **37.7%** dei punti viable (mediana 0.323; sotto il supporto nel
+    **58.7%**), contro 10 su 11 nelle celle canoniche a parametri fissi. Dove cade fuori, **la
+    U non è risolta lì** e viene riportata come tale, **non estrapolata**.
+  - **Task D — criterio dei byte-check RITIRATO, con la misura a supporto.** Vedi §9, dove il
+    criterio nuovo è già registrato come applicato: due limbi che non si compensano (≤8 ULP
+    con pavimento assoluto sui **livelli**, regime a tolleranza **zero**) e i due limiti
+    misurati (ULP puro inutilizzabile vicino allo zero — `Tax_Rate` a rr=0: **3460 ULP** su
+    un gap di 1.7e-16; e **non applicabile a quantità differenziate o fittate** —
+    `slope_raw`: **3410 ULP** da input a 4 ULP, controllate dal **segno**). Baseline
+    ri-fissata a **7/7 PASS**; driver b07–b10 e b12 aggiornati, e **tutti continuano a
+    registrare il `byte_equal` ritirato** perché il cambiamento resti visibile.
+  - **Task E — `delta` elevato da sensitivity a LIMITE STRUTTURALE.** Registrato in §9: al δ
+    implicato dai dati il modello **non esiste** (0 punti viable su 843, `ST(delta)`=1.00
+    sulla viability); è la firma di `g = 0` letta attraverso `I/K = δ + g`.
+  - **527 test verdi** (512 + 15 nuovi, che pinnano **la ragione** di ogni costante dichiarata,
+    non il suo valore). Driver `scripts/run_brief14.py` (fasi `bridge`/`morris`/`sobol`/
+    `wide`/`report`, `SAMPLE_SEED` fissato, ambiente in `ces_b14_environment.json`, verdetto
+    meccanico serializzato in `ces_b14_verdict.json`); **18 CSV** `results/ces_b14_*.csv` +
+    **2 JSON** (`environment`, `verdict`). **Nessuna figura nuova** — l'unico brief che non
+    ne produce, perché ripara una quantità invece di misurarne una nuova. **Fuori scope:** ricalibrare alcunché sulla base della
+    riparazione; i limiti di campionamento del brief 13 (3 seed, N=256 su 11 parametri)
+    restano **invariati e non migliorati** — le S1 piccole restano indistinguibili da zero; e
+    il σ\* marginalizzato del ponte (0.96) e lo sweep Sobol wide **sweepano set di parametri
+    diversi** (quindici contro undici, cinque fissati ai midpoint): concordano nel messaggio
+    (la frontiera marginalizzata sta a σ ≳ 1) ma **non sono la stessa stima** e non vengono
+    presentati come tale.
+
 - **Brief 15 — ristrutturazione del paper: dall'ordine cronologico a quello
   argomentativo** (solo `paper/`; **nessun numero nuovo o modificato**, nessuna modifica a
   `src/`/`scripts/`/`results/`/`tests/`). La U di `Y(ρ)` è enunciata **una volta sola e
