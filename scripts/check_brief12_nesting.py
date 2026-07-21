@@ -18,9 +18,21 @@ The slice is declared in :data:`REFERENCES` and covers, across the four referenc
 dial on and off.
 
 Artifact vs artifact (the brief-07 discipline): both frames are read back from disk and
-compared as CSV text, because pandas ``to_csv`` is not perfectly round-trip-lossless.  Any
-nonzero deviation is a FINDING — printed, written to
-``results/ces_b12_byte_check.csv``, and never smoothed over.
+compared as CSV text, because pandas ``to_csv`` is not perfectly round-trip-lossless.
+
+**The pass criterion changed in brief 14 (task D), and this script is where the new
+baseline is fixed.**  Briefs 07-13 required ``max_abs_dev == 0.0``.  Brief 13 §7.3(a) then
+measured that exact byte equality is not reproducible across time — the code at
+``7c2670f``, whose own check reported *7/7 PASS, dev = 0.0*, deviates by up to 2.1 ULP
+from its own committed results when re-run later, cause unidentified, **zero regime
+flips**.  A criterion that the unmodified code fails is not a criterion.
+
+It is replaced by :func:`experiment.compare_artifacts`: a declared numerical tolerance
+(:data:`experiment.BYTE_CHECK_ULP` = 8 ULP with an absolute floor) on the levels, AND a
+regime check at tolerance **exactly zero** — viability, which constraint binds, and the
+sign of every resolvable metric must match exactly.  The retired ``byte_equal`` is still
+computed and written to the CSV, so the change of standard stays visible rather than
+quietly disappearing from the artifacts.  A FINDING on either limb still stops the work.
 
 Determinism: BLAS pinned to one thread before numpy is imported (below); the simulation
 path is thread-invariant, and every cell is seeded and shares no state, so the pooling
@@ -52,7 +64,13 @@ for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXP
 import numpy as np
 import pandas as pd
 
-from experiment import _PANEL_METRICS, run_grid_panels
+from experiment import (
+    BYTE_CHECK_ATOL,
+    BYTE_CHECK_ULP,
+    _PANEL_METRICS,
+    compare_artifacts,
+    run_grid_panels,
+)
 
 RESULTS = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results"))
 
@@ -167,26 +185,36 @@ def byte_check(slice_path):
             print(f"    {r['name']}: SHAPE MISMATCH {a.shape} vs {b.shape}  <-- FINDING")
             continue
 
-        num = b.select_dtypes(include=[float, int]).columns
-        dev = float(np.max(np.abs(a[num].to_numpy() - b[num].to_numpy())))
-        byte_equal = a.to_csv(index=False) == b.to_csv(index=False)
-        ok = bool(byte_equal and dev == 0.0)
+        res = compare_artifacts(a, b)
+        ok = res["ok"]
         all_ok = all_ok and ok
-        rows.append({"config": r["name"], "ref": r["ref"], "byte_equal": byte_equal,
-                     "max_abs_dev": dev, "n_rows": len(a), "n_shared_cols": len(shared),
+        rows.append({"config": r["name"], "ref": r["ref"], "n_rows": len(a),
+                     "n_shared_cols": len(shared), **res,
                      "note": "PASS" if ok else "FINDING"})
         print(f"    {r['name']}: {'PASS' if ok else 'FINDING'}  ref={r['ref']}  "
-              f"n_rows={len(a)}  cols={len(shared)}  byte_equal={byte_equal}  "
-              f"max_abs_dev={dev:.1e}")
+              f"n_rows={len(a)}  cols={len(shared)}  "
+              f"max_ulp_sig={res['max_ulp_significant']:.2f}  "
+              f"max_abs_dev={res['max_abs_dev']:.1e}  "
+              f"n_exceed={res['n_exceed']}/{res['n_compared']}  "
+              f"regime_equal={res['regime_equal']}  "
+              f"(retired byte_equal={res['byte_equal']})")
 
     out = pd.DataFrame(rows)
     path = os.path.join(RESULTS, "ces_b12_byte_check.csv")
     out.to_csv(path, index=False)
     print(f"  wrote {path}")
     if not all_ok:
-        print("\n  NESTING CHECK: FINDING - the ownership fix moved a committed result.")
+        print("\n  NESTING CHECK: FINDING - a committed result moved.")
     else:
-        print("\n  NESTING CHECK: PASS - the default model is unchanged (dev = 0.0).")
+        worst = max(r["max_ulp_significant"] for r in rows)
+        n_retired = sum(1 for r in rows if not r["byte_equal"])
+        print(f"\n  NESTING CHECK: PASS under the brief-14 criterion "
+              f"(<= {BYTE_CHECK_ULP} ULP on levels, regime exact).")
+        print(f"    worst significant drift across all configs: {worst:.2f} ULP "
+              f"of the {BYTE_CHECK_ULP} allowed - this is the BASELINE brief 14 fixes.")
+        if n_retired:
+            print(f"    {n_retired}/{len(rows)} configs would have FAILED the retired "
+                  f"'dev == 0.0' criterion - which is the measurement that retired it.")
     return all_ok
 
 
@@ -198,6 +226,8 @@ def main():
 
     print(f"Brief 12 nesting check: {len(REFERENCES)} configs, {STEPS} steps, "
           f"{SEEDS} seeds, tail {TAIL}")
+    print(f"  criterion (brief 14): <= {BYTE_CHECK_ULP} ULP with atol {BYTE_CHECK_ATOL:g} "
+          f"on levels, AND exact regime match")
     ok = byte_check(regenerate(args.workers))
     return 0 if ok else 1
 

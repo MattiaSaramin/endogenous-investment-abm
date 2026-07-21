@@ -226,6 +226,54 @@ serve solo a garantire che il transiente sia esaurito.
   convenzione, solo diversa. Da trattare in sensitivity analysis (punto 5), non con
   l'ancoraggio.
 
+#### ⚠️ LIMITE STRUTTURALE (elevato dal brief 14, task E): al δ empiricamente implicato il modello NON SOPRAVVIVE
+
+Il brief 11 e il brief 13 hanno misurato due cose che, **messe insieme, non sono una
+nota di robustezza ma un limite del modello** — e vanno scritte come tale.
+
+1. **Il brief 11** ha misurato il δ **implicito** BEA per il perimetro del modello:
+   **≈ 0.090**.
+2. **Il brief 13** ha misurato la viability sullo spazio dei parametri. Per bin di δ
+   (Sobol primario, N=256, 3.328 punti):
+
+   | δ | punti | frazione viable |
+   |---|---|---|
+   | 0.030–0.045 | 832 | 0.992 |
+   | 0.045–0.060 | 832 | 0.758 |
+   | 0.060–0.075 | 821 | 0.183 |
+   | **0.075–0.090** | **843** | **0.000** |
+
+   `ST(delta)` sulla viability = **1.00** (CI ±0.12): δ **da solo** governa la
+   sopravvivenza dell'economia. Nessun altro parametro si avvicina (π0 secondo a
+   `ST` = 0.29). Il check σ largo replica la scogliera con la stessa forma
+   (0/427 viable nell'ultimo bin).
+
+**L'enunciato congiunto: nella banda di δ che i dati implicano per questo perimetro,
+zero punti su 843 sopravvivono.** Il modello non è "meno robusto" a δ alto: a δ alto
+**non esiste**.
+
+**Perché non è ricalibrabile via.** La tentazione è leggere questo come "allora δ=0.05
+è confermato dalla SA". È il contrario, e la ragione è la chiusura contabile del brief
+11 (§"La relazione contabile giusta"): `I/K = δ + g`. Con `g = 0` — il punto 13,
+crescita di A, è **tagliato** — l'investimento di steady state deve coprire *tutto* il
+deprezzamento e nient'altro. Alzare δ verso il dato senza aggiungere crescita chiede al
+blocco capitale di finanziare un deprezzamento da economia in crescita con il flusso di
+investimento di un'economia ferma: il capitale si erode a ogni periodo e l'economia
+muore. **δ=0.05 non è dove i dati lo mettono: è dove `g=0` lo costringe a stare perché
+il modello sopravviva.** Il brief 11 aveva ragione a non ricalibrare, ma la ragione
+giusta è questa, non "invaliderebbe i numeri canonici" (che è vero e resta vero, ma è
+una ragione di convenienza, non di sostanza).
+
+**Come va riportato in tesi.** Come limite strutturale dichiarato del blocco capitale,
+accanto all'altro limite già registrato (il modello non può matchare I/Y e K/Y business
+insieme senza crescita — stessa causa, `g=0`). Sono **la stessa firma vista da due
+lati**: dal lato dei livelli, K/Y non torna; dal lato della viability, δ empirico
+uccide. La riparazione non è una calibrazione ma un **meccanismo** — il punto 13
+(crescita di A) — dichiarato future work.
+
+**Nessun run nuovo:** il brief 14 non ha misurato niente di nuovo qui, ha elevato a
+limite un risultato già misurato che era stato archiviato come sensitivity.
+
 ### `retention_ratio` (ρ) = 0.40 — quota di profitto trattenuta/investita
 - **Ruolo:** finanziamento interno; `I = clip(ρ·profit·util_effect, floor,
   profit)`; è il parametro headline dello sweep; determina `K/Y = ρα/δ`.
@@ -828,6 +876,50 @@ esattamente per questo che `viable` è una QoI **a sé**, sull'intero campione n
 
 ### Esiti misurati (Sobol primario, N=256 su 11 parametri, 3.328 punti, 3 seed)
 
+> ### ⚠️ QoI RIPARATA dal brief 14 (task C) — l'headline qui sotto è misurato con la CORDA
+>
+> Il brief 14 ha rifatto Morris e Sobol con la **pendenza OLS su 4 ρ** al posto della
+> corda a 2 punti, con parametri, range, congelati e seed di campionamento **importati**
+> dal driver del brief 13 (non ricopiati), così l'unica cosa che differisce è la QoI.
+> Entrambi gli stimatori sono calcolati **sugli stessi run**, quindi il confronto è esatto.
+>
+> | | frazione viable | `P(wage-led\|viable)` **corda** | `P(wage-led\|viable)` **OLS** |
+> |---|---|---|---|
+> | brief 13 (solo corda) | 0.483 | 0.095 | — |
+> | brief 14 primario, σ 0.40–0.60 | 0.480 | 0.094 | **0.026** |
+> | brief 14 wide, σ 0.30–1.00 | 0.468 | 0.202 | **0.098** |
+>
+> La colonna corda **riproduce** il brief 13 (0.094 vs 0.095; 0.202 vs 0.201): il residuo
+> è il set di sopravvissuti cambiato, non lo stimatore. **La QoI riparata taglia la
+> frazione wage-led di 3,6× nella banda empirica e di metà nel check largo.**
+>
+> **Perché, e la contabilità torna esatta.** Corda e OLS discordano di segno su 112 dei
+> 1.596 punti viable; **110 sono "corda negativa, OLS positiva"** e solo 2 il contrario.
+> Netto 108 — e `(0,0940 − 0,0263) × 1596 = 108`. Tutta la differenza dell'headline è
+> quei punti, identificati uno per uno. A distinguerli è esattamente il meccanismo
+> previsto: dove i due stimatori discordano il punto di svolta medio è **ρ\* = 0,473**,
+> *dentro* la finestra [0.35, 0.55] della corda; dove concordano è **ρ\* = 0,820**, fuori
+> supporto, dove `Y(ρ)` è monotona e qualunque stimatore vede la stessa cosa.
+>
+> **Ma gli indici di Sobol non si muovono quasi**: `delta` `ST` 0.900 vs 0.966, `pi0`
+> 0.561 vs 0.562, `sigma` 0.021 vs 0.024; viability `delta` 0.916 vs 1.002. **Quali
+> parametri generano la varianza è robusto allo stimatore; il livello della probabilità
+> wage-led no.** Sono due domande diverse, e la risposta del brief 13 alla prima regge.
+>
+> **Lo screening è cambiato** (stessa keep rule, stesso seed): entra `target_utilization`,
+> esce `benefit_replacement_rate`. È la ragione per cui il brief imponeva di **rifare**
+> Morris e non riusarlo — e implica anche che i run del brief 13 non erano riusabili
+> nemmeno in linea di principio, perché un set di sopravvissuti diverso è una matrice di
+> disegno diversa.
+>
+> **Limite dichiarato su ρ\* nello spazio marginalizzato:** la svolta cade **dentro** il
+> supporto solo nel **37,7%** dei punti viable (mediana ρ\* = 0,323; sotto il supporto nel
+> 58,7% dei casi), a differenza delle celle canoniche a parametri fissi dove è risolta in
+> 10 su 11. Dove cade fuori, la U **non è risolta lì** ed è riportata come tale, non
+> estrapolata.
+>
+> Artifact: `ces_b14_{morris,sobol,wide}_*.csv`, `ces_b14_summary.csv`.
+
 **Headline: `P(corda < 0 | viable) = 0.095 ± 0.007`** (SE binomiale, 1.606 punti viable),
 **frazione viable = 0.483**. Sullo spazio empiricamente difendibile il **wage-led è
 l'eccezione, non la regola**, e metà dello spazio non è nemmeno viable. Non si
@@ -1379,6 +1471,57 @@ ancoraggio.
    l'uguaglianza esatta con una **tolleranza ULP dichiarata** (es. ≤4 ULP relativi) più
    un **check di regime a tolleranza zero** — che è la parte che porta davvero il
    contenuto scientifico.
+
+   > ### ✅ CHIUSO dal brief 14 (task D) — criterio RITIRATO CON MISURA A SUPPORTO
+   >
+   > Il criterio nuovo è in `src/experiment.py` come costanti sorgente, non come
+   > scelta per run: `BYTE_CHECK_ULP = 8`, `BYTE_CHECK_ATOL = 1e-12`,
+   > `compare_artifacts()`, `regime_signature()`. Due limbi, che rispondono a domande
+   > diverse e **non si compensano**:
+   >
+   > 1. **numerico, sui LIVELLI:** `|a−b| ≤ atol + 8·ULP`. 8 ULP ≈ 4× l'inviluppo di
+   >    2,1 ULP misurato dal brief 13; il margine è dichiarato come giudizio.
+   > 2. **di regime, a tolleranza ZERO:** viability, vincolo che morde, segno di ogni
+   >    metrica risolvibile, `Dead_Firms`. È il limbo che porta il contenuto: una
+   >    deriva che sposta un livello alla quindicesima cifra è un fatto floating-point,
+   >    una che ribalta una cella da viable a collassata è un fatto scientifico.
+   >
+   > **Due cose misurate dal brief 14 mentre costruiva il criterio, entrambe da
+   > registrare perché cambiano cosa il criterio può dire:**
+   >
+   > **(i) La tolleranza ULP pura è inutilizzabile senza un pavimento assoluto.** ULP è
+   > una misura *relativa*, quindi esplode ovunque il valore confrontato sia vicino a
+   > zero. Misurato sui QoI del brief 13: `Tax_Rate_hi` mostra **3.460 ULP su uno scarto
+   > assoluto di 1,7e-16**, solo perché `rr = 0` mette molti punti a tassa esattamente
+   > zero. Stessa cosa per ogni metrica che legittimamente sta a zero (`Money_Buffer`,
+   > il capitale di una cella collassata a 8e-40). Da qui `BYTE_CHECK_ATOL`, e da qui
+   > anche il fatto che `regime_signature` **non dichiara un segno che non sa
+   > risolvere** (|v| ≤ atol ⇒ segno 0): altrimenti il limbo di regime sparerebbe a
+   > ogni run su rumore da 1e-16.
+   >
+   > **(ii) Il criterio NON si applica a quantità differenziate o fittate** — corda,
+   > pendenza OLS, curvatura. Sottraggono numeri di taglia simile, quindi la
+   > cancellazione catastrofica rende l'errore relativo arbitrariamente grande a
+   > partire da input stabili. Misurato: sui QoI Sobol del brief 13 `slope_raw` devia
+   > di **3.410 ULP** mentre i suoi input deviano di **4 ULP** e il suo scarto assoluto
+   > è 3,4e-13. Una tolleranza capace di far passare quel numero sarebbe troppo larga
+   > per dire qualcosa sui livelli. **Le quantità derivate sono quindi controllate dal
+   > limbo di regime (il segno), non da una tolleranza** — che è anche la proprietà che
+   > può davvero muovere una conclusione. Dichiarato in `BYTE_CHECK_SCOPE`.
+   >
+   > **Baseline ri-fissata** (`scripts/check_brief12_nesting.py`, 440 celle, 7 config):
+   > **7/7 PASS, deriva significativa massima 0,00 ULP** — e `byte_equal = True` su
+   > tutte, cioè *oggi* la fetta riproduce esattamente. Il brief 13 aveva misurato
+   > 2,1 ULP sullo stesso codice. **La deriva è quindi INTERMITTENTE**, il che rafforza
+   > il ritiro anziché indebolirlo: un criterio che passa o fallisce a seconda del
+   > giorno non porta informazione su cosa sia cambiato nel modello. Il criterio nuovo
+   > è stabile fra le occorrenze; il vecchio no.
+   >
+   > **Driver aggiornati al criterio nuovo:** `run_brief07/08/09/10.py`,
+   > `check_brief12_nesting.py`. Tutti registrano ancora `byte_equal` (il criterio
+   > ritirato) accanto al verdetto nuovo, così la sostituzione resta visibile negli
+   > artifact invece di sparire in silenzio. Test: 15 nuovi in `tests/test_model.py`,
+   > che pinnano *la ragione* di ciascuna scelta e non solo la costante.
 8. **NUOVO (brief 13) — un bug latente a σ→1, trovato dalla SA.**
    `ces_labour_for_demand` andava in `OverflowError` per σ entro ~0.0006 da 1: a `r→0`
    il termine `−log1p(−pi0)` **non svanisce**, quindi l'esponente supera 709 mentre il

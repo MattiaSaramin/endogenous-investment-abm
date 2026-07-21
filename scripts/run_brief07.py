@@ -68,6 +68,7 @@ from experiment import (
     RHO_SWEEP_B05,
     bootstrap_sigma_star,
     cells_from_panel,
+    compare_artifacts,
     common_viable_support,
     run_grid_panel,
     sigma_star_by_rho,
@@ -312,15 +313,20 @@ def _nesting_byte_check(out, panel_name):
                          "max_abs_dev": float("nan"), "note": "shape mismatch"})
             print(f"    c0={c0}: SHAPE MISMATCH mine={a.shape} ref={b.shape}  <-- FINDING")
             continue
-        num = b.select_dtypes(include=[float, int]).columns
-        dev = float(np.max(np.abs(a[num].to_numpy() - b[num].to_numpy())))
-        byte_equal = a.to_csv(index=False) == b.to_csv(index=False)
-        ok = byte_equal and dev == 0.0
+        # Criterion updated by brief 14 (task D): a declared ULP tolerance on the levels
+        # plus an EXACT regime match, replacing the retired ``dev == 0.0``.  The retired
+        # value is still recorded so the change of standard stays auditable.
+        res = compare_artifacts(a, b)
+        ok = res["ok"]
         all_ok = all_ok and ok
-        rows.append({"c0": c0, "n_rows": len(a), "byte_equal": byte_equal,
-                     "max_abs_dev": dev, "note": "PASS" if ok else "FINDING"})
+        rows.append({"c0": c0, "n_rows": len(a), **res,
+                     "note": "PASS" if ok else "FINDING"})
         print(f"    c0={c0}: {'PASS' if ok else 'FINDING'}  n_rows={len(a)}  "
-              f"byte_equal={byte_equal}  max_abs_dev={dev:.1e}")
+              f"max_ulp_sig={res['max_ulp_significant']:.2f}  "
+              f"n_exceed={res['n_exceed']}/{res['n_compared']}  "
+              f"regime_equal={res['regime_equal']}  "
+              f"max_abs_dev={res['max_abs_dev']:.1e}  "
+              f"(retired byte_equal={res['byte_equal']})")
 
     return pd.DataFrame(rows)
 

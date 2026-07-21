@@ -79,6 +79,7 @@ from experiment import (
     _PANEL_METRICS,
     bootstrap_sigma_star,
     cells_from_panel,
+    compare_artifacts,
     common_viable_support,
     run_grid_panels,
     run_single,
@@ -374,15 +375,18 @@ def _byte_check(out, panel_name):
                          "max_abs_dev": float("nan"), "note": f"shape {a.shape} vs {b.shape}"})
             print(f"    c0={c0} eta={eta}: SHAPE MISMATCH {a.shape} vs {b.shape}  <-- FINDING")
             continue
-        num = b.select_dtypes(include=[float, int]).columns
-        dev = float(np.max(np.abs(a[num].to_numpy() - b[num].to_numpy())))
-        byte_equal = a.to_csv(index=False) == b.to_csv(index=False)
-        ok = byte_equal and dev == 0.0
+        # Criterion updated by brief 14 (task D): declared ULP tolerance on the levels plus
+        # an EXACT regime match, replacing the retired ``dev == 0.0``.
+        res = compare_artifacts(a, b)
+        ok = res["ok"]
         all_ok = all_ok and ok
-        rows.append({"c0": c0, "eta": eta, "ref": ref_name, "byte_equal": byte_equal,
-                     "max_abs_dev": dev, "note": "PASS" if ok else "FINDING"})
+        rows.append({"c0": c0, "eta": eta, "ref": ref_name, "n_rows": len(a), **res,
+                     "note": "PASS" if ok else "FINDING"})
         print(f"    c0={c0} eta={eta}: {'PASS' if ok else 'FINDING'}  ref={ref_name}  "
-              f"n_rows={len(a)}  byte_equal={byte_equal}  max_abs_dev={dev:.1e}")
+              f"n_rows={len(a)}  max_ulp_sig={res['max_ulp_significant']:.2f}  "
+              f"n_exceed={res['n_exceed']}/{res['n_compared']}  "
+              f"regime_equal={res['regime_equal']}  "
+              f"(retired byte_equal={res['byte_equal']})")
     if not all_ok:
         print("  nesting check: FINDING - lambda_e=1 did not reproduce a committed panel.")
     return pd.DataFrame(rows)

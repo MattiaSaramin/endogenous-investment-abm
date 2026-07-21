@@ -757,6 +757,35 @@ negoziabili.
   > dentro il brief che lo viola** (sarebbe post-hoc): la proposta — tolleranza ULP
   > dichiarata + check di regime a tolleranza **zero** — è registrata in
   > `parameter_notes.md` §"Tensioni aperte" 7bis per il brief successivo.
+  >
+  > **✅ APPLICATO dal brief 14 (task D).** Il criterio nuovo vive in `src/experiment.py`
+  > come costanti sorgente (`BYTE_CHECK_ULP = 8`, `BYTE_CHECK_ATOL = 1e-12`,
+  > `compare_artifacts`, `regime_signature`), non come scelta per run. Due limbi che non
+  > si compensano: **≤8 ULP con pavimento assoluto sui LIVELLI**, e **regime a tolleranza
+  > zero** (viability, vincolo che morde, segno risolvibile, `Dead_Firms`). Baseline
+  > ri-fissata sulla fetta del brief 12: **7/7 PASS, deriva significativa 0,00 ULP** — cioè
+  > *oggi* riproduce esattamente, mentre il brief 13 misurò 2,1 ULP sullo stesso codice:
+  > **la deriva è intermittente**, che è la ragione più forte per ritirare l'uguaglianza
+  > esatta (un criterio che passa a seconda del giorno non porta informazione).
+  > Due limiti misurati mentre lo si costruiva, entrambi dichiarati nel sorgente:
+  > **(i)** ULP puro è inutilizzabile vicino allo zero (`Tax_Rate` a `rr=0`: 3.460 ULP su
+  > 1,7e-16) — da qui il pavimento assoluto, e da qui il fatto che il limbo di regime non
+  > dichiara un segno che non sa risolvere; **(ii)** il criterio **non si applica a
+  > quantità differenziate o fittate** (corda, pendenza, curvatura): la cancellazione
+  > catastrofica le rende relativamente instabili da input stabili (`slope_raw`: 3.410 ULP
+  > da input a 4 ULP). Quelle sono controllate dal **segno**, non da una tolleranza
+  > (`BYTE_CHECK_SCOPE`). Driver aggiornati: b07, b08, b09, b10, b12.
+- **⚠️ Limite strutturale del blocco capitale — `delta` (elevato dal brief 14, task E).**
+  Il brief 11 ha misurato il δ implicito BEA per il perimetro del modello (**≈0.090**); il
+  brief 13 ha misurato che nella banda δ ∈ [0.075, 0.09] sopravvivono **0 punti su 843**,
+  con `ST(delta)` sulla viability = **1.00**. Messi insieme: **al δ che i dati implicano il
+  modello non esiste.** Non è robustezza, è la firma di `g = 0` letta dalla chiusura
+  `I/K = δ + g` (brief 11): senza crescita l'investimento di steady state copre solo il
+  deprezzamento, quindi δ empirico erode il capitale a ogni periodo. δ=0.05 non è dove i
+  dati lo mettono, è **dove `g=0` lo costringe a stare perché il modello sopravviva**.
+  Stessa firma già registrata dal lato dei livelli (I/Y e K/Y business non stanno insieme
+  senza crescita). Da riportare come **limite dichiarato**, mai da ricalibrare; la
+  riparazione è un meccanismo (punto 13, crescita di `A`), dichiarato future work.
 - **README, codice e figure coerenti tra loro** (è già emerso un disallineamento
   documentale in passato — la spec "Fase 2" fantasma: non deve ripetersi).
 - **Ancoraggio bibliografico:** ogni scelta di modellazione e ogni parametro

@@ -1,0 +1,10 @@
+{
+  "verdict": "cause (a): chord vs derivative - the brief-13 QoI is the defect",
+  "sides": {
+    "cell1 fixed/chord": "straddles",
+    "cell2 fixed/ols": "below",
+    "cell3 marg/chord": "below",
+    "cell4 marg/ols": "below"
+  },
+  "rule": "sign flips between cell 1 and cell 2 (fixed params, different method) => cause (a), the brief-13 QoI is the defect; sign flips between cell 2 and cell 4 (same method, fixed vs marginalised) => cause (b), sigma* is real but LOCAL and must be demoted to a conditional result; both => both contribute and the relative weight is quantified; neither => a new FINDING, to be reported and not forced."
+}

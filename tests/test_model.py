@@ -50,8 +50,18 @@ from experiment import (
     quadratic_curvature,
     run_grid_panel,
     run_grid_panels,
+    run_design_points,
+    qoi_from_runs,
     sigma_star_interp,
     slopes_by_sigma,
+    compare_artifacts,
+    regime_signature,
+    ulp_distance,
+    BYTE_CHECK_ATOL,
+    BYTE_CHECK_ULP,
+    SA_RHO_GRID,
+    SA_RHO_LO,
+    SA_RHO_HI,
     _PANEL_METRICS,
     _gradient_weights,
 )
@@ -1928,3 +1938,210 @@ def test_capitalist_consumption_reporter():
     # Capitalists are a strict subset of households, so it must be below total consumption.
     assert 0.0 < df["Capitalist_Consumption"].iloc[-1] < df["Consumption"].iloc[-1]
     assert "Capitalist_Consumption" not in _PANEL_METRICS
+
+
+# ======================================================================
+# The reproducibility criterion for nesting checks (brief 14, task D)
+# ======================================================================
+#
+# Brief 13 §7.3(a) measured that the old criterion — ``max_abs_dev == 0.0`` — is not
+# reproducible across time (up to 2.1 ULP on identical code, cause unidentified, zero
+# regime flips).  These tests pin the REPLACEMENT: a declared hybrid tolerance on levels
+# plus an exact regime check.  They are written so that loosening either limb by accident
+# fails the suite.
+
+
+def test_ulp_distance_basic():
+    """One representable step is 1 ULP, at any magnitude; exact equality is 0."""
+    for v in (1.0, 1e-3, 1e3, 137.42):
+        assert ulp_distance(v, v) == 0.0
+        assert ulp_distance(v, np.nextafter(v, np.inf)) == pytest.approx(1.0)
+        assert ulp_distance(v, np.nextafter(np.nextafter(v, np.inf), np.inf)) \
+            == pytest.approx(2.0)
+    # Zero against zero agrees, despite np.spacing(0) being subnormal.
+    assert ulp_distance(0.0, 0.0) == 0.0
+
+
+def test_ulp_distance_nan_semantics():
+    """NaN vs NaN agrees (an undefined metric is undefined in both); NaN vs a number
+    does not, and must not be silently swallowed by a tolerance."""
+    assert ulp_distance(np.nan, np.nan) == 0.0
+    assert np.isinf(ulp_distance(np.nan, 1.0))
+    assert np.isinf(ulp_distance(1.0, np.nan))
+
+
+def test_ulp_distance_explodes_near_zero_which_is_why_atol_exists():
+    """The measured justification for BYTE_CHECK_ATOL, pinned as a test.
+
+    A pure ULP criterion is unusable on metrics that legitimately rest at zero: a gap of
+    1e-16 there is astronomically many ULP.  If this ever stops being true the absolute
+    limb could be dropped — so the test asserts the *reason*, not just the constant.
+    """
+    assert ulp_distance(0.0, 1e-16) > 1e3
+    # ...and the hybrid tolerance is what rescues it.
+    a = pd.DataFrame({"Tax_Rate": [0.0, 0.0]})
+    b = pd.DataFrame({"Tax_Rate": [1e-16, -1e-16]})
+    assert compare_artifacts(a, b)["ok"]
+
+
+def test_compare_artifacts_accepts_small_drift_rejects_real_change():
+    """The tolerance must admit the measured ULP-scale drift and nothing larger.
+
+    The gap between the two is ~13 orders of magnitude, so this is not a close call —
+    which is the point of choosing the constant with that much margin.
+    """
+    base = pd.DataFrame({"Output": [100.0, 55.5], "Total_Capital": [300.0, 120.0]})
+
+    drift = base.copy()
+    for c in drift.columns:                      # a few ULP, as brief 13 measured
+        drift[c] = [np.nextafter(np.nextafter(v, np.inf), np.inf) for v in drift[c]]
+    assert compare_artifacts(drift, base)["ok"]
+
+    real = base.copy()                           # the smallest genuine divergence: 1e-3 rel
+    real.loc[0, "Output"] = 100.0 * (1.0 + 1e-3)
+    res = compare_artifacts(real, base)
+    assert not res["ok"] and res["n_exceed"] == 1
+
+
+def test_compare_artifacts_tolerance_is_not_open_ended():
+    """A deviation just past the declared tolerance FAILS — the constant must bite."""
+    base = pd.DataFrame({"Output": [100.0]})
+    v = 100.0
+    for _ in range(BYTE_CHECK_ULP + 1):
+        v = np.nextafter(v, np.inf)
+    # ...but only once the absolute limb is out of the way (atol dominates at this scale).
+    res = compare_artifacts(pd.DataFrame({"Output": [v]}), base, atol=0.0)
+    assert res["n_exceed"] == 1 and res["ok"] is False
+
+
+def test_regime_limb_has_zero_tolerance():
+    """A drift that flips viability is a FINDING no matter how small it is numerically.
+
+    This is the whole point of the two-limb design: the numerical limb is allowed to
+    forgive 1e-13, the regime limb forgives nothing.
+    """
+    ref = pd.DataFrame({"Output": [1.0 + 1e-15]})       # just above COLLAPSE_Y = 1.0
+    mine = pd.DataFrame({"Output": [1.0 - 1e-15]})      # just below: collapsed
+    res = compare_artifacts(mine, ref)
+    assert res["n_exceed"] == 0                          # numerically indistinguishable
+    assert not res["regime_equal"] and not res["ok"]     # ...but a different regime
+
+
+def test_regime_signature_tracks_binding_constraint_and_sign():
+    """Which constraint binds, and the sign of every metric, are regime facts."""
+    cols = {"Bound_Demand": [0.9, 0.1], "Bound_Profitmax": [0.1, 0.9],
+            "Bound_Capital": [0.0, 0.0], "Bound_Workforce": [0.0, 0.0],
+            "Output": [50.0, 50.0]}
+    sig = regime_signature(pd.DataFrame(cols))
+    assert list(sig["binding"]) == ["Bound_Demand", "Bound_Profitmax"]
+    assert list(sig["sign_Output"]) == [1, 1]
+    flipped = regime_signature(pd.DataFrame({**cols, "Output": [50.0, -50.0]}))
+    assert list(flipped["sign_Output"]) == [1, -1]
+
+
+# ======================================================================
+# The repaired QoI: OLS over a swept rho support (brief 14, tasks A-C)
+# ======================================================================
+
+
+def _fake_runs(y_by_rho, seeds=2, points=1):
+    """Synthetic SA runs with prescribed Y(rho) — lets the estimators be checked
+    against a known answer instead of against the model's own output."""
+    rows = []
+    for p in range(points):
+        for rho, y in y_by_rho.items():
+            for s in range(seeds):
+                rows.append({"point": p, "rho": rho, "seed": s, "Output": y,
+                             "Unemployment_Rate": 0.3, "Total_Capital": 100.0})
+    return pd.DataFrame(rows)
+
+
+def test_qoi_rhos_none_is_the_brief13_estimator_unchanged():
+    """NESTING.  Without ``rhos`` the function must behave exactly as it did for brief 13,
+    or the committed SA artifacts stop being regenerable from this code path."""
+    runs = _fake_runs({SA_RHO_LO: 10.0, SA_RHO_HI: 20.0})
+    q = qoi_from_runs(runs)
+    assert q["slope_raw"].iloc[0] == pytest.approx((20.0 - 10.0) / (SA_RHO_HI - SA_RHO_LO))
+    # None of the brief-14 columns may appear when the repair is not requested.
+    for c in ("chord", "rho_star", "viable_chord", "n_rho", "quad_coef"):
+        assert c not in q.columns
+
+
+def test_qoi_ols_recovers_a_known_slope():
+    """On an exactly linear Y(rho) the OLS slope is that slope, and the chord agrees."""
+    y = {r: 100.0 + 40.0 * r for r in SA_RHO_GRID}
+    q = qoi_from_runs(_fake_runs(y), rhos=SA_RHO_GRID)
+    assert q["slope_raw"].iloc[0] == pytest.approx(40.0)
+    assert q["chord_raw"].iloc[0] == pytest.approx(40.0)
+
+
+def test_chord_and_ols_can_disagree_in_sign_on_a_u_curve():
+    """**The defect brief 14 exists to repair**, as an executable statement.
+
+    On a U-shaped ``Y(rho)`` with the turn inside the support — which brief 05 measured in
+    19 of 22 canonical cells — the chord and the OLS slope are different functionals and
+    can carry OPPOSITE signs from identical data.
+
+    The vertex is at rho = 0.47, and the window that produces disagreement is narrow and
+    computable: on this four-point support the chord [0.35, 0.55] is negative for any
+    vertex above 0.45, while the OLS slope stays positive for any vertex below 0.50.  Only
+    in that gap do the two estimators contradict each other — which is exactly why the
+    defect was invisible until someone checked, and why the fix is to report both.
+    """
+    y = {r: 100.0 + 200.0 * (r - 0.47) ** 2 for r in SA_RHO_GRID}
+    q = qoi_from_runs(_fake_runs(y), rhos=SA_RHO_GRID)
+    assert q["chord_raw"].iloc[0] < 0.0 < q["slope_raw"].iloc[0]
+    # ...and the primary columns carry the OLS answer, not the chord.
+    assert q["wage_led_raw"].iloc[0] == 0.0
+    assert q["wage_led_chord"].iloc[0] == 1.0
+
+
+def test_qoi_reports_the_turning_point_and_whether_it_is_resolved():
+    """``rho_star`` is the U's turn; outside the support it is flagged, not extrapolated."""
+    inside = qoi_from_runs(
+        _fake_runs({r: 100.0 + 200.0 * (r - 0.50) ** 2 for r in SA_RHO_GRID}),
+        rhos=SA_RHO_GRID)
+    assert inside["rho_star"].iloc[0] == pytest.approx(0.50)
+    assert inside["rho_star_in_support"].iloc[0] == 1.0
+
+    outside = qoi_from_runs(
+        _fake_runs({r: 100.0 + 200.0 * (r - 1.50) ** 2 for r in SA_RHO_GRID}),
+        rhos=SA_RHO_GRID)
+    assert outside["rho_star_in_support"].iloc[0] == 0.0
+
+
+def test_viability_is_evaluated_over_the_whole_support_and_the_chord_pair_separately():
+    """A wider rho support gives collapse more chances, so ``viable`` is NOT comparable to
+    the brief-13 number; ``viable_chord`` is the column that is."""
+    runs = _fake_runs({r: 50.0 for r in SA_RHO_GRID})
+    # Kill only rho = 0.65, which the brief-13 chord never visited.
+    runs.loc[runs["rho"] == 0.65, "Total_Capital"] = 0.0
+    q = qoi_from_runs(runs, rhos=SA_RHO_GRID)
+    assert q["viable"].iloc[0] == 0.0
+    assert q["viable_chord"].iloc[0] == 1.0
+    assert math.isnan(q["slope"].iloc[0])          # conditional QoI is never imputed
+    assert not math.isnan(q["slope_raw"].iloc[0])  # ...the raw one is measured everywhere
+
+
+def test_qoi_requires_paired_seeds_across_every_swept_rho():
+    """CRN is the estimator's premise: an unpaired rho must raise, not average away."""
+    runs = _fake_runs({r: 50.0 for r in SA_RHO_GRID}, seeds=2)
+    runs = runs[~((runs["rho"] == 0.45) & (runs["seed"] == 1))]
+    with pytest.raises(ValueError, match="CRN broken"):
+        qoi_from_runs(runs, rhos=SA_RHO_GRID)
+
+
+def test_run_design_points_sweeps_the_requested_rhos():
+    """``rhos`` reaches the pool; default stays the brief-13 two-point support."""
+    pts = [dict(sigma=0.5, c0=1.0)]
+    runs = run_design_points(pts, seeds=1, steps=40, tail=10, workers=1,
+                             rhos=SA_RHO_GRID)
+    assert sorted(runs["rho"].unique()) == SA_RHO_GRID
+    default = run_design_points(pts, seeds=1, steps=40, tail=10, workers=1)
+    assert sorted(default["rho"].unique()) == [SA_RHO_LO, SA_RHO_HI]
+
+
+def test_sa_rho_grid_contains_the_brief13_chord_points():
+    """The repair is only auditable because chord and OLS come from the SAME runs."""
+    assert SA_RHO_LO in SA_RHO_GRID and SA_RHO_HI in SA_RHO_GRID
+    assert min(SA_RHO_GRID) == 0.35 and max(SA_RHO_GRID) == 0.65   # canonical support ends

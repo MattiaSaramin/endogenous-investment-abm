@@ -68,7 +68,7 @@ for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXP
 import numpy as np
 import pandas as pd
 
-from experiment import _PANEL_METRICS, run_grid_panels
+from experiment import _PANEL_METRICS, compare_artifacts, run_grid_panels
 from model import MacroModel, _firms
 
 # --- experiment configuration ---------------------------------------------
@@ -314,17 +314,20 @@ def byte_check(out, panel_name):
             print(f"    {name}: SHAPE MISMATCH {a.shape} vs {b.shape}  <-- FINDING")
             continue
 
-        num = b.select_dtypes(include=[float, int]).columns
-        dev = float(np.max(np.abs(a[num].to_numpy() - b[num].to_numpy())))
-        byte_equal = a.to_csv(index=False) == b.to_csv(index=False)
-        ok = byte_equal and dev == 0.0
+        # Criterion updated by brief 14 (task D): declared ULP tolerance on the levels plus
+        # an EXACT regime match, replacing the retired ``dev == 0.0``.
+        res = compare_artifacts(a, b)
+        ok = res["ok"]
         all_ok = all_ok and ok
-        rows.append({"scenario": name, "ref": sc["ref"], "byte_equal": byte_equal,
-                     "max_abs_dev": dev, "n_rows": len(a),
-                     "n_shared_cols": len(shared), "note": "PASS" if ok else "FINDING"})
+        rows.append({"scenario": name, "ref": sc["ref"], "n_rows": len(a),
+                     "n_shared_cols": len(shared), **res,
+                     "note": "PASS" if ok else "FINDING"})
         print(f"    {name}: {'PASS' if ok else 'FINDING'}  ref={sc['ref']}  "
-              f"n_rows={len(a)}  cols={len(shared)}  byte_equal={byte_equal}  "
-              f"max_abs_dev={dev:.1e}")
+              f"n_rows={len(a)}  cols={len(shared)}  "
+              f"max_ulp_sig={res['max_ulp_significant']:.2f}  "
+              f"n_exceed={res['n_exceed']}/{res['n_compared']}  "
+              f"regime_equal={res['regime_equal']}  "
+              f"(retired byte_equal={res['byte_equal']})")
     if not all_ok:
         print("  nesting check: FINDING - spread=0 did not reproduce a committed panel.")
     return pd.DataFrame(rows)
