@@ -647,6 +647,36 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     ricalibrare qualunque parametro sulla base della SA (sarebbe calibrazione mascherata
     da robustezza); consolidamento del notebook (b07–b13, subito dopo).
 
+- **Brief 15 — ristrutturazione del paper: dall'ordine cronologico a quello
+  argomentativo** (solo `paper/`; **nessun numero nuovo o modificato**, nessuna modifica a
+  `src/`/`scripts/`/`results/`/`tests/`). La U di `Y(ρ)` è enunciata **una volta sola e
+  presto** (nuova §6): ρ\*, la sua crescita in σ, il lato su cui cade il ρ ancorato, e
+  **poi** σ\* come riduzione dichiarata sotto stimatore — il che rende superfluo il
+  `declbox` difensivo della vecchia §7, rimosso. §10 e §11 **fuse** in una sola §9 con
+  headline sulla QoI riparata (`P(wage-led|viable) = 0.026`) e il conto dei 108 punti che
+  chiude esatto; **2×2, regola di verdetto ex-ante e controllo di ancoraggio a 14 cifre
+  spostati in appendice**. La conditionality fiscale **promossa** a §8 autonoma (che il
+  sussidio *elimini* la regione wage-led è un risultato sulle istituzioni, non un
+  controllo di robustezza). Nuova **appendice A "Validation and reproducibility"**: §9
+  vecchia (invariante valido al solo default), criterio byte-check coi due limiti
+  dichiarati, 2×2 completo, **trail delle retrattazioni**, riproducibilità — aperta dal
+  principio, non dal mea culpa. §4 espansa 128→575 parole (tassonomia dei tre livelli di
+  ancoraggio, I/Y su BEA, δ a convenzione con banda, `I/K = δ + g`); le **tre serie FRED
+  ora citate** in `references.bib` (34→37 voci) invece che asserite. Abstract 550→**249
+  parole**. **Verifica: zero discrepanze** sui numeri contro gli artifact, **18/18**
+  headline allineati notebook/README/paper, zero `\cref` pendenti, linter e definizioni
+  puliti. **Deviazione dichiarata e CHIUSA:** l'appendice sta a **1.340 parole contro il
+  target ~700 del brief (+91%)**, fuori dalla banda ±20%. Il target era **sotto-stimato dal
+  brief stesso**: i cinque elementi che elenca pesavano già ~1.370 parole nei file
+  d'origine, e scendere a 840 richiederebbe tagliarne uno. Accettato dal PI; la banda vale
+  per le altre voci, tutte rientrate (§8 a +21% accettata come irrilevante).
+  **Due detector riparati** (fuori repo, in tooling di sessione): il linter LaTeX
+  segnalava 79 falsi positivi mascherando i veri, e il cross-check dei 18 numeri leggeva
+  una **lista di file scritta a mano**, diventata falsa al primo rinomino — avrebbe
+  riportato un accordo mai testato. Entrambi ora falliscono su un caso sintetico con
+  difetti noti **prima** di essere creduti. È la stessa lezione di §9: *un check che
+  riporta successo senza ispezionare nulla è peggio di nessun check.*
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
