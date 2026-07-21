@@ -146,16 +146,30 @@ $\sigma$ & Fraction viable & $P(\text{wage-led} \mid \text{viable})$
 \end{tabular}
 \end{table}
 
-The threshold lands at $\sigma \approx 0.65$ --- exactly where
-\cref{sec:frontier} puts $\sigstar$ --- \textbf{but the direction is inverted
-relative to how the conditional result reads}. \Cref{sec:frontier} says the
-empirical range sits \emph{below} $\sigstar$ and is therefore not wage-led;
-here, below $0.65$ wage-led is rare and above it is common, which is the same
-\emph{location} with the opposite \emph{interpretation} of which side is which.
+The pattern is monotone in $\sigma$ and in the \emph{same} direction as
+\cref{sec:frontier}: \cref{sec:frontier} puts the empirical range below
+$\sigstar$, where the model is not wage-led, and here too wage-led is rare
+below $0.65$ and commoner above it. The two are consistent.
 
-That the location reproduces under two independent methods is evidence
-\emph{for} the frontier. It is the sign that is not comparable, and we
-deliberately do not resolve it by argument. Two causes are candidates:
+\begin{declbox}[frametitle={A reading error, corrected in \cref{sec:bridge}}]
+An earlier draft of this section read the table above as showing a direction
+\emph{inverted} relative to the conditional result. That reading was wrong, and
+it was wrong twice over. It is recorded here rather than deleted, because the
+experiment of \cref{sec:bridge} was designed to explain it and the design
+survives its own premise.
+
+First, the direction was never inverted: ``the empirical range sits below
+$\sigstar$ and is therefore not wage-led'' and ``below $0.65$ wage-led is rare''
+are the same statement, not opposite ones. Second, there is no threshold at
+$0.65$ --- or anywhere: $P(\text{wage-led} \mid \text{viable})$ never reaches
+$0.5$ at any $\sigma$ tested, topping out at $0.380$. \Cref{sec:bridge} measures
+the marginalised frontier directly and puts it at $\sigstar \approx 0.96$.
+\end{declbox}
+
+What \emph{is} genuinely at issue is the estimator. The chord used here and the
+OLS slope used in \cref{sec:frontier} are different functionals of a curved
+$Y(\rho)$, and we deliberately do not resolve which to prefer by argument. Two
+causes are candidates:
 
 \begin{enumerate}[label=(\alph*)]
   \item \textbf{Chord versus derivative.} \Cref{sec:wagecurve} fits an OLS

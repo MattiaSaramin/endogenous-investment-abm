@@ -507,9 +507,14 @@ limite un risultato già misurato che era stato archiviato come sensitivity.
     σ\* = 0.654 [0.616, 0.691] (λ_e=1), 0.686 [0.637, 0.721] (0.5),
     0.674 [0.639, 0.709] (0.25) — CI ampiamente sovrapposte; a η=0.10,
     0.725 [0.697, 0.745] / 0.713 [0.667, 0.752] / 0.721 [0.684, 0.754]. L'empirico σ
-    0.40–0.60 resta **sotto** σ\* per ogni λ_e (P(σ\*>0.60) ≈ 1): il wage-led — e la
-    sua crescita in η (brief 07) — è **robusto al gain**. Nessun finding di selezione
-    del bacino.
+    0.40–0.60 resta **sotto** σ\* per ogni λ_e (P(σ\*>0.60) ≈ 1), quindi **profit-led a
+    ogni gain**; e σ=1 resta sopra σ\*, quindi il wage-led di σ=1 sopravvive a ogni gain.
+    Ciò che è **robusto al gain** è la *posizione della frontiera*, e con essa entrambe le
+    letture ai due lati. Nessun finding di selezione del bacino.
+    > *Formulazione corretta dal brief 14.* Diceva "il wage-led — e la sua crescita in η —
+    > è robusto al gain", citando come prova che l'empirico resta **sotto** σ\*. Ma sotto
+    > σ\* la pendenza è positiva: è il lato **profit-led**. La λ_e-invarianza è reale e
+    > invariata; era l'etichetta a essere invertita.
   - **E2 (c0=2.0) — ipotesi di stabilizzazione.** La regione di collasso è
     **λ_e-invariante entro il rumore di griglia/seed** (celle con qualche collasso:
     η=0.10 → 16/15/14 a λ_e=1/0.5/0.25, ma celle a collasso pieno piatte a 6;
@@ -963,16 +968,23 @@ ricalibra: è il risultato per cui la SA esiste (§8 del brief lo vieta esplicit
 
 Il brief 11 aveva declassato δ=0.05 a **convenzione** notando che il δ implicito BEA è
 ≈0.090, e concludeva "non ricalibrare, invaliderebbe ogni numero canonico". La SA mostra
-qualcosa di più forte e più scomodo: **a δ≈0.09 il modello non esiste** (0/832 punti
+qualcosa di più forte e più scomodo: **a δ≈0.09 il modello non esiste** (0/843 punti
 viable), e δ=0.05 siede appena dentro il bordo. Il monito era giusto per la ragione
 sbagliata. **Da riportare in tesi come limite strutturale**, non da aggiustare.
 
 **σ è irrilevante dentro la banda empirica** (`ST` = 0.024, S1 indistinguibile da zero).
-Il brief 07 concludeva "l'empirico σ 0.40–0.60 sta **sotto** σ\* ⟹ wage-led"; qui, nella
-stessa banda ma con gli altri 15 parametri liberi, il wage-led è al 9,5%. **La frontiera
-σ\* non sopravvive alla globalizzazione**: era un enunciato condizionato alla cella in
-cui è stato misurato. Per bin di σ, `P(wage-led|viable)` = 0.071 / 0.068 / 0.091 / 0.150
-(0.40→0.60): un effetto lieve e nella direzione attesa, ma di secondo ordine rispetto a δ.
+~~Il brief 07 concludeva "l'empirico σ 0.40–0.60 sta **sotto** σ\* ⟹ wage-led"~~ —
+**MISATTRIBUZIONE, corretta dal brief 14.** Il brief 07 non ha mai concluso questo, e i
+panel committati dicono il contrario: sotto σ\* la pendenza `dY/dρ` è **positiva**, cioè
+**profit-led** (misurato: +26.8 a σ=0.4, +17.8 a σ=0.5, +5.6 a σ=0.6; il segno gira a
+σ\*=0.654 e resta negativo sopra). Il wage-led vive **sopra** σ\*. Enunciato corretto:
+*nella banda empirica, con gli altri 15 parametri liberi, il wage-led è al 9,5% — e questo
+è **coerente** con la frontiera, non in tensione con essa, perché la banda empirica sta
+dalla parte profit-led della frontiera.* Per bin di σ, `P(wage-led|viable)` = 0.071 /
+0.068 / 0.091 / 0.150 (0.40→0.60): sale con σ, cioè **nella stessa direzione** della
+frontiera, ma è di secondo ordine rispetto a δ. Ciò che la globalizzazione mostra non è
+che σ\* si inverte, ma che **σ spiega pochissima varianza** (`ST` = 0.024): la frontiera è
+reale e condizionale, e marginalmente quasi tutto il moto viene da δ e π0.
 
 **Kalecki — l'intervento che l'identità non poteva dare** (punti viable, a ρ_lo):
 
@@ -1026,10 +1038,28 @@ effetto è un limite del metodo da tenere presente, non un incidente di questa e
 su `viable` 0.008 → 0.047 ±0.052 — entrambi indistinguibili da zero alle CI di N=128).
 `delta` continua a dominare (`ST` = 1.019 su `slope_raw`, 0.970 su `viable`).
 
-> **La soglia cade a σ≈0.65 — esattamente dove il brief 04/07 colloca σ\* — ma la
+> ~~**La soglia cade a σ≈0.65 — esattamente dove il brief 04/07 colloca σ\* — ma la
 > DIREZIONE è invertita rispetto a come la conclusione è scritta.** I documenti dicono
 > "l'empirico σ 0.40–0.60 sta **sotto** σ\* ⟹ wage-led"; qui sotto 0.65 il wage-led è raro
-> (4–6%) e sopra è frequente (34–38%).
+> (4–6%) e sopra è frequente (34–38%).~~
+>
+> ### ⚠️ RITIRATO dal brief 14 — l'inversione non esiste, ed era un errore di lettura
+>
+> I documenti **non** dicono "sotto σ\* ⟹ wage-led". Dicono l'opposto (README §2:
+> l'empirico sta sotto σ\*, dove `dY/dρ > 0`, quindi **non** wage-led), e i panel
+> committati lo confermano: sotto σ\* la pendenza è positiva. Quindi "sotto 0.65 il
+> wage-led è raro e sopra è frequente" è **la stessa direzione** della frontiera, non la
+> sua opposta. Non c'era niente da spiegare su questo asse.
+>
+> Inoltre **non c'è nessuna soglia a 0.65**: un passaggio da 4–6% a 34–38% non è un
+> attraversamento. `P(wage-led|viable)` non raggiunge 0.5 a nessun σ testato, con nessuno
+> dei due stimatori (massimo 0.380 corda / 0.211 OLS riparata). Il brief 14 ha misurato la
+> frontiera marginalizzata direttamente: **σ\* = 0.94 (corda) / 0.96 (OLS)**, cioè a
+> ridosso o sopra σ=1.
+>
+> Resta vera e confermata la causa **(a)** (corda vs derivata) — vedi §"Esiti misurati" e
+> README §10. Le due cause qui sotto sono comunque state separate dall'esperimento, come
+> il brief imponeva; è solo la *premessa* che si è rivelata inesistente.
 >
 > **DUE CAUSE CANDIDATE, NON ANCORA DISTINTE. Nessuna delle due va scritta come "la"
 > spiegazione finché un esperimento non le separa.**

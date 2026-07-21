@@ -413,8 +413,13 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   **single-pool** (`run_grid_panels`, 2 spawn di pool anziché 24). **Esito headline
   (E1, c0=1.0): σ\*(η; λ_e) λ_e-INVARIANTE entro CI** — a η=0 σ\*=0.654/0.686/0.674 a
   λ_e=1/0.5/0.25 (CI sovrapposte), a η=0.10 0.725/0.713/0.721; l'empirico σ 0.40–0.60
-  resta **sotto** σ\* per ogni λ_e: **il wage-led è robusto al gain**, nessun finding
-  di selezione del bacino. **E2 (c0=2.0): ipotesi di stabilizzazione NON CONFERMATA** —
+  resta **sotto** σ\* per ogni λ_e — quindi **profit-led a ogni gain** — e σ=1 resta
+  sopra, quindi il wage-led di σ=1 sopravvive a ogni gain: **è la posizione della
+  frontiera a essere robusta al gain**, con entrambe le letture ai suoi due lati.
+  Nessun finding di selezione del bacino.
+  *(Formulazione corretta dal brief 14: diceva "il wage-led è robusto al gain" citando
+  come prova che l'empirico resta sotto σ\*, che è invece il lato profit-led. La
+  λ_e-invarianza misurata non cambia; cambia l'etichetta.)* **E2 (c0=2.0): ipotesi di stabilizzazione NON CONFERMATA** —
   la regione di collasso è λ_e-invariante entro il rumore (celle a collasso pieno
   piatte; η=0.15 non monotono) e la cella di riferimento (σ=1.5, ρ=0.40, η=0.10)
   **collassa a K=0/U=1 a ogni λ_e**. Il collasso c0=2.0 è guidato dal canale
@@ -598,7 +603,7 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   - **Esito headline: `P(corda < 0 | viable) = 0.095 ± 0.007`, frazione viable 0.483.**
     **Il wage-led è l'eccezione, non la regola**, e metà dello spazio empirico non è
     viable. **`delta` domina tutto** (`ST`≈1.00 sulla viability): a δ∈[0.075,0.09]
-    **0/832 punti sopravvivono**, e δ=0.05 siede appena dentro il bordo — il brief 11
+    **0/843 punti sopravvivono**, e δ=0.05 siede appena dentro il bordo — il brief 11
     aveva ragione a non ricalibrare, ma per la ragione sbagliata. **`sigma` è irrilevante
     nella banda empirica** (`ST`=0.024): **la frontiera σ\* del brief 07 non sopravvive
     alla globalizzazione** — era condizionata alla cella in cui fu misurata. `ST ≫ S1`

@@ -293,8 +293,14 @@ within its neighbours' CIs.
 | 0.10  | 0.25       | 0.721        | [0.684, 0.754]  | 100 %              |
 
 * **`sigma*` is `lambda_e`-invariant within CI.** The empirical `sigma` 0.40–0.60
-  stays *below* `sigma*` for every gain, so the wage-led result and its brief-07 rise
-  with `eta` are both **robust to the expectation gain**. No basin-selection finding.
+  stays *below* `sigma*` for every gain - so it is **profit-led at every gain** - while
+  `sigma = 1` stays above it, so the `sigma = 1` wage-led result also survives every
+  gain. What is **robust to the expectation gain** is the *location of the frontier*,
+  and with it both readings on either side of it. No basin-selection finding.
+  > **Wording corrected (brief 14).** This bullet used to say "the wage-led result ...
+  > robust to the expectation gain", offering as evidence that the empirical range stays
+  > *below* `sigma*`. But below `sigma*` the slope is positive - that is the **profit-led**
+  > side. The measured `lambda_e`-invariance is unchanged; only the label was inverted.
 
 ![sigma*(lambda_e): does the expectation gain move the sign frontier?](results/ces_b08_sigma_star_lambda.png)
 
@@ -598,10 +604,10 @@ that in context. Viability is identical (0.483) and `P(chord < 0 | viable)` doub
 | **0.649–0.823** | 0.469 | **0.338** | +27.2 |
 | **0.823–0.998** | 0.481 | **0.380** | +21.5 |
 
-**The threshold lands at `sigma ~ 0.65` - exactly where briefs 04 and 07 put `sigma*` - but
-the direction is inverted relative to how the conclusion is written up.** The documents say
-empirical `sigma` sits *below* `sigma*` and is therefore wage-led; here, below 0.65
-wage-led is rare and above it is common.
+~~**The threshold lands at `sigma ~ 0.65` - exactly where briefs 04 and 07 put `sigma*` -
+but the direction is inverted relative to how the conclusion is written up.** The documents
+say empirical `sigma` sits *below* `sigma*` and is therefore wage-led; here, below 0.65
+wage-led is rare and above it is common.~~ **- retracted, see below**
 
 > ### ⚠️ CORRECTED BY BRIEF 14 - the paragraph above is wrong on both counts
 >
