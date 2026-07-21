@@ -615,10 +615,12 @@ wage-led is rare and above it is common.
 >    wage-led rare below 0.65, common above - is therefore the **same** direction as the
 >    sign frontier, not its opposite. The sentence claiming otherwise misread this
 >    repository's own documents.
-> 2. **The threshold is not at 0.65.** A rise from 0.057 to 0.338 between bins is not a
->    crossing: `P(wage-led)` reaches 0.5 somewhere **above** `sigma ~ 0.82`, not at 0.65.
->    Brief 14 measured the marginalised frontier directly and puts it at
->    `sigma* = 0.94` (chord) / **0.96** (OLS) - see section 10.
+> 2. **There is no threshold at 0.65 - or anywhere in range.** A rise from 0.057 to 0.338
+>    between bins is not a crossing. `P(wage-led)` **never reaches 0.5** at any `sigma`
+>    tested, under either estimator: it tops out at 0.380 (chord) and 0.211 (repaired OLS)
+>    in the highest bin. Brief 14 measured the marginalised frontier directly and puts it
+>    at `sigma* = 0.94` (chord) / **0.96** (OLS), i.e. at or above `sigma = 1` - see
+>    section 10.
 >
 > The two candidate causes below were therefore posed against a premise that did not
 > hold. Cause **(a) is nonetheless real and is confirmed** by brief 14; cause (b) does not
@@ -741,11 +743,74 @@ depend on which chord anyone picked - is the last column: **at the empirically a
 `rho` (~0.36, brief 11), the economy sits *left* of the turn for every `sigma` >= 0.5**, so
 locally more retention *depresses* output even where the whole-support slope is positive.
 
-**The contradiction is closed, and partly it was never there.** See the correction box in
-section 9: brief 13's wide-`sigma` check agrees in direction with the sign frontier, and
-the threshold is not at 0.65 but above 0.82 (brief 14 puts the marginalised frontier at
-0.96). What survives as a real finding is cause (a) - and it is a methodological finding
-about this project's own estimator, not about the economy.
+**Task C - the SA redone with the repaired QoI.** Morris and Sobol re-run with the OLS
+slope in place of the chord. Parameters, ranges, frozen values and the sampling seed are
+*imported* from the brief-13 driver rather than copied, so the QoI is provably the only
+thing that differs.
+
+*The screening changed, which is why the brief required it to be redone rather than
+reused.* Same keep rule, same seed: `target_utilization` enters the survivor set and
+`benefit_replacement_rate` leaves it. A different QoI genuinely selects different
+parameters - and it also means brief 13's runs could not have been reused even in
+principle, since a different survivor set is a different design matrix.
+
+*The headline moves a long way; the decomposition barely moves at all.* Both estimators are
+computed **on the same runs**, so the comparison is exact:
+
+| | fraction viable | P(wage-led \| viable) chord | P(wage-led \| viable) **OLS** |
+|---|---|---|---|
+| brief 13 (chord only) | 0.483 | 0.095 | - |
+| **primary**, `sigma` 0.40–0.60 | 0.480 | 0.094 | **0.026** |
+| **wide**, `sigma` 0.30–1.00 | 0.468 | 0.202 | **0.098** |
+
+The chord column reproduces brief 13 (0.094 vs 0.095; 0.202 vs 0.201) - the residual
+difference is the changed survivor set, not the estimator. **The repaired QoI then cuts the
+wage-led fraction by 3.6x in the empirical band and by half in the wide check.**
+
+*Why - and the accounting closes exactly.* Chord and OLS disagree in sign on 112 of 1596
+viable points; **110 of those are "chord negative, OLS positive"** and only 2 the reverse.
+Net 108 - and `(0.0940 - 0.0263) x 1596 = 108`. The entire headline difference is those
+points, individually identified. What distinguishes them is exactly the predicted mechanism:
+where the two estimators disagree the mean turning point is `rho* = 0.473`, **inside** the
+chord's [0.35, 0.55] window; where they agree it is `rho* = 0.820`, outside the support,
+where `Y(rho)` is monotone and any estimator sees the same thing.
+
+*But the Sobol indices are nearly unchanged* (`delta` `ST` 0.900 vs 0.966, `pi0` 0.561 vs
+0.562, `sigma` 0.021 vs 0.024, viability `delta` 0.916 vs 1.002). **Which parameters
+generate the variance is robust to the estimator; the level of the wage-led probability is
+not.** Those are different questions, and brief 13's answer to the first one stands.
+
+*A declared limit on task B in the marginalised space.* `rho*` is resolved inside the
+support in only **37.7%** of viable SA points (median `rho*` = 0.323, below the support in
+58.7% of cases) - unlike the fixed-parameter canonical cells, where it is resolved in 10 of
+11. Where the turn falls outside, the U is **not resolved there** and is reported as such
+rather than extrapolated.
+
+*The wide check, repeated with the repaired QoI - the direct test.*
+
+| `sigma` bin | n viable | P(wage-led) OLS | P(wage-led) chord |
+|---|---|---|---|
+| 0.30–0.48 | 191 | 0.000 | 0.016 |
+| 0.48–0.65 | 197 | 0.025 | 0.127 |
+| 0.65–0.82 | 201 | 0.154 | 0.299 |
+| 0.82–1.00 | 190 | 0.211 | 0.363 |
+
+Wage-led becomes **more** common as `sigma` rises, under both estimators - the same
+direction as the sign frontier of section 2, and never crossing 0.5 anywhere in range.
+
+**The contradiction is closed: it never existed.** Brief 13's wide check always agreed in
+direction with the sign frontier; the write-up misread it (see the correction box in
+section 9). What survives is cause (a), which is a methodological finding about this
+project's own estimator rather than a result about the economy - and its practical effect
+is to make the empirically supported band **less** wage-led, not more.
+
+*Declared limits, unchanged from brief 13 and not improved by this brief.* 3 seeds, so
+seed noise still lands in the residual; `N = 256` over 11 parameters still leaves small S1
+indistinguishable from zero (several come out slightly negative). The bridge's marginalised
+`sigma*` (0.96) and the wide check (which does not cross zero below `sigma = 1`) sweep
+*different* parameter sets - the bridge sweeps all fifteen, the Sobol design fixes five at
+midpoints - so they are consistent in message (the marginalised frontier sits at or above
+`sigma ~ 1`) but are not the same estimate and are not presented as one.
 
 ---
 
@@ -831,11 +896,13 @@ scripts/
 ├── run_brief10.py   Regenerates the brief-10 firm-heterogeneity viability probe (aggregates vs spread + domino trace) (reproducible)
 ├── compute_anchoring_ratios.py   Brief-11 I/Y and K/Y at the reference cells; reads committed panels, runs NO simulation
 ├── check_brief12_nesting.py      Brief-12 nesting check: re-runs a SLICE of the committed panels and byte-compares (not a driver)
-└── run_brief13.py                Regenerates the brief-13 global SA: pilot -> Morris screening -> Sobol (+ wide-sigma check, + report/figures)
+├── run_brief13.py                Regenerates the brief-13 global SA: pilot -> Morris screening -> Sobol (+ wide-sigma check, + report/figures)
+└── run_brief14.py                Regenerates brief 14: the chord-vs-OLS bridge (task A/B) -> Morris -> Sobol -> wide, all on the repaired QoI
 notebooks/
 └── 01_Endogenous_Investment.ipynb   rho sweep at sigma=1 + sigma sweep with the sign frontier
 results/
 ├── ces_b13_*.csv    brief-13 global SA: pilot, Morris screening, Sobol design/QoI/indices, by-products, summary; produced by scripts/run_brief13.py
+├── ces_b14_*.csv    brief-14 QoI repair: the 2x2 bridge (fixed/marginalised x chord/OLS), task-B slopes with rho*, redone Morris/Sobol/wide, verdict; produced by scripts/run_brief14.py
 ├── ces_b13_environment.json       brief-13 run environment (versions, sampling seed, seeds/steps, the declared Morris keep rule)
 ├── ces_b12_*.csv    brief-12 ownership-fix nesting check: byte-check summary + the regenerated slice; produced by scripts/check_brief12_nesting.py
 ├── ces_b11_anchoring_ratios.csv   brief-11 I/Y, K/Y, I/K by scenario and rho; produced by scripts/compute_anchoring_ratios.py
@@ -891,6 +958,14 @@ python scripts/run_brief13.py --phase morris   # ~20 min: screening under the pr
 python scripts/run_brief13.py --phase sobol    # ~2.2 h: indices with bootstrap CIs
 python scripts/run_brief13.py --phase wide     # ~45 min: the declared wide-sigma check
 python scripts/run_brief13.py --phase report   # analysis + figures only, no simulation
+
+# brief 14: repair the QoI (OLS over 4 rho instead of a 2-point chord) and separate the two
+# candidate causes brief 13 could not tell apart. The bridge's fixed arm is pure re-analysis
+# of committed panels; only the marginalised arm and the SA cost runs.
+python scripts/run_brief14.py --phase bridge   # ~25 min: tasks A + B, incl. the mandatory sigma* anchoring control
+python scripts/run_brief14.py --phase morris   # ~25 min: screening redone under the SAME rule, imported from brief 13
+python scripts/run_brief14.py --phase sobol    # ~4.7 h: indices with bootstrap CIs, repaired QoI
+python scripts/run_brief14.py --phase wide     # ~1.9 h: the wide-sigma check repeated - the direct test of brief 13's contradiction
 
 # run the checks (SFC across pct_capitalists, buffer==0, distribution, labour accounting, CES nesting, wage curve, adaptive expectations, government, heterogeneity, ownership, bootstrap)
 python -m pytest tests/ -q

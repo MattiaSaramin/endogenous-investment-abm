@@ -876,6 +876,50 @@ esattamente per questo che `viable` è una QoI **a sé**, sull'intero campione n
 
 ### Esiti misurati (Sobol primario, N=256 su 11 parametri, 3.328 punti, 3 seed)
 
+> ### ⚠️ QoI RIPARATA dal brief 14 (task C) — l'headline qui sotto è misurato con la CORDA
+>
+> Il brief 14 ha rifatto Morris e Sobol con la **pendenza OLS su 4 ρ** al posto della
+> corda a 2 punti, con parametri, range, congelati e seed di campionamento **importati**
+> dal driver del brief 13 (non ricopiati), così l'unica cosa che differisce è la QoI.
+> Entrambi gli stimatori sono calcolati **sugli stessi run**, quindi il confronto è esatto.
+>
+> | | frazione viable | `P(wage-led\|viable)` **corda** | `P(wage-led\|viable)` **OLS** |
+> |---|---|---|---|
+> | brief 13 (solo corda) | 0.483 | 0.095 | — |
+> | brief 14 primario, σ 0.40–0.60 | 0.480 | 0.094 | **0.026** |
+> | brief 14 wide, σ 0.30–1.00 | 0.468 | 0.202 | **0.098** |
+>
+> La colonna corda **riproduce** il brief 13 (0.094 vs 0.095; 0.202 vs 0.201): il residuo
+> è il set di sopravvissuti cambiato, non lo stimatore. **La QoI riparata taglia la
+> frazione wage-led di 3,6× nella banda empirica e di metà nel check largo.**
+>
+> **Perché, e la contabilità torna esatta.** Corda e OLS discordano di segno su 112 dei
+> 1.596 punti viable; **110 sono "corda negativa, OLS positiva"** e solo 2 il contrario.
+> Netto 108 — e `(0,0940 − 0,0263) × 1596 = 108`. Tutta la differenza dell'headline è
+> quei punti, identificati uno per uno. A distinguerli è esattamente il meccanismo
+> previsto: dove i due stimatori discordano il punto di svolta medio è **ρ\* = 0,473**,
+> *dentro* la finestra [0.35, 0.55] della corda; dove concordano è **ρ\* = 0,820**, fuori
+> supporto, dove `Y(ρ)` è monotona e qualunque stimatore vede la stessa cosa.
+>
+> **Ma gli indici di Sobol non si muovono quasi**: `delta` `ST` 0.900 vs 0.966, `pi0`
+> 0.561 vs 0.562, `sigma` 0.021 vs 0.024; viability `delta` 0.916 vs 1.002. **Quali
+> parametri generano la varianza è robusto allo stimatore; il livello della probabilità
+> wage-led no.** Sono due domande diverse, e la risposta del brief 13 alla prima regge.
+>
+> **Lo screening è cambiato** (stessa keep rule, stesso seed): entra `target_utilization`,
+> esce `benefit_replacement_rate`. È la ragione per cui il brief imponeva di **rifare**
+> Morris e non riusarlo — e implica anche che i run del brief 13 non erano riusabili
+> nemmeno in linea di principio, perché un set di sopravvissuti diverso è una matrice di
+> disegno diversa.
+>
+> **Limite dichiarato su ρ\* nello spazio marginalizzato:** la svolta cade **dentro** il
+> supporto solo nel **37,7%** dei punti viable (mediana ρ\* = 0,323; sotto il supporto nel
+> 58,7% dei casi), a differenza delle celle canoniche a parametri fissi dove è risolta in
+> 10 su 11. Dove cade fuori, la U **non è risolta lì** ed è riportata come tale, non
+> estrapolata.
+>
+> Artifact: `ces_b14_{morris,sobol,wide}_*.csv`, `ces_b14_summary.csv`.
+
 **Headline: `P(corda < 0 | viable) = 0.095 ± 0.007`** (SE binomiale, 1.606 punti viable),
 **frazione viable = 0.483**. Sullo spazio empiricamente difendibile il **wage-led è
 l'eccezione, non la regola**, e metà dello spazio non è nemmeno viable. Non si
