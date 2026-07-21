@@ -92,8 +92,9 @@
 \newcommand{\Ystar}{Y^{\ast}}
 \DeclareMathOperator{\clip}{clip}
 
-% A box for the "declared" methodological statements that carry the paper
-\newtcolorbox{declbox}[1][]{
-  enhanced, breakable, colback=gray!5, colframe=gray!55,
-  boxrule=0.5pt, arc=1.5pt, left=8pt, right=8pt, top=6pt, bottom=6pt,
-  fonttitle=\bfseries\small, #1}
+% NOTE: `declbox` is defined ONCE, above, on mdframed. A second definition used to
+% sit here built on \newtcolorbox, left behind when the package was switched from
+% tcolorbox to mdframed to avoid loading TikZ/PGF. Since tcolorbox is no longer
+% loaded, \newtcolorbox was undefined and the document could not compile at all -
+% this was the fatal error in the first three CI builds. Do not reintroduce a second
+% definition here without also loading the package it needs.
