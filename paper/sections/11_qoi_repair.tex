@@ -6,7 +6,7 @@
 \section{Repairing the quantity of interest}
 \label{sec:bridge}
 
-The contradiction of \cref{sec:inversion} is resolvable only by experiment,
+The tension reported in \cref{sec:inversion} is resolvable only by experiment,
 and the experiment is designed as a $2\times2$: method (chord versus OLS)
 crossed with conditioning (all other parameters fixed at their defaults versus
 marginalised over the sensitivity ranges), on a shared grid of runs. The
@@ -16,63 +16,78 @@ axis at constant method implicates cause~(b); both flipping means both
 contribute and the weights must be quantified; neither flipping is a new
 finding to be reported, not forced.
 
-\subsection{The fixed-parameter arm}
+The experiment survived a discovery that might have dissolved it. Half of what
+\cref{sec:inversion} set out to explain --- the apparent \emph{inversion} of
+direction --- turned out to be a misreading of this project's own documents
+rather than a property of the model, as the correction box there records. What
+remained was a genuine disagreement between two estimators, which is what the
+method axis was built to measure; and the conditioning axis, designed to test
+a hypothesis about a phenomenon that did not exist, turned out to measure
+something real in its own right. We report the design as it was fixed, not as
+it would have been written knowing the answer.
 
-\Cref{tab:bridge} reports the arm that has been executed.
+The fixed-parameter arm costs no simulation: the committed panels already carry
+the canonical $\sigma$ grid crossed with the canonical $\rho$ support at
+twenty seeds, so the chord and the OLS slope are two linear functionals of the
+same data and the same bootstrap delivers an interval for each. Only the
+marginalised arm required new runs.
+
+\subsection{The 2$\times$2}
+
+\Cref{tab:bridge} reports the completed design.
 
 \begin{table}[htbp]
 \centering
 \small
-\caption{Bridging experiment, fixed-parameter arm. The canonical support is
-the committed one; \emph{grid4} is the four-point grid shared with the
-marginalised arm.}
+\caption{Bridging experiment, complete. The fixed arm holds every parameter at
+the configuration in which \cref{sec:frontier} identified $\sigstar$
+($c_0 = 1.0$, $\eta = 0$); the marginalised arm draws the other fifteen
+parameters from the \cref{sec:sa} ranges on the same $\sigma$ grid. All rows
+use \emph{grid4}, the four-point $\rho$ support shared by both arms, so the
+comparison is not confounded by the support.}
 \label{tab:bridge}
-\begin{tabular}{llrl}
+\begin{tabular}{llrll}
 \toprule
-Scenario & Method (support) & $\sigstar$ & 95\% CI\\
+Cell & Parameters & Method & $\sigstar$ & 95\% CI\\
 \midrule
-\multirow{4}{*}{$\eta = 0$}
-  & OLS (canonical)   & 0.654 & $[0.616,\,0.691]$\\
-  & chord (canonical) & 0.447 & $[0.395,\,0.501]$\\
-  & OLS (grid4)       & 0.643 & $[0.596,\,0.701]$\\
-  & chord (grid4)     & 0.447 & $[0.395,\,0.501]$\\
-\addlinespace[2pt]
-\multirow{2}{*}{$\eta = 0.10$}
-  & OLS (canonical)   & 0.725 & $[0.697,\,0.745]$\\
-  & chord (canonical) & 0.501 & $[0.465,\,0.553]$\\
+1 & fixed        & chord & 0.447 & $[0.395,\,0.501]$\\
+2 & fixed        & OLS   & 0.643 & $[0.596,\,0.701]$\\
+3 & marginalised & chord & 0.938 & $[0.573,\,0.976]$\\
+4 & marginalised & OLS   & \textbf{0.962} & $[0.723,\,0.985]$\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The mandatory anchoring control passes: the OLS estimator on the canonical
-support reproduces $\sigstar = 0.654$ with the published interval, so the
-problem is not upstream of both candidate causes.
+The mandatory anchoring control passes to fourteen significant figures: cell~2
+evaluated on the full committed support returns
+$\sigstar = 0.6540142777288407$ against the published $0.654$ with interval
+$[0.616, 0.691]$. The bridge is therefore measuring the same object as
+\cref{sec:frontier}, and any difference across the table is the treatment.
 
-Cause~(a) is then confirmed as a real and \emph{large} contributor. At
-identical parameters, changing only the estimator moves $\sigstar$ from
-$0.654$ to $0.447$, with non-overlapping intervals: for any $\sigma$ between
-those values, the chord is negative while the OLS slope is positive. The two
-statistics genuinely disagree in sign on the same data.
+\paragraph{Verdict: cause (a).} At identical parameters, changing only the
+estimator moves $\sigstar$ from $0.643$ to $0.447$ with \emph{non-overlapping}
+intervals: for any $\sigma$ between those values the chord is negative while
+the OLS slope is positive. The two statistics genuinely disagree in sign on the
+same data, and they disagree about the statement the conditional result is
+written in --- under OLS the empirical band $[0.40, 0.60]$ lies wholly on the
+profit-led side, under the chord it straddles the frontier. By the rule fixed
+in advance, that is cause~(a), and the quantity of interest is the defect.
 
-\paragraph{But cause (a) points the wrong way.} This is the informative part.
-The chord turns negative at a \emph{lower} $\sigma$ than the OLS slope, so at
-fixed parameters the chord finds wage-led outcomes \emph{more} often at low
-$\sigma$, not less. \Cref{tab:widesigma}, by contrast, finds wage-led outcomes
-\emph{rare} below $\sigma \approx 0.65$. The chord/derivative distinction is
-therefore real but insufficient: on its own it would have widened the wage-led
-region at low $\sigma$, whereas the marginalised measurement narrows it.
-Cause~(b) --- conditioning --- must be doing the opposing work.
+\begin{declbox}[frametitle={What the rule does not capture, reported anyway}]
+The rule asks whether the empirical band changes \emph{sides}. Marginalising
+does not move it across --- cells 2 and 4 both place the band below $\sigstar$
+--- so cause~(b) does not fire. But marginalising moves $\sigstar$ from $0.643$
+to $0.962$, which is \emph{further} than the estimator moves it, and also with
+non-overlapping intervals. It simply moves the frontier \emph{away} from the
+band rather than across it.
 
-\begin{declbox}[frametitle={Status: open, and reported as open}]
-The marginalised arm of the design has not yet been executed, so the formal
-verdict is not yet available and we do not state one. What has been measured
-is that (a) contributes materially and in the \emph{opposite} direction to
-the observed inversion, which raises the prior on (b) considerably but does
-not establish it. Until the marginalised arm exists, the correct description
-of $\sigstar$ is a \emph{conditional} result whose marginal counterpart is
-unmeasured --- and that is how it is described in this paper. This is the
-point at which the project is most exposed to asserting the opposite of the
-truth, and it is deliberately left unasserted.
+Reporting only ``cause (a)'' would therefore let a threshold rule stand in for
+the measurement. $\sigstar$ is strongly conditional on where the other fifteen
+parameters are held; both displacements push the same way, and the empirically
+supported band is profit-led more robustly than \cref{sec:frontier} alone
+claimed. An earlier draft of this section predicted, from the fixed arm alone,
+that conditioning ``must be doing the opposing work''. That inference was
+correct: conditioning moves the chord frontier from $0.447$ to $0.938$.
 \end{declbox}
 
 \subsection{A quantity of interest suited to a U-shaped response}
@@ -128,3 +143,99 @@ $\rhostar$ for every $\sigma$ at or above $0.5$.}
 
 This statement does not depend on which chord an analyst happens to pick, which
 is exactly the property the original quantity of interest lacked.
+
+\subsection{The sensitivity analysis, redone on the repaired quantity}
+\label{sec:sarepaired}
+
+\Cref{sec:sa} is then re-run end to end with the OLS slope over four $\rho$
+values in place of the two-point chord. Parameters, ranges, frozen values and
+the sampling seed are \emph{imported} from the original driver rather than
+restated, so the quantity of interest is provably the only thing that differs;
+and because the four-point support contains the two chord points, both
+estimators are computed from the \emph{same runs}.
+
+\paragraph{The screening changes.} Under the identical keep rule and seed,
+$\mathtt{target\_utilization}$ enters the surviving set and
+$\mathtt{benefit\_replacement\_rate}$ leaves it. A different quantity of
+interest genuinely selects different parameters --- which is also why the
+earlier runs could not have been recycled: a different survivor set is a
+different design matrix.
+
+\paragraph{The headline moves; the decomposition does not.}
+\Cref{tab:repaired} puts the two estimators side by side.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{The repair, with both estimators computed on the same runs.
+$P(\text{wl})$ abbreviates $P(\text{wage-led} \mid \text{viable})$.}
+\label{tab:repaired}
+\begin{tabular}{lrrr}
+\toprule
+Analysis & Fraction viable & $P(\text{wl})$ chord & $P(\text{wl})$ OLS\\
+\midrule
+\Cref{sec:sa}, chord only            & 0.483 & 0.095 & ---\\
+Primary, $\sigma \in [0.40, 0.60]$   & 0.480 & 0.094 & \textbf{0.026}\\
+Wide, $\sigma \in [0.30, 1.00]$      & 0.468 & 0.202 & \textbf{0.098}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The chord column reproduces \cref{sec:sa} ($0.094$ against $0.095$; $0.202$
+against $0.201$), the residual being the changed survivor set rather than the
+estimator. The repaired quantity then cuts the wage-led fraction by a factor of
+$3.6$ inside the empirical band, and by half in the wide check.
+
+\paragraph{Why, to the point.} The difference is not diffuse. Chord and OLS
+disagree in sign on $112$ of the $1596$ viable points; $110$ of those are
+``chord negative, OLS positive'' and $2$ are the reverse, for a net of $108$.
+The headline gap is $(0.0940 - 0.0263) \times 1596 = 108$ points. Every point
+of the difference is individually identified, and what distinguishes them is
+the mechanism predicted in \cref{tab:turning}: where the two estimators
+disagree the mean turning point is $\rhostar = 0.473$, \emph{inside} the
+chord's $[0.35, 0.55]$ window; where they agree it is $0.820$, outside the
+support, where $Y(\rho)$ is monotone and any estimator sees the same thing.
+
+\paragraph{The variance decomposition is robust to the repair.}
+Total-order indices barely move: on the slope, $\delta$ goes from $0.966$ to
+$0.900$, $\pi_0$ from $0.562$ to $0.561$, $\sigma$ from $0.024$ to $0.021$; on
+viability, $\delta$ from $1.002$ to $0.916$. \emph{Which} parameters generate
+the variance is robust to the estimator; the \emph{level} of the wage-led
+probability is not. These are different questions, and the answer
+\cref{sec:sa} gives to the first one stands.
+
+\paragraph{The wide check, repeated.} \Cref{tab:widerepaired} is the direct
+test of the reading error corrected in \cref{sec:inversion}.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{$P(\text{wage-led} \mid \text{viable})$ by $\sigma$ bin under both
+estimators, on the same runs, $\sigma \in [0.30, 1.00]$.}
+\label{tab:widerepaired}
+\begin{tabular}{lrrr}
+\toprule
+$\sigma$ bin & $n$ viable & OLS & chord\\
+\midrule
+0.301--0.475 & 191 & 0.000 & 0.016\\
+0.475--0.649 & 197 & 0.025 & 0.127\\
+0.649--0.823 & 201 & 0.154 & 0.299\\
+0.823--0.998 & 190 & 0.211 & 0.363\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Wage-led outcomes become \emph{more} common as $\sigma$ rises, under both
+estimators --- the same direction as \cref{sec:frontier}, and never crossing
+$0.5$ at any $\sigma$ tested. The tension reported as open in \cref{sec:sa} is
+closed, and part of it was never there: only the estimator was genuinely at
+issue, and its effect is to make the empirically supported band \emph{less}
+wage-led, not more.
+
+\paragraph{A limit on the turning point itself, declared.} In the marginalised
+space $\rhostar$ falls inside the swept support in only $37.7\%$ of viable
+points (median $0.323$; below the support in $58.7\%$ of cases), against 10 of
+11 in the fixed-parameter cells of \cref{tab:turning}. Where the turn falls
+outside, the U is \emph{not resolved there}, and it is reported as such rather
+than extrapolated. The U-shaped statement above is a statement about the
+conditional cells, and it is not silently promoted to the whole space.
