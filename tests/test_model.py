@@ -122,25 +122,32 @@ def _steady(retention_ratio=REF_RHO, seed=0, steps=STEPS, tail=50, **kw):
 # between wages and profits but must not touch the money circuit, so SFC has to hold at
 # eta > 0 too.  eta = 0 keeps the original coverage.  lambda_e (expectation_gain) is folded
 # in the same way (brief 08 §6.4): a slower expectation only changes the labour plan, never
-# the settlement, so conservation and the zero buffer must survive lambda_e < 1 too.
-@pytest.mark.parametrize("rho,eta,lambda_e", [
-    (0.35, 0.0, 1.0), (0.40, 0.0, 1.0), (0.40, 0.10, 1.0),
-    (0.40, 0.0, 0.25), (0.40, 0.10, 0.5),
+# the settlement, so conservation and the zero buffer must survive lambda_e < 1 too.  lambda_u
+# (utilization_expectation_gain, brief 17 §7.6) is folded in likewise: smoothing the
+# accelerator signal only re-times investment, never the settlement, so SFC must hold at
+# lambda_u < 1 too — the last two rows carry it (parametrised, not duplicated).
+@pytest.mark.parametrize("rho,eta,lambda_e,lambda_u", [
+    (0.35, 0.0, 1.0, 1.0), (0.40, 0.0, 1.0, 1.0), (0.40, 0.10, 1.0, 1.0),
+    (0.40, 0.0, 0.25, 1.0), (0.40, 0.10, 0.5, 1.0),
+    (0.40, 0.10, 1.0, 0.5), (0.40, 0.10, 0.5, 0.25),
 ])
-def test_money_is_conserved(rho, eta, lambda_e):
-    model = MacroModel(retention_ratio=rho, seed=7, eta=eta, expectation_gain=lambda_e)
+def test_money_is_conserved(rho, eta, lambda_e, lambda_u):
+    model = MacroModel(retention_ratio=rho, seed=7, eta=eta, expectation_gain=lambda_e,
+                       utilization_expectation_gain=lambda_u)
     initial = total_money(model)
     for _ in range(600):
         model.step()
         assert total_money(model) == pytest.approx(initial, abs=1e-7)
 
 
-@pytest.mark.parametrize("rho,eta,lambda_e", [
-    (0.35, 0.0, 1.0), (0.40, 0.0, 1.0), (0.40, 0.10, 1.0),
-    (0.40, 0.0, 0.25), (0.40, 0.10, 0.5),
+@pytest.mark.parametrize("rho,eta,lambda_e,lambda_u", [
+    (0.35, 0.0, 1.0, 1.0), (0.40, 0.0, 1.0, 1.0), (0.40, 0.10, 1.0, 1.0),
+    (0.40, 0.0, 0.25, 1.0), (0.40, 0.10, 0.5, 1.0),
+    (0.40, 0.10, 1.0, 0.5), (0.40, 0.10, 0.5, 0.25),
 ])
-def test_buffer_returns_to_zero(rho, eta, lambda_e):
-    model = MacroModel(retention_ratio=rho, seed=2, eta=eta, expectation_gain=lambda_e)
+def test_buffer_returns_to_zero(rho, eta, lambda_e, lambda_u):
+    model = MacroModel(retention_ratio=rho, seed=2, eta=eta, expectation_gain=lambda_e,
+                       utilization_expectation_gain=lambda_u)
     for _ in range(300):
         model.step()
         for f in _firms(model):
@@ -2145,3 +2152,197 @@ def test_sa_rho_grid_contains_the_brief13_chord_points():
     """The repair is only auditable because chord and OLS come from the SAME runs."""
     assert SA_RHO_LO in SA_RHO_GRID and SA_RHO_HI in SA_RHO_GRID
     assert min(SA_RHO_GRID) == 0.35 and max(SA_RHO_GRID) == 0.65   # canonical support ends
+
+
+# ======================================================================
+# Brief 17 — investment (utilisation) expectation: the accelerator reads u^e
+# ======================================================================
+#
+# PRE-REGISTERED HYPOTHESIS (brief 17 §4), recorded here and in scripts/run_brief17.py
+# BEFORE any measurement run: smoothing shrinks the excursions of u^e around
+# target_utilization, hence the variance of util_effect, so lambda_u < 1 behaves like a
+# lower effective beta.  These tests pin the MECHANISM (the update law, the nesting, which
+# signal the accelerator reads) — NOT the hypothesis' outcome, which is measured by the
+# driver and never asserted here.
+
+def test_expected_utilization_update_is_geometric_at_constant_u():
+    """§7.1 update law: with utilisation held constant and lambda_u < 1, the u^e error
+    shrinks by the exact factor (1 - lambda_u) each step — the demand-expectation law of
+    brief 08 applied to utilisation."""
+    u = 0.7
+    for gain in (0.25, 0.5, 0.75):
+        ue = 0.9                       # start at target_utilization
+        prev_err = abs(ue - u)
+        for _ in range(200):
+            ue = adaptive_expectation(ue, u, gain)
+            err = abs(ue - u)
+            if prev_err > 1e-9:
+                assert err == pytest.approx(prev_err * (1.0 - gain), rel=1e-9)
+            prev_err = err
+        assert ue == pytest.approx(u, abs=1e-9)
+
+
+def test_expected_utilization_gain_zero_is_frozen_at_target():
+    """§7.1: lambda_u = 0 never updates u^e, so it stays at its seed target_utilization for
+    every firm and step — the degenerate 'no accelerator' control (util_effect == 1)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10,
+                   utilization_expectation_gain=0.0)
+    target = m.target_utilization
+    for _ in range(200):
+        m.step()
+        for f in _firms(m):
+            assert f.expected_utilization == target       # adaptive_expectation(prev, ., 0) == prev
+            assert f.util_effect == 1.0                    # 1 + beta*(target - target)
+
+
+def test_expected_utilization_gain_one_equals_realised_exactly():
+    """§7.1: lambda_u = 1 makes u^e equal the realised utilisation in EXACT equality after
+    each step (the explicit adaptive_expectation branch), so the accelerator reads exactly
+    what the pre-brief-17 model read."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10,
+                   utilization_expectation_gain=1.0)
+    for _ in range(200):
+        m.step()
+        for f in _firms(m):
+            assert f.expected_utilization == f.utilization        # byte-for-byte
+
+
+def test_utilization_expectation_gain_one_nests_default_bit_for_bit():
+    """§7.2: utilization_expectation_gain = 1.0 reproduces the default trajectory exactly on
+    a short run with the wage curve on — the assertion that protects the explicit branch, as
+    for eta = 0 and lambda_e = 1."""
+    def outputs(**kw):
+        m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10, **kw)
+        out = []
+        for _ in range(200):
+            m.step()
+            out.append(sum(f.production for f in _firms(m)))
+        return out
+    assert outputs() == outputs(utilization_expectation_gain=1.0)
+
+
+def test_utilization_expectation_gain_default_is_one():
+    """§7.2 / §8.3: the constructor default is lambda_u = 1.0, so no canonical number moves."""
+    def final(seed, **kw):
+        m = MacroModel(retention_ratio=REF_RHO, seed=seed, **kw)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert MacroModel(seed=0).utilization_expectation_gain == 1.0
+    assert final(0) == final(0, utilization_expectation_gain=1.0)
+
+
+def test_accelerator_reads_expected_not_realised_utilisation():
+    """§7.3: with lambda_u < 1 and a moving utilisation the two signals diverge, and it is the
+    EXPECTED utilisation (not utilization_last_period) that determines util_effect."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10,
+                   utilization_expectation_gain=0.3)
+    for _ in range(120):
+        m.step()
+    # The values plan_investment (step 3) will read at the NEXT step, captured before the
+    # step so step_production (step 5) has not yet overwritten them.
+    pre = [(f, f.expected_utilization, f.utilization_last_period) for f in _firms(m)]
+    assert any(abs(ue - ulp) > 1e-6 for _, ue, ulp in pre)   # the signals actually differ
+    m.step()
+    for f, ue, ulp in pre:
+        on_expected = max(0.0, 1.0 + m.beta * (ue - m.target_utilization))
+        on_realised = max(0.0, 1.0 + m.beta * (ulp - m.target_utilization))
+        assert f.util_effect == pytest.approx(on_expected, rel=1e-12, abs=1e-12)
+        if abs(ue - ulp) > 1e-6:
+            assert f.util_effect != pytest.approx(on_realised, rel=1e-12, abs=1e-12)
+
+
+def test_expected_utilization_updates_from_the_closed_period_not_the_next():
+    """§7.4: u^e is updated from the utilisation of the period that just closed, never the
+    next one — the one-period information lag is structural, as for Ye."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.0,
+                   utilization_expectation_gain=0.5)
+    for _ in range(20):
+        m.step()
+    f = _firms(m)[0]
+    ue_before = f.expected_utilization
+    m.step()
+    assert f.expected_utilization == pytest.approx(
+        adaptive_expectation(ue_before, f.utilization, 0.5), rel=1e-12
+    )
+
+
+def test_util_effect_is_nonnegative_and_floor_is_reachable():
+    """§7.5: util_effect keeps the max(0, .) guard at every step with lambda_u < 1 (a); and
+    the floor 0 is reachable in the L_profitmax = +inf case, where utilisation is 0 by the
+    declared convention, so a strong-enough accelerator on u^e -> 0 clips to it (b)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10,
+                   utilization_expectation_gain=0.5)
+    for _ in range(200):
+        m.step()
+        for f in _firms(m):
+            assert f.util_effect >= 0.0
+
+    # Floor reachable: at the u = 0 convention (L_profitmax = +inf), a strong accelerator
+    # sends 1 + beta*(u^e - target) negative and it clips to 0.  Exercised directly on the
+    # plan_investment guard with u^e smoothed down to 0 under lambda_u < 1.
+    m2 = MacroModel(retention_ratio=REF_RHO, seed=0, beta=2.0,
+                    utilization_expectation_gain=0.5)
+    f = _firms(m2)[0]
+    f.expected_utilization = 0.0                  # the u = 0 convention limit
+    f.profit_last_period = 10.0
+    f.plan_investment()
+    assert f.util_effect == 0.0                   # max(0, 1 + 2.0*(0 - 0.9)) = 0
+
+
+@pytest.mark.parametrize("gain", [0.25, 0.5])
+def test_determinism_with_utilization_expectation(gain):
+    """§7.7: same seed => same trajectory with lambda_u < 1; different seeds differ."""
+    def final(seed):
+        m = MacroModel(retention_ratio=REF_RHO, seed=seed, sigma=0.5, eta=0.10,
+                       utilization_expectation_gain=gain)
+        for _ in range(300):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()["Output"].iloc[-1]
+    assert final(3) == final(3)
+    assert final(1) != final(2)
+
+
+@pytest.mark.parametrize("bad", [-0.1, 1.0 + 1e-9, 2.0])
+def test_utilization_expectation_gain_out_of_range_raises(bad):
+    """§7.8 / §8: lambda_u must lie in [0, 1]."""
+    with pytest.raises(ValueError):
+        MacroModel(seed=0, utilization_expectation_gain=bad)
+
+
+def test_utilization_expectation_gain_bounds_are_admissible():
+    """Both endpoints are valid: 1.0 (default / nesting) and 0.0 (frozen accelerator)."""
+    MacroModel(seed=0, utilization_expectation_gain=0.0)
+    MacroModel(seed=0, utilization_expectation_gain=1.0)
+
+
+@pytest.mark.parametrize("gain", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_initialisation_is_neutral_for_every_gain(gain):
+    """§7.9: at t = 0, u^e = target_utilization and util_effect = 1.0 exactly for every
+    lambda_u, and the first plan_investment keeps util_effect at exactly 1.0 (u^e_0 = target),
+    so the first period is unchanged whatever the gain."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=0, sigma=0.5, eta=0.10,
+                   utilization_expectation_gain=gain)
+    target = m.target_utilization
+    for f in _firms(m):
+        assert f.expected_utilization == target
+        assert f.util_effect == 1.0
+    row0 = m.datacollector.get_model_vars_dataframe().iloc[0]
+    assert row0["Expected_Utilization"] == target
+    assert row0["Util_Effect"] == 1.0
+    m.step()
+    for f in _firms(m):
+        assert f.util_effect == 1.0                # 1 + beta*(u^e_0 - target) = 1.0 exactly
+
+
+def test_new_reporters_are_out_of_panel_metrics():
+    """Brief 17 §3/§6: Expected_Utilization and Util_Effect must NOT be in _PANEL_METRICS —
+    adding either would change the committed panels' schema and break the nesting byte-check
+    — but they ARE collected as model reporters (reachable via the metrics override)."""
+    assert "Expected_Utilization" not in _PANEL_METRICS
+    assert "Util_Effect" not in _PANEL_METRICS
+    m = MacroModel(seed=0)
+    for _ in range(3):
+        m.step()
+    cols = m.datacollector.get_model_vars_dataframe().columns
+    assert "Expected_Utilization" in cols and "Util_Effect" in cols

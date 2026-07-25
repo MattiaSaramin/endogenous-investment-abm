@@ -40,7 +40,8 @@ Behavioural core:
 
 4. **Internal financing via retained earnings.**  Firms retain exactly what they
    invest and distribute the rest as dividends; investment is a profit-flow
-   decision with a utilisation accelerator and a floor.
+   decision with a utilisation accelerator — on the *expected* utilisation ``u^e``
+   (brief 17; ``lambda_u = 1`` reads last realised utilisation) — and a floor.
 
 5. **Class saving + wealth effect.**  Workers consume a large share of income,
    capitalists a small share; consumption also responds to money wealth.
@@ -354,6 +355,10 @@ class Firm(mesa.Agent):
         self.money_buffer = 0.0
         self.profit_last_period = 0.0
         self.utilization_last_period = 0.0
+        # Expected utilisation u^e (brief 17): the accelerator reads this instead of the
+        # realised utilisation.  Partial-adjustment update in step_production; the model
+        # seeds it to target_utilization and lambda_u = 1 keeps it == utilization_last_period.
+        self.expected_utilization = 0.0
 
         # Expectations / employment
         self.expected_demand = 0.0
@@ -443,12 +448,19 @@ class Firm(mesa.Agent):
         self.desired_employment = max(0, int(limit))
 
     # ------------------------------------------------------------------
-    # Investment plan (unchanged in form; accelerator on last utilisation)
+    # Investment plan (unchanged in form; accelerator on EXPECTED utilisation, brief 17)
     # ------------------------------------------------------------------
     def plan_investment(self):
-        """Plan investment from the flow of profit, capped by current profit."""
+        """Plan investment from the flow of profit, capped by current profit.
+
+        The accelerator reads the *expected* utilisation ``expected_utilization`` (u^e),
+        formed by partial adjustment in :meth:`step_production` (brief 17).  With
+        ``utilization_expectation_gain = 1`` u^e equals last period's realised utilisation
+        exactly, so this reproduces the pre-brief-17 accelerator bit-for-bit.  The
+        ``max(0, .)`` guard on ``util_effect`` is unchanged.
+        """
         util_effect = 1.0 + self.model.beta * (
-            self.utilization_last_period - self.model.target_utilization
+            self.expected_utilization - self.model.target_utilization
         )
         util_effect = max(0.0, util_effect)
         self.util_effect = util_effect          # diagnostic: accelerator signal
@@ -486,7 +498,8 @@ class Firm(mesa.Agent):
         ``u = 0``.  This is the honest limit, not a fudge — as ``L_profitmax -> inf``
         the profit-max capacity diverges and ``Y / Y*_pm -> 0`` continuously, so the
         firm reads as maximally far below its profit-max scale.  The accelerator then
-        sits at its floor ``1 + beta*(0 - target_utilization)``.
+        sits at its floor ``1 + beta*(0 - target_utilization)`` once the expectation
+        ``u^e`` has adjusted down to it (brief 17).
         """
         L = len(self.workers)
         A = self.productivity
@@ -513,6 +526,16 @@ class Firm(mesa.Agent):
                 if self.profitmax_capacity > 1e-12 else 0.0
             )
         self.utilization_last_period = self.utilization
+
+        # Expected utilisation for next period (brief 17): partial adjustment towards the
+        # utilisation just realised, the same scheme as the demand expectation below.
+        # ``utilization_expectation_gain = 1`` recovers u^e = utilization_last_period
+        # bit-for-bit (see :func:`adaptive_expectation`); the accelerator in plan_investment
+        # reads this expectation, not the realised value.  It uses the utilisation of the
+        # period now closing, so the one-period information lag is structural, as for Ye.
+        self.expected_utilization = adaptive_expectation(
+            self.expected_utilization, self.utilization, m.utilization_expectation_gain
+        )
 
         # Adaptive expectation for next period (brief 08): partial adjustment towards
         # the demand just realised.  ``expectation_gain = 1`` recovers the static

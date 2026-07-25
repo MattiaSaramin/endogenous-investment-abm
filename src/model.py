@@ -18,11 +18,13 @@ expected income depends on employment status) — step 0 added by brief 07:
        fires the excess and fills vacancies (random matching) -> employment
     2. households form consumption demand (income = wage if employed, else 0;
        plus dividends for capitalists)
-    3. firms plan investment (profit flow, accelerator on last utilisation)
+    3. firms plan investment (profit flow, accelerator on EXPECTED utilisation u^e;
+       lambda_u = 1 -> last realised utilisation)
     4. firms register demand (consumption + investment)
     5. firms produce: Y = min(demand, Y*(K, L)); ration; set u; update the demand
-       expectation Ye <- Ye + lambda_e*(faced - Ye) (brief 08; lambda_e = 1 -> Ye = faced,
-       the static case).  No new step: the update stays inside production, as before.
+       expectation Ye <- Ye + lambda_e*(faced - Ye) (brief 08) and the utilisation
+       expectation u^e <- u^e + lambda_u*(u - u^e) (brief 17; lambda_u = 1 -> u^e = u, the
+       pre-brief-17 case).  No new step: both updates stay inside production, as before.
     6. firm accounting: wage_bill = w_t*L, retained (= I_planned), residual dividends
     7. investment settlement: pay I_delivered; K(t+1) = (1-delta)K + I_delivered;
        buffer returns to zero
@@ -389,6 +391,26 @@ def compute_average_utilization(model):
     return sum(f.utilization for f in firms) / len(firms)
 
 
+def compute_expected_utilization(model):
+    """Mean firm expected utilisation u^e (brief 17) — what the accelerator reads."""
+    firms = _firms(model)
+    if not firms:
+        return 0.0
+    return sum(f.expected_utilization for f in firms) / len(firms)
+
+
+def compute_util_effect(model):
+    """Mean firm accelerator gain ``max(0, 1 + beta*(u^e - target))`` (brief 17).
+
+    The variable the investment-expectation hypothesis rests on: its cross-cell standard
+    deviation should fall as ``lambda_u`` falls (brief 17 §4).  NOT in ``_PANEL_METRICS``.
+    """
+    firms = _firms(model)
+    if not firms:
+        return 0.0
+    return sum(f.util_effect for f in firms) / len(firms)
+
+
 def compute_consumption(model):
     return sum(h.actual_consumption for h in _households(model))
 
@@ -655,6 +677,17 @@ class MacroModel(mesa.Model):
         unit tests, never swept.  No reliable point estimate exists for an ABM of this kind
         (adaptive expectations, Nerlove 1958; constant-gain learning, Evans & Honkapohja
         2001), so it is swept, not chosen (see parameter_notes.md).
+    utilization_expectation_gain : float
+        Gain ``lambda_u`` on the adaptive *utilisation*-expectation update read by the
+        investment accelerator (brief 17),
+        ``u^e_t = u^e_{t-1} + lambda_u*(u_{t-1} - u^e_{t-1})``.  ``1.0`` (default) makes the
+        accelerator read last period's realised utilisation and reproduces the pre-brief-17
+        model bit-for-bit; ``lambda_u < 1`` smooths the signal; ``lambda_u = 0`` freezes
+        ``u^e`` at ``target_utilization`` (accelerator neutralised to ``util_effect == 1``).
+        Must lie in ``[0, 1]``.  Swept, not chosen — same literature as ``lambda_e`` (Nerlove
+        1958; Evans & Honkapohja 2001), no point estimate for an ABM of this kind; this dial
+        makes ``beta`` less load-bearing but leaves it without an empirical referent (see
+        parameter_notes.md).
     c0, c1, capitalist_mpc, wealth_effect : float
         Consumption function terms.  ``c0`` and ``wealth_effect`` are demand levers
         (chosen values, not empirical estimates).
@@ -727,6 +760,10 @@ class MacroModel(mesa.Model):
         # Expectations (brief 08): expectation_gain = 1 nests the static-expectations model
         expectation_gain=1.0,
 
+        # Investment-expectation gain (brief 17): utilization_expectation_gain = 1 makes the
+        # accelerator read last realised utilisation, nesting the pre-brief-17 model exactly.
+        utilization_expectation_gain=1.0,
+
         # Consumption
         c0=2.0,
         c1=0.9,
@@ -749,6 +786,10 @@ class MacroModel(mesa.Model):
             raise ValueError("the normalisation anchor (K0, L0) must be positive")
         if not (0.0 <= expectation_gain <= 1.0):
             raise ValueError("expectation_gain (lambda_e) must be in [0, 1]")
+        if not (0.0 <= utilization_expectation_gain <= 1.0):
+            raise ValueError(
+                "utilization_expectation_gain (lambda_u) must be in [0, 1]"
+            )
         if benefit_replacement_rate < 0.0:
             raise ValueError("benefit_replacement_rate must be >= 0")
         if not (0.0 <= max_tax <= 1.0):
@@ -812,6 +853,11 @@ class MacroModel(mesa.Model):
         # Adaptive expectations (brief 08): the gain on the demand-expectation update in
         # Firm.step_production.  1.0 (default) is static expectations (Ye = last demand).
         self.expectation_gain = expectation_gain
+
+        # Investment-expectation gain (brief 17): the gain on the utilisation-expectation
+        # update in Firm.step_production, read by the accelerator in plan_investment.  1.0
+        # (default) reads last realised utilisation (u^e = u_{t-1}), nesting exactly.
+        self.utilization_expectation_gain = utilization_expectation_gain
 
         self.c0 = c0
         self.c1 = c1
@@ -895,6 +941,9 @@ class MacroModel(mesa.Model):
                 initial_capital, len(f.workers), f.productivity, K0, L0, pi0, sigma
             )
             f.utilization_last_period = target_utilization
+            # u^e_0 = target_utilization (brief 17), so util_effect starts at exactly 1.0
+            # and the first period is unchanged, mirroring utilization_last_period above.
+            f.expected_utilization = target_utilization
 
         # --- data collection --------------------------------------------
         self.datacollector = mesa.DataCollector(
@@ -914,6 +963,12 @@ class MacroModel(mesa.Model):
                 "Consumption": compute_consumption,
                 "Investment": compute_investment,
                 "Average_Utilization": compute_average_utilization,
+                # Investment-expectation accelerator (brief 17): mean expected utilisation
+                # (what the accelerator reads) and mean util_effect (the accelerator gain).
+                # Kept OUT of experiment._PANEL_METRICS on purpose (brief 17 §3), like
+                # Capitalist_Consumption: the committed panels keep their exact columns.
+                "Expected_Utilization": compute_expected_utilization,
+                "Util_Effect": compute_util_effect,
                 "Wage_Share": compute_wage_share,
                 "Wage_Share_Profitmax": compute_wage_share_profitmax,
                 "Profit_Share": compute_profit_share,
