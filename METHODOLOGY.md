@@ -603,7 +603,9 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   - **Esito headline: `P(corda < 0 | viable) = 0.095 ± 0.007`, frazione viable 0.483.**
     **Il wage-led è l'eccezione, non la regola**, e metà dello spazio empirico non è
     viable. **`delta` domina tutto** (`ST`≈1.00 sulla viability): a δ∈[0.075,0.09]
-    **0/843 punti sopravvivono**, e δ=0.05 siede appena dentro il bordo — il brief 11
+    **0/843 punti sopravvivono** *(⚠️ QoI-corda del brief 13; la QoI OLS riparata del
+    brief 14 misura `ST(delta|viable)`=0.916 e il taglio δ∈[0.075,0.090] conta 832 punti
+    — vedi la voce brief 14 e §9)*, e δ=0.05 siede appena dentro il bordo — il brief 11
     aveva ragione a non ricalibrare, ma per la ragione sbagliata. **`sigma` è irrilevante
     nella banda empirica** (`ST`=0.024): **la frontiera σ\* del brief 07 non sopravvive
     alla globalizzazione** — era condizionata alla cella in cui fu misurata. `ST ≫ S1`
@@ -737,8 +739,10 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     ri-fissata a **7/7 PASS**; driver b07–b10 e b12 aggiornati, e **tutti continuano a
     registrare il `byte_equal` ritirato** perché il cambiamento resti visibile.
   - **Task E — `delta` elevato da sensitivity a LIMITE STRUTTURALE.** Registrato in §9: al δ
-    implicato dai dati il modello **non esiste** (0 punti viable su 843, `ST(delta)`=1.00
-    sulla viability); è la firma di `g = 0` letta attraverso `I/K = δ + g`.
+    implicato dai dati il modello **non esiste** (0 punti viable su **832** in
+    δ∈[0.075,0.090], `ST(delta|viable)`=**0.916** — la QoI-corda del brief 13 leggeva
+    ≈1.00/843; `ces_b14_sobol_indices.csv`, `ces_b16_turning_points.csv`); è la firma di
+    `g = 0` letta attraverso `I/K = δ + g`.
   - **527 test verdi** (512 + 15 nuovi, che pinnano **la ragione** di ogni costante dichiarata,
     non il suo valore). Driver `scripts/run_brief14.py` (fasi `bridge`/`morris`/`sobol`/
     `wide`/`report`, `SAMPLE_SEED` fissato, ambiente in `ces_b14_environment.json`, verdetto
@@ -844,8 +848,10 @@ brief 13.** Entrambi i prerequisiti sono stati saldati prima di eseguirla:
 **Debito residuo:** ~~verificare I/Y con una serie BEA primaria~~ e ~~fissare
 l'unità temporale del periodo~~ — **entrambi CHIUSI dal brief 11** (I/Y verificato
 contro `A008RE1Q156NBEA`, con esito: il modello sta **sopra** l'ancora, non "match
-incoraggiante"; periodo = 1 anno dichiarato). Aperto: la **sensitivity di `U_min`**
-(convenzione della wage curve, brief 07 — dentro la SA globale, punto 5); e
+incoraggiante"; periodo = 1 anno dichiarato). ~~Aperto: la **sensitivity di `U_min`**~~ **CHIUSA dal brief 13/14**
+(`u_min` è fra i **17 parametri** dello screening Morris: μ\*=8.52, conf 7.87 su
+`slope_raw`, **0.0000** su `viable` — screenato inerte, non sopravvissuto al Sobol;
+`ces_b14_morris.csv`); e
 **notebook: aggiungere le sezioni "wage curve"
 (σ*(η), brief 07) e "aspettative adattive" (σ*(η;λ_e) + mappa di collasso,
 brief 08) al prossimo consolidamento** — i brief 07 e 08 hanno lasciato le figure
@@ -917,8 +923,9 @@ negoziabili.
   > (`BYTE_CHECK_SCOPE`). Driver aggiornati: b07, b08, b09, b10, b12.
 - **⚠️ Limite strutturale del blocco capitale — `delta` (elevato dal brief 14, task E).**
   Il brief 11 ha misurato il δ implicito BEA per il perimetro del modello (**≈0.090**); il
-  brief 13 ha misurato che nella banda δ ∈ [0.075, 0.09] sopravvivono **0 punti su 843**,
-  con `ST(delta)` sulla viability = **1.00**. Messi insieme: **al δ che i dati implicano il
+  brief 13/14 ha misurato che nella banda δ ∈ [0.075, 0.09] sopravvivono **0 punti su 832**
+  (taglio `ces_b16_turning_points.csv`), con `ST(delta|viable)` = **0.916**
+  (`ces_b14_sobol_indices.csv`; la QoI-corda del brief 13 leggeva ≈1.00 su 843). Messi insieme: **al δ che i dati implicano il
   modello non esiste.** Non è robustezza, è la firma di `g = 0` letta dalla chiusura
   `I/K = δ + g` (brief 11): senza crescita l'investimento di steady state copre solo il
   deprezzamento, quindi δ empirico erode il capitale a ogni periodo. δ=0.05 non è dove i
@@ -1081,7 +1088,7 @@ negoziabili.
   annidamento `u_min=None` bit-for-bit e validazione, reporter `Capitalist_Consumption`
   fuori da `_PANEL_METRICS`, e la **regressione sulla banda σ→1** che il bug di overflow
   avrebbe fatto fallire — continuità attraverso σ=1 e guardia inerte sulle σ sweepate).
-  **512 test.** *(Brief 11 non aggiunge test: non tocca `src/`.)*
+  **527 test.** *(Brief 11 non aggiunge test: non tocca `src/`.)*
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di

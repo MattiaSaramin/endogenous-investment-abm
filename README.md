@@ -568,8 +568,8 @@ wage → U → capital channel that is interactive by construction.
 
 Brief 11 demoted `delta = 0.05` to a declared convention, noting the BEA-implied figure is
 ≈0.090, and warned against recalibrating. The SA sharpens that into something harder: **at
-the value the data suggest, this model does not exist** - 0 of 843 points survive, and
-`ST(delta)` on viability is **1.00** (CI ±0.12), so `delta` alone governs survival (`pi0` is
+the value the data suggest, this model does not exist** - 0 of 832 points survive, and
+`ST(delta)` on viability is **0.916** (CI ±0.12), so `delta` alone governs survival (`pi0` is
 a distant second at 0.29).
 
 > ### This is a structural limit, not a robustness caveat (elevated by brief 14, task E)
