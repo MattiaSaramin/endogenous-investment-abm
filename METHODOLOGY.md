@@ -223,6 +223,20 @@ deve essere **o misurato** (con seed, step e configurazione riproducibili) **o
 dichiarato esplicitamente come target di design**. Non si registrano target come
 risultati. Vale anche per la memoria di progetto.
 
+**Raffinamento (brief 17): ogni numero ha IL SUO artifact.** Non basta che un numero sia
+*ricalcolabile* da UN artifact; prima di dichiararlo sbagliato bisogna stabilire da QUALE
+artifact viene. Un numero **corretto di un'altra vintage** non è un refuso, e «correggerlo»
+a pezzi **rompe la coerenza** del documento che lo contiene. **Regola operativa: un claim si
+dichiara sbagliato solo dopo averne identificato il referente.** Due casi misurati, entrambi
+**falsi allarmi del triage del brief 17** (una diagnosi «stale» su citazioni in realtà corrette
+di `ces_b13`):
+- **`0/843`**: veniva dal **binning di `ces_b13`**, non da `ces_b16`; la «correzione» poggiava
+  anche su un'**aritmetica falsa** (821+843 = 1664, la tabella tornava a 3328). **Revertita** in
+  `667003b`.
+- **`ST≈1.00`**: **1.0018 è il valore corretto di `ces_b13`** (corda); l'edit a 0.916 **resta**,
+  ma è un **cambio di vintage** verso la QoI riparata (`ces_b14` OLS, 0.9158), non la correzione
+  di un errore.
+
 ---
 
 ## 6. Decisione architetturale: sequenziare il mercato del lavoro (ESEGUITA)
@@ -604,7 +618,8 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     **Il wage-led è l'eccezione, non la regola**, e metà dello spazio empirico non è
     viable. **`delta` domina tutto** (`ST`≈1.00 sulla viability): a δ∈[0.075,0.09]
     **0/843 punti sopravvivono** *(⚠️ QoI-corda del brief 13; la QoI OLS riparata del
-    brief 14 misura `ST(delta|viable)`=0.916 e il taglio δ∈[0.075,0.090] conta 832 punti
+    brief 14 misura `ST(delta|viable)`=0.916 (`ces_b14` OLS; il ≈1.00 di qui è **1.0018**,
+    `ces_b13` corda — entrambe corrette per il proprio referente) e il taglio δ∈[0.075,0.090] conta 832 punti
     — vedi la voce brief 14 e §9)*, e δ=0.05 siede appena dentro il bordo — il brief 11
     aveva ragione a non ricalibrare, ma per la ragione sbagliata. **`sigma` è irrilevante
     nella banda empirica** (`ST`=0.024): **la frontiera σ\* del brief 07 non sopravvive
@@ -740,8 +755,9 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     registrare il `byte_equal` ritirato** perché il cambiamento resti visibile.
   - **Task E — `delta` elevato da sensitivity a LIMITE STRUTTURALE.** Registrato in §9: al δ
     implicato dai dati il modello **non esiste** (0 punti viable su **832** in
-    δ∈[0.075,0.090], `ST(delta|viable)`=**0.916** — la QoI-corda del brief 13 leggeva
-    ≈1.00/843; `ces_b14_sobol_indices.csv`, `ces_b16_turning_points.csv`); è la firma di
+    δ∈[0.075,0.090], `ST(delta|viable)`=**0.916** (`ces_b14` OLS) — la QoI-corda del brief 13 leggeva
+    **1.0018**/843 (`ces_b13`; due vintage, entrambe corrette per il proprio referente);
+    `ces_b14_sobol_indices.csv`, `ces_b16_turning_points.csv`); è la firma di
     `g = 0` letta attraverso `I/K = δ + g`.
   - **527 test verdi** (512 + 15 nuovi, che pinnano **la ragione** di ogni costante dichiarata,
     non il suo valore). Driver `scripts/run_brief14.py` (fasi `bridge`/`morris`/`sobol`/
@@ -797,7 +813,10 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   Due reporter `Expected_Utilization`/`Util_Effect` **fuori da `_PANEL_METRICS`** (come
   `Capitalist_Consumption`). **Perché priorità 1:** `ces_b14_sobol_indices.csv` mette `S1(β)=0.64` della
   varianza del segno di dY/dρ su β, senza referente empirico e agganciato a questo segnale arbitrario —
-  vulnerabilità **misurata** dell'headline. **Ipotesi pre-registrata (§4, scritta nel driver PRIMA dei
+  vulnerabilità **misurata** dell'headline. **La premessa NON dipende dalla riparazione della QoI:** β è
+  **primo per S1 su `slope|viable` in ENTRAMBE le vintage** — **0.370** (corda, `ces_b13`) e **0.641** (OLS,
+  `ces_b14`) — quindi «il parametro che porta il segno non è ancorato» regge su entrambi gli stimatori, e cade
+  l'obiezione «avete scelto la QoI che vi conviene». **Ipotesi pre-registrata (§4, scritta nel driver PRIMA dei
   run):** lo smoothing riduce la varianza di `util_effect`, `λ_u<1` come β efficace più basso ⇒ ρ\* scende
   (0.37–0.40), la quota «a sinistra» cala, i wage-led si diradano. **Esito Fase A (scenario headline
   c0=1.0/σ=0.5/η=0.10/rr=0; 6 β × 5 λ_u × 4 nodi ρ × 20 seed): IPOTESI FALSIFICATA.** (a) **Meccanismo
@@ -830,6 +849,15 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   **Debito notebook:** il consolidamento del notebook arriva a b14; il brief 17 ne **apre uno nuovo** (le
   sezioni λ_u / margine — `ces_b17_*` — non sono nel notebook). **Debito byte-check:** il pin a 8 ULP è
   troppo stretto per l'ambiente attuale — registrato in §9, non risolto qui.
+  **Task 0 (correzioni documentali, `7e404f8`) — riclassificazione (brief 17, post-revisione).** Dei sei
+  item «corretti», **quattro erano davvero stale** (conteggio test → 527; #1 «svolta ≥0.420»; #2 «16 vs 17
+  parametri»; #6 mediana ρ\* 0.414 vs 0.323) e **due erano citazioni CORRETTE di `ces_b13`** (chord vintage)
+  **mal diagnosticate come stale** dal triage: **`ST≈1.00`** (= **1.0018** su `ces_b13`; l'edit a **0.916**
+  sopravvive come **cambio di vintage** verso la QoI riparata `ces_b14`, non come refuso) e **`0/843`**
+  (binning `ces_b13`; **revertito** in `667003b` perché toccava il blocco chord-vintage coerente del paper
+  §9 — tabella + figura `ces_b13` + prosa — e poggiava su aritmetica falsa). L'oggetto del commit `7e404f8`
+  («six stale SA figures») è quindi impreciso su due dei sei; **non riscritto** (storia). Vedi il
+  raffinamento §5 «ogni numero ha il suo artifact».
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
@@ -983,8 +1011,9 @@ negoziabili.
 - **⚠️ Limite strutturale del blocco capitale — `delta` (elevato dal brief 14, task E).**
   Il brief 11 ha misurato il δ implicito BEA per il perimetro del modello (**≈0.090**); il
   brief 13/14 ha misurato che nella banda δ ∈ [0.075, 0.09] sopravvivono **0 punti su 832**
-  (taglio `ces_b16_turning_points.csv`), con `ST(delta|viable)` = **0.916**
-  (`ces_b14_sobol_indices.csv`; la QoI-corda del brief 13 leggeva ≈1.00 su 843). Messi insieme: **al δ che i dati implicano il
+  (taglio `ces_b16_turning_points.csv`), con `ST(delta|viable)` = **0.916** (`ces_b14` OLS) vs
+  **1.0018** (`ces_b13` corda) — due vintage, entrambe corrette per il proprio referente
+  (`ces_b14_sobol_indices.csv`, `ces_b13_sobol_indices.csv`). Messi insieme: **al δ che i dati implicano il
   modello non esiste.** Non è robustezza, è la firma di `g = 0` letta dalla chiusura
   `I/K = δ + g` (brief 11): senza crescita l'investimento di steady state copre solo il
   deprezzamento, quindi δ empirico erode il capitale a ogni periodo. δ=0.05 non è dove i
