@@ -806,20 +806,30 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   steady state, e lisciare un segnale autocorrelato non ne riduce la varianza. (b) **ρ\*, slope OLS,
   wage-led λ_u-invarianti** entro le bande inter-seed su [0.25,1.0] (spread di ρ\* ≤ semi-ampiezza CI;
   escluso β=0.05 che siede sull'ancora, max **0.72 bande**); ρ\* **sale con β** (0.36→0.53), wage-led solo
-  **4/30** celle a β=1.0. (c) **L'unico λ_u che conta è 0** (acceleratore spento del tutto): ρ\*→0.358
-  β-indipendente, slope→+130 (profit-led), nessun wage-led ⇒ è **β** (la forza dell'acceleratore), non il
-  lisciamento del segnale, a collocare ρ\*. **H1 esce più forte:** il claim primario sopravvive alla
-  respecifica del canale che porta il 64% della varianza del segno. **Gate (§5):** la regola congelata
-  (`ces_b17_gate.json`) è OPEN, ma la decomposizione post-hoc mostra i 6 trigger come **4 degeneri (λ_u=0)
-  + 2 rumore near-anchor (β=0.05) + 0 gradiente di lisciamento**; **chiuso sulla sostanza** (§5: se inerte
-  entro le bande, chiudi; non eseguire la Fase B per completezza). β **resta senza referente empirico**
-  (reso meno load-bearing, non ancorato). **551 test verdi** (527 invariati + 24 nuovi di §7). Driver
+  **4/30** celle a β=1.0. **Conclusione a due tempi:** *(a — segnale)* H1 è **robusto alla specifica del
+  SEGNALE** (λ_u): ρ\*/slope/wage-led invarianti su [0.25,1.0], meccanismo falsificato — rafforzamento reale.
+  *(b — forza)* H1 è **load-bearing sulla FORZA** (β): il margine all'ancora (ρ ancorato **fuori** dalla CI
+  bootstrap di ρ\*, `ces_b17_margin.csv`) è **risolto solo per β≥0.5**, e il default 0.5 sta sul bordo;
+  spegnere l'acceleratore in **due modi indipendenti** (λ_u=0 *o* β=0.05) dà lo stesso esito — il margine
+  **SVANISCE** (l'ancora entra nella CI), **non si inverte**. Quindi **λ_u=0 non è un controllo degenere:
+  è metà del risultato**. β **resta senza referente** (meno load-bearing sul segnale, non ancorato nel livello).
+  **Due limiti di scope dichiarati:** (i) il 64% (S1 su `slope|viable`) è **marginalizzato** su 11 parametri,
+  la Fase A è **condizionale** su un punto (σ=0.5/η=0.10/c0=1.0/rr=0) — **NON** «H1 sopravvive al canale che
+  porta il 64%» (sarebbe la confusione condizionale/marginale dei brief 13-14); la **Fase B non è stata
+  eseguita**. (ii) la Fase A **non ha testato il regime di collasso c0=2.0**, dove il brief 08 trovò l'unico
+  effetto interessante di λ_e — **lacuna di disegno del brief** (§5 fissa lo scenario headline), future work,
+  non eseguita. **Gate (§5):** la regola congelata (`ces_b17_gate.json`) è OPEN, ma la decomposizione post-hoc
+  mostra i 6 trigger come **4 degeneri (λ_u=0) + 2 rumore near-anchor (β=0.05) + 0 gradiente di lisciamento**;
+  **chiuso sulla sostanza** (§5: se inerte entro le bande, chiudi; non eseguire la Fase B per completezza). **551 test verdi** (527 invariati + 24 nuovi di §7). Driver
   `scripts/run_brief17.py` (fasi `byte-check`/`phaseA`/`report`, ipotesi §4 e soglia del gate **congelate
   nel sorgente prima dei run**, thread BLAS pinnati, ambiente in `ces_b17_environment.json`); CSV
   `results/ces_b17_*.csv` + `ces_b17_gate.json` + figura `ces_b17_rho_star_lambda.png`. Variante B (`u^e`
   da `expected_demand`) registrata come scartata in `parameter_notes.md` perché non annida. **Fuori scope:**
   smoothing di `profit_last_period` (registrato come punto **10-ter**, non fatto); regole di apprendimento
   più ricche (RLS, switching); **Fase B** (design b14 marginalizzato) **non eseguita — gate chiuso**.
+  **Debito notebook:** il consolidamento del notebook arriva a b14; il brief 17 ne **apre uno nuovo** (le
+  sezioni λ_u / margine — `ces_b17_*` — non sono nel notebook). **Debito byte-check:** il pin a 8 ULP è
+  troppo stretto per l'ambiente attuale — registrato in §9, non risolto qui.
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
@@ -957,6 +967,19 @@ negoziabili.
   > catastrofica le rende relativamente instabili da input stabili (`slope_raw`: 3.410 ULP
   > da input a 4 ULP). Quelle sono controllate dal **segno**, non da una tolleranza
   > (`BYTE_CHECK_SCOPE`). Driver aggiornati: b07, b08, b09, b10, b12.
+  >
+  > **⚠️ DEBITO DICHIARATO (brief 17) — il pin a 8 ULP è troppo stretto per l'ambiente attuale.**
+  > Il byte-check di annidamento del brief 17 (λ_u=1 vs i quattro panel committati) dà `ok=False`
+  > su b05/b07/b09 per **solo drift d'ambiente a regime intatto**: max abs dev **7,6e-11** su
+  > `Total_Capital`, **immutato dal brief 17** (git-stash: brief-17-default ≡ pre-brief-17, dev=0.0),
+  > e b10 è PASS pulito (0 ULP). Il pin `BYTE_CHECK_ULP = 8` fu tarato dal brief 14 su una busta di
+  > **2,1 ULP**; le celle di collasso c0=2.0 in questo ambiente arrivano a **~1342 ULP relativi** a
+  > regime intatto — oltre il pin, ma cinque-sei ordini sotto un cambiamento reale (~1e13 ULP). **Se il
+  > pin resta com'è, ogni brief futuro mostrerà `ok=False`, e un detector che fallisce sempre smette di
+  > essere letto.** Da risolvere in un brief dedicato: **o** ri-derivare il pin sulla busta misurata,
+  > **o** riformulare il criterio come **regime-first** con la **deviazione ASSOLUTA riportata accanto**
+  > (il limbo di regime già c'è e passa; è il limbo ULP a essere mal tarato). **Registrato, non risolto
+  > qui.** Referto: `results/ces_b17_byte_check.csv`.
 - **⚠️ Limite strutturale del blocco capitale — `delta` (elevato dal brief 14, task E).**
   Il brief 11 ha misurato il δ implicito BEA per il perimetro del modello (**≈0.090**); il
   brief 13/14 ha misurato che nella banda δ ∈ [0.075, 0.09] sopravvivono **0 punti su 832**

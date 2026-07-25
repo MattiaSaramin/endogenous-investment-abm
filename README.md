@@ -827,7 +827,7 @@ midpoints - so they are consistent in message (the marginalised frontier sits at
 
 ---
 
-### 11. Respecifying the accelerator's signal does not move the headline (brief 17)
+### 11. The headline is robust to the accelerator's signal, load-bearing on its strength (brief 17)
 
 The global SA put 64 % of the sign variance on `beta` (`S1(beta) = 0.64` on `slope|viable`,
 `ces_b14_sobol_indices.csv`) - and `beta` is both unanchored and attached to an arbitrary
@@ -845,30 +845,44 @@ calibrate `beta`.
 of `u^e`, hence the variance of `util_effect`, so `lambda_u < 1` acts like a lower effective
 `beta` - `rho*` should fall, the anchored-left margin drop, wage-led points thin.
 
-**Result (Phase A, headline `c0 = 1.0`, `sigma = 0.5`, `eta = 0.10`; 6 `beta` x 5 `lambda_u`
-x 4 `rho` nodes x 20 seeds): the hypothesis is FALSIFIED.**
+**Result (Phase A, headline `c0 = 1.0`, `sigma = 0.5`, `eta = 0.10`, `rr = 0`; 6 `beta` x 5
+`lambda_u` x 4 `rho` nodes x 20 seeds; `ces_b17_*`): the hypothesis is FALSIFIED, and the
+picture is two-part.**
 
-* *The mechanism fails at the root.* The within-tail SD of `util_effect` does **not** fall with
-  `lambda_u` - it is flat across `[0.25, 1.0]` (at `beta = 1.0`: 0.026 / 0.022 / 0.025 / 0.024)
-  and only zero at `lambda_u = 0` (frozen). A genuine EWMA reduction (`lambda = 0.25` gives
-  ~0.38x) would be obvious; there is none, because `u` is **persistent** in steady state, and
-  smoothing an autocorrelated signal does not reduce its variance.
-* *`rho*`, the OLS slope and the wage-led sign are `lambda_u`-invariant* over `[0.25, 1.0]`: the
-  `rho*` spread across `lambda_u` is at or below the inter-seed CI half-width for every `beta`
-  (excluding `beta = 0.05`, whose `rho*` sits on the anchor - resolution noise; the systematic
-  maximum is 0.72 bands). `rho*` rises with `beta` (0.36 -> 0.53); wage-led appears in only 4 of
-  30 cells, all at `beta = 1.0`.
-* *The only `lambda_u` that matters is 0* (the accelerator switched off entirely): `rho*` -> 0.358
-  independent of `beta`, slope -> +130 (profit-led), no wage-led - confirming that it is `beta`,
-  not the smoothing of the signal, that places `rho*`.
+*(a) The headline is robust to the accelerator's SIGNAL (`lambda_u`).* The mechanism fails at the
+root: the within-tail SD of `util_effect` does **not** fall with `lambda_u` - it is flat across
+`[0.25, 1.0]` (at `beta = 1.0`: 0.026 / 0.022 / 0.025 / 0.024), only zero at `lambda_u = 0`
+(frozen). A genuine EWMA reduction (`lambda = 0.25` gives ~0.38x) would be obvious; there is none,
+because `u` is **persistent** in steady state and smoothing an autocorrelated signal does not
+reduce its variance. Consequently `rho*`, the OLS slope and the wage-led sign are
+`lambda_u`-invariant over `[0.25, 1.0]`: the `rho*` spread across `lambda_u` is at or below the
+inter-seed CI half-width for every `beta` (excluding `beta = 0.05`, whose `rho*` sits on the
+anchor - resolution noise; the systematic maximum is 0.72 bands). This is a real strengthening -
+the sign result does not depend on the arbitrary, unfiltered signal `beta` was attached to.
 
-The primary claim therefore survives the respecification of the channel that carries 64 % of the
-sign variance: **the headline comes out stronger, not weaker.** The frozen gate
-(`ces_b17_gate.json`) reads OPEN, but its six triggers decompose into four degenerate
-`lambda_u = 0` cells and two `beta = 0.05` near-anchor-noise cells - no smoothing gradient - so the
-brief closes on the inertness, without running the marginalised Phase B "for completeness". `beta`
-**remains without an empirical referent**: this brief makes it less load-bearing (its signal no
-longer depends on an arbitrary filter), it does not anchor it.
+*(b) The headline is load-bearing on the accelerator's STRENGTH (`beta`).* `rho*` rises with `beta`
+(0.36 -> 0.53), and the margin at the anchored `rho <= 0.363` - is the anchor *outside* the
+bootstrap CI of `rho*`? - is **resolved only for `beta >= 0.5`** (`ces_b17_margin.csv`). The
+default `beta = 0.5` is the smallest resolved value, on that edge. Switch the accelerator off in
+either of two independent ways - `lambda_u = 0` (`u^e` frozen at target) or `beta = 0.05` (a weak
+accelerator) - and the outcome is the same: the margin **vanishes** (the anchor enters the CI), it
+does not invert. So `lambda_u = 0` is not a mere degenerate control; it is half the result. `beta`
+**remains without an empirical referent** - this brief makes it less load-bearing on the *signal*,
+it does not anchor its *level*.
+
+**Two scope limits, declared.** (i) The 64 % (`S1` on `slope|viable`) is **marginalised** over 11
+parameters, whereas Phase A is **conditional** on one point (`sigma = 0.5`, `eta = 0.10`,
+`c0 = 1.0`, `rr = 0`). This is therefore *not* a claim that the headline survives "the channel
+carrying 64 % of the variance" - that would repeat the conditional/marginal confusion of briefs
+13-14. Phase B, which would have made the claim marginal, was **not run**. (ii) Phase A did not
+test the `c0 = 2.0` collapse regime, where brief 08 found the only interesting `lambda_e` effect;
+that is a **design gap of the brief** (its section 5 fixed the headline scenario), declared future
+work, not run here.
+
+**Gate.** The frozen gate (`ces_b17_gate.json`) reads OPEN, but its six triggers decompose into
+four `lambda_u = 0` cells and two `beta = 0.05` near-anchor-noise cells - no smoothing gradient
+over `[0.25, 1.0]` - so the brief closes on the inertness of the *signal*, without running Phase B
+"for completeness".
 
 ---
 

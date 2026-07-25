@@ -261,6 +261,10 @@ def build_deliverables(runs):
     rho_star = pd.DataFrame(rs_rows).sort_values(["beta", "lambda_u"], ignore_index=True)
     rho_star.to_csv(os.path.join(RESULTS, "ces_b17_rho_star.csv"), index=False)
 
+    # --- the margin at the anchored rho (the two-part conclusion, brief 17 correction) ---
+    margin = _margin_table(rho_star)
+    margin.to_csv(os.path.join(RESULTS, "ces_b17_margin.csv"), index=False)
+
     # --- slopes CSV (b14 OLS) ------------------------------------------------------------
     slopes = qoi[["beta", "lambda_u", "point", "slope", "slope_seed_sd", "slope_raw",
                   "viable", "wage_led"]].sort_values(["beta", "lambda_u"], ignore_index=True)
@@ -328,6 +332,35 @@ def apply_gate(rho_star):
     decision = "OPEN Phase B" if triggers else "CLOSE (lambda_u inert within inter-seed bands)"
     return {"rule": GATE_RULE, "anchored_rho_max": ANCHORED_RHO_MAX,
             "decision": decision, "n_triggers": len(triggers), "triggers": triggers}
+
+
+def _margin_table(rho_star):
+    """Is the anchored rho resolved to one side of rho*?  (brief 17, two-part conclusion.)
+
+    Deterministic, reads the rho_star frame only - no simulation.  A margin is RESOLVED when
+    the anchor ``ANCHORED_RHO_MAX`` lies OUTSIDE the bootstrap CI of rho*; then rho* > anchor
+    puts the anchor on the falling branch (retention depresses output there - H1's direction).
+    When the anchor is INSIDE the CI the margin is UNRESOLVED: it does not invert, it vanishes.
+    This is why lambda_u = 0 is not a mere degenerate control - it is one of two independent
+    ways (with beta = 0.05) to switch the accelerator off, and both dissolve the margin.
+    """
+    rows = []
+    for _, x in rho_star.iterrows():
+        resolved = bool(x["resolved"]) and np.isfinite(x["ci_lo"])
+        in_ci = bool(resolved and (x["ci_lo"] <= ANCHORED_RHO_MAX <= x["ci_hi"]))
+        margin_resolved = bool(resolved and not in_ci)
+        if margin_resolved:
+            side = "falling (rho*>anchor, negative margin)" if x["rho_star"] > ANCHORED_RHO_MAX \
+                   else "rising (rho*<anchor, positive margin)"
+        elif resolved:
+            side = "unresolved (anchor inside rho* CI)"
+        else:
+            side = "unresolved (rho* not resolved)"
+        rows.append({"beta": x["beta"], "lambda_u": x["lambda_u"], "rho_star": x["rho_star"],
+                     "ci_lo": x["ci_lo"], "ci_hi": x["ci_hi"], "anchor": ANCHORED_RHO_MAX,
+                     "anchor_in_ci": in_ci, "margin_resolved": margin_resolved,
+                     "margin_side": side})
+    return pd.DataFrame(rows).sort_values(["beta", "lambda_u"], ignore_index=True)
 
 
 def _gate_decomposition(rho_star, triggers):
@@ -421,6 +454,11 @@ def _report(util, rho_star, slopes, gate):
     piv2 = rho_star.assign(rs=np.where(rho_star["resolved"], rho_star["rho_star"], np.nan)) \
                    .pivot(index="beta", columns="lambda_u", values="rs")
     print(piv2.to_string(float_format=lambda x: f"{x:.3f}"))
+    print("\nmargin at the anchored rho (resolved = anchor OUTSIDE the rho* bootstrap CI):")
+    marg = _margin_table(rho_star)
+    piv3 = marg.assign(m=np.where(marg["margin_resolved"], "resolved", "VANISHES")) \
+               .pivot(index="beta", columns="lambda_u", values="m")
+    print(piv3.to_string())
     print(f"\nGATE: {gate['decision']}  ({gate['n_triggers']} triggers)")
     for tr in gate["triggers"]:
         print(f"   beta={tr['beta']} lambda_u={tr['lambda_u']}: rho*={tr['rho_star']:.3f} "

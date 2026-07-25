@@ -580,21 +580,30 @@ limite un risultato già misurato che era stato archiviato come sensitivity.
     semi-ampiezza CI inter-seed** per ogni β (escludendo β=0.05, che siede sull'ancora → rumore di
     risoluzione: max **0.72 bande**). ρ\* **sale con β** (0.36→0.53), confermando §0. Wage-led solo
     **4/30** celle, tutte a β=1.0.
-  - **L'unico λ_u che conta è 0** (acceleratore spento): ρ\* → 0.358 β-indipendente, slope → +130
-    (profit-led), nessun wage-led — conferma che è **β** (la forza dell'acceleratore), non il
-    lisciamento del segnale, a collocare ρ\*.
+  - **Il margine all'ancora è retto dalla FORZA dell'acceleratore (β):** il margine (ρ ancorato
+    **fuori** dalla CI bootstrap di ρ\*, `ces_b17_margin.csv`) è **risolto solo per β≥0.5**, e il
+    default 0.5 sta sul bordo. Spegnere l'acceleratore in **due modi indipendenti** — λ_u=0 (u^e
+    congelato a target: ρ\*→0.358 β-indipendente, slope→+130, nessun wage-led) *o* β=0.05 — dà lo
+    stesso esito: il margine **SVANISCE** (l'ancora entra nella CI), **non si inverte**. Quindi
+    **λ_u=0 non è un controllo degenere: è metà del risultato**.
   - **Gate:** la regola congelata (`ces_b17_gate.json`) è OPEN, ma la decomposizione post-hoc mostra
     i 6 trigger come **4 degeneri (λ_u=0) + 2 rumore near-anchor (β=0.05) + 0 gradiente di
     lisciamento**. Chiuso sulla sostanza (§5: se inerte entro le bande, chiudi; non eseguire la
     Fase B per completezza).
-- **Verdetto:** **sweep, non stima.** `λ_u=1` è il default per l'identità col modello precedente.
-  **H1 esce più forte:** il claim primario (posizione di ρ\*, margine dell'88.7%) è **invariante
-  alla respecifica del canale** che porta il 64% della varianza del segno, per ogni λ_u∈[0.25,1.0].
-  **β resta senza referente empirico:** questo brief lo rende **meno load-bearing** (il suo segnale
-  non dipende dal filtro), **non lo ancora** — l'ancoraggio di β (accelerator/investment-Q) resta un
-  brief bibliografico separato. **Fuori scope:** smoothing di `profit_last_period` (registrato come
-  punto **10-ter**, non fatto); regole di apprendimento più ricche (RLS, switching) sul canale
-  investimento. Verifica λ_u-invarianza contro `ces_b17_rho_star.csv` / `ces_b17_util_effect.csv`.
+- **Verdetto (a due tempi):** **sweep, non stima.** `λ_u=1` è il default per l'identità col modello
+  precedente. *(a — segnale)* H1 è **robusto alla specifica del SEGNALE** dell'acceleratore: ρ\*, slope
+  e wage-led invarianti entro le bande su [0.25,1.0], meccanismo §4 falsificato alla radice (la sd di
+  `util_effect` non cala — `u` persistente). Rafforzamento reale. *(b — forza)* H1 è **load-bearing sulla
+  FORZA** (β): margine risolto solo per β≥0.5, default sul bordo; **β resta senza referente empirico** —
+  questo brief lo rende meno load-bearing **sul segnale**, non ne ancora il **livello** (accelerator/
+  investment-Q = brief bibliografico separato). **Due limiti di scope dichiarati:** (i) il 64% (S1 su
+  `slope|viable`) è **marginalizzato** su 11 parametri, la Fase A è **condizionale** su un punto — **NON**
+  «H1 sopravvive al canale che porta il 64%» (confusione condizionale/marginale dei brief 13-14); la
+  **Fase B non è stata eseguita**. (ii) la Fase A **non ha testato il regime c0=2.0**, dove il brief 08
+  trovò l'unico effetto interessante di λ_e — lacuna di disegno del brief (§5), future work, non eseguita.
+  **Fuori scope:** smoothing di `profit_last_period` (punto **10-ter**, non fatto); regole di apprendimento
+  più ricche (RLS, switching). Verifica contro `ces_b17_margin.csv` / `ces_b17_rho_star.csv` /
+  `ces_b17_util_effect.csv`.
 
 ---
 
