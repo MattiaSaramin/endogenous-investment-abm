@@ -1,0 +1,47 @@
+{
+  "python": "3.14.3",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.4.3",
+  "pandas": "3.0.1",
+  "mesa": "3.5.1",
+  "blas_threads": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "config": {
+    "scenario": {
+      "c0": 1.0,
+      "sigma": 0.5,
+      "eta": 0.1,
+      "benefit_replacement_rate": 0.0
+    },
+    "betas": [
+      0.05,
+      0.15,
+      0.3,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "lambda_us": [
+      1.0,
+      0.75,
+      0.5,
+      0.25,
+      0.0
+    ],
+    "rho_nodes": [
+      0.35,
+      0.45,
+      0.55,
+      0.65
+    ],
+    "seeds": 20,
+    "steps": 2000,
+    "anchored_rho_max": 0.3632216782659768,
+    "gate_rule": "open Phase B iff, for some beta: |rho*(lu) - rho*(lu=1)| > CI_halfwidth(rho*|lu=1) for a resolved lambda_u<1 cell, OR sign(rho*-anchored) flips between lu and lu=1",
+    "boot_B": 1000,
+    "boot_seed": 20250725
+  }
+}

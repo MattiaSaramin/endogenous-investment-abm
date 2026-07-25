@@ -786,6 +786,41 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   difetti noti **prima** di essere creduti. È la stessa lezione di §9: *un check che
   riporta successo senza ispezionare nulla è peggio di nessun check.*
 
+- **Brief 17 — aspettativa sull'investimento (punto 10-bis): l'acceleratore su `u^e`.** L'acceleratore
+  d'investimento passa dal segnale realizzato `utilization_last_period` a un'**aspettativa di utilizzo**
+  `u^e`, aggiornata con lo schema a parziale aggiustamento del brief 08, gain `λ_u` (codice:
+  `utilization_expectation_gain`, default 1.0). `λ_u=1` annida il pre-brief-17 **bit-for-bit** (branch
+  esplicito di `adaptive_expectation`; verificato via **git-stash** su 6 celle headline+collasso: dev=0.0,
+  e byte-check slice **detector-first** — un λ_u fittizio FALLISCE prima di credere al PASS — **regime-esatto
+  sui 4 panel**; il residuo numerico oltre 8 ULP su b05/b07/b09 è **drift d'ambiente pre-esistente**
+  (max abs 7,6e-11 su `Total_Capital`, celle di collasso c0=2.0), non del brief 17, e b10 è PASS pulito).
+  Due reporter `Expected_Utilization`/`Util_Effect` **fuori da `_PANEL_METRICS`** (come
+  `Capitalist_Consumption`). **Perché priorità 1:** `ces_b14_sobol_indices.csv` mette `S1(β)=0.64` della
+  varianza del segno di dY/dρ su β, senza referente empirico e agganciato a questo segnale arbitrario —
+  vulnerabilità **misurata** dell'headline. **Ipotesi pre-registrata (§4, scritta nel driver PRIMA dei
+  run):** lo smoothing riduce la varianza di `util_effect`, `λ_u<1` come β efficace più basso ⇒ ρ\* scende
+  (0.37–0.40), la quota «a sinistra» cala, i wage-led si diradano. **Esito Fase A (scenario headline
+  c0=1.0/σ=0.5/η=0.10/rr=0; 6 β × 5 λ_u × 4 nodi ρ × 20 seed): IPOTESI FALSIFICATA.** (a) **Meccanismo
+  falsificato alla radice:** la **sd temporale** di `util_effect` **non cala** con λ_u — è piatta su
+  [0.25,1.0] (β=1.0: 0.026/0.022/0.025/0.024), = 0 solo a λ_u=0 (congelato); `u` è **persistente** in
+  steady state, e lisciare un segnale autocorrelato non ne riduce la varianza. (b) **ρ\*, slope OLS,
+  wage-led λ_u-invarianti** entro le bande inter-seed su [0.25,1.0] (spread di ρ\* ≤ semi-ampiezza CI;
+  escluso β=0.05 che siede sull'ancora, max **0.72 bande**); ρ\* **sale con β** (0.36→0.53), wage-led solo
+  **4/30** celle a β=1.0. (c) **L'unico λ_u che conta è 0** (acceleratore spento del tutto): ρ\*→0.358
+  β-indipendente, slope→+130 (profit-led), nessun wage-led ⇒ è **β** (la forza dell'acceleratore), non il
+  lisciamento del segnale, a collocare ρ\*. **H1 esce più forte:** il claim primario sopravvive alla
+  respecifica del canale che porta il 64% della varianza del segno. **Gate (§5):** la regola congelata
+  (`ces_b17_gate.json`) è OPEN, ma la decomposizione post-hoc mostra i 6 trigger come **4 degeneri (λ_u=0)
+  + 2 rumore near-anchor (β=0.05) + 0 gradiente di lisciamento**; **chiuso sulla sostanza** (§5: se inerte
+  entro le bande, chiudi; non eseguire la Fase B per completezza). β **resta senza referente empirico**
+  (reso meno load-bearing, non ancorato). **551 test verdi** (527 invariati + 24 nuovi di §7). Driver
+  `scripts/run_brief17.py` (fasi `byte-check`/`phaseA`/`report`, ipotesi §4 e soglia del gate **congelate
+  nel sorgente prima dei run**, thread BLAS pinnati, ambiente in `ces_b17_environment.json`); CSV
+  `results/ces_b17_*.csv` + `ces_b17_gate.json` + figura `ces_b17_rho_star_lambda.png`. Variante B (`u^e`
+  da `expected_demand`) registrata come scartata in `parameter_notes.md` perché non annida. **Fuori scope:**
+  smoothing di `profit_last_period` (registrato come punto **10-ter**, non fatto); regole di apprendimento
+  più ricche (RLS, switching); **Fase B** (design b14 marginalizzato) **non eseguita — gate chiuso**.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
@@ -793,9 +828,10 @@ decisione presa, lato imprese dichiarato quasi-rappresentativo con evidenza misu
 feature non implementata, riallocazione = future work (punto 12)**; **9) prezzi endogeni
 (parte salario FATTA col brief 07; resta il PREZZO — vedi sotto)**; **10) aspettative
 adattive — parte DOMANDA FATTA col brief 08** (σ\* λ_e-invariante; ipotesi di
-stabilizzazione c0=2.0 non confermata); **resta l'aspettativa sull'INVESTIMENTO**
-(oggi l'acceleratore usa `utilization_last_period`, un segnale realizzato, non
-un'aspettativa — punto 10-bis);
+stabilizzazione c0=2.0 non confermata); **10-bis) aspettativa sull'INVESTIMENTO — FATTA
+col brief 17** (acceleratore su `u^e`; ipotesi §4 **falsificata**: λ_u inerte entro le bande su
+[0.25,1.0], meccanismo falsificato — `u` persistente; **H1 più forte**; solo λ_u=0 muove ρ\*).
+**Resta il punto 10-ter** (smoothing di `profit_last_period`, dichiarato non fatto);
 12) entrata/uscita/fallimento imprese; 13) cambiamento tecnologico (crescita di
 A); 14) banche e credito (estende la matrice SFC: depositi, prestiti);
 **15) politica monetaria e fiscale — il sussidio a bilancio in pareggio è REINNESTATO
@@ -970,7 +1006,9 @@ negoziabili.
   (`ces_capacity`, `ces_labour_*`, `ces_mpl`, …) e `adaptive_expectation` (brief 08,
   branch esplicito λ_e=1). Nessuna modifica funzionale al brief 09: solo docstring
   aggiornati dove i disoccupati "earn nothing" (ora salvo il sussidio brief 09). Nessuna modifica al brief 10: la `A` d'impresa era già un attributo
-  di `Firm`, il ventaglio la popola dal modello
+  di `Firm`, il ventaglio la popola dal modello; **brief 17:** stato `expected_utilization`
+  (u^e) aggiornato via `adaptive_expectation` in `step_production` e **letto dall'acceleratore
+  in `plan_investment`** al posto di `utilization_last_period` (che resta come diagnostica)
 - `src/model.py` — MacroModel: mercato del lavoro, sequenza del periodo (step 0 =
   wage curve, brief 07; update aspettativa adattiva dentro lo step di produzione,
   brief 08; **step 8 = governo, brief 09**), settlement, metriche (incl.
@@ -983,7 +1021,10 @@ negoziabili.
   esplicito spread=0), parametro `productivity_spread` (default 0.0, validato ∈[0,1)),
   costanti `DEAD_FIRM_K`/`TOPK_N` e reporter `Dead_Firms`/`TopK_Share` (brief 10);
   assegnazione della proprietà **ciclando sulle imprese**, in un loop separato che non
-  tocca l'RNG, e validazione `pct_capitalists` ⇒ almeno 1 capitalista (brief 12)
+  tocca l'RNG, e validazione `pct_capitalists` ⇒ almeno 1 capitalista (brief 12);
+  **brief 17:** parametro `utilization_expectation_gain` (λ_u, default 1.0, validato ∈[0,1]),
+  init `expected_utilization = target_utilization`, reporter `Expected_Utilization`/`Util_Effect`
+  (media sulle imprese) tenuti **fuori da `_PANEL_METRICS`** come `Capitalist_Consumption`
 - `src/experiment.py` — runner Monte-Carlo, sweep ρ, griglia (σ, ρ) e sign
   frontier (brief 04), stack di robustezza brief 05 (`run_grid_panel`,
   `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …); `eta`,
@@ -1053,9 +1094,18 @@ negoziabili.
   leggendo i CSV committati, **senza simulazione**. La matrice di design viaggia **con** le
   QoI (`ces_b13_*_design.csv`), così le analisi a valle non dipendono dal campionatore che
   si riproduce
+- `scripts/run_brief17.py` — **brief 17**, driver dell'aspettativa sull'investimento. Fasi
+  `byte-check` (annidamento λ_u=1 su slice, **detector-first**, criterio brief-14) / `phaseA`
+  (griglia β×λ_u allo scenario headline, 4 nodi ρ con CRN, 20 seed) / `report` (rigenera i
+  deliverable dai run committati, **senza simulazione**). **Ipotesi §4 e soglia del gate §5
+  congelate nel sorgente PRIMA dei run** (`HYPOTHESIS`, `GATE_RULE`); thread BLAS pinnati,
+  ambiente in `ces_b17_environment.json`. La `sd` raccolta per `Util_Effect` è la **within-tail**
+  (temporale), perché la media è ~λ_u-invariante per linearità
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati. `ces_b13_*.csv` + `ces_b13_environment.json`
+- `results/` — output misurati committati. `ces_b17_*.csv` + `ces_b17_gate.json` +
+  `ces_b17_environment.json` + figura `ces_b17_rho_star_lambda.png` (brief 17) → rigenerati da
+  `run_brief17.py` (`--phase report` non simula). `ces_b13_*.csv` + `ces_b13_environment.json`
   e 3 figure (brief 13) → rigenerati da `run_brief13.py` (fasi separabili; `--phase report`
   non simula). `ces_b12_byte_check.csv` e
   `ces_b12_nesting_slice.csv` (brief 12) → rigenerati da `check_brief12_nesting.py`.
@@ -1087,8 +1137,12 @@ negoziabili.
   `num_firms × num_households`, pin direzionale del **bacino** via capitale per lavoratore,
   annidamento `u_min=None` bit-for-bit e validazione, reporter `Capitalist_Consumption`
   fuori da `_PANEL_METRICS`, e la **regressione sulla banda σ→1** che il bug di overflow
-  avrebbe fatto fallire — continuità attraverso σ=1 e guardia inerte sulle σ sweepate).
-  **527 test.** *(Brief 11 non aggiunge test: non tocca `src/`.)*
+  avrebbe fatto fallire — continuità attraverso σ=1 e guardia inerte sulle σ sweepate),
+  aspettativa sull'investimento (brief 17: legge di update di u^e — geometrica/congelata a
+  target/uguaglianza esatta a λ_u=1 — annidamento λ_u=1 bit-for-bit, l'acceleratore legge u^e e
+  non l'utilizzo realizzato, lag di un periodo, floor di `util_effect`, SFC/determinismo
+  parametrizzati su λ_u<1, validazione, neutralità a t=0 per ogni λ_u, e reporter fuori da
+  `_PANEL_METRICS`). **551 test** (527 invariati + 24 nuovi). *(Brief 11 non aggiunge test: non tocca `src/`.)*
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di

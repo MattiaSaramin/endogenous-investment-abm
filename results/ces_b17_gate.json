@@ -1,0 +1,135 @@
+{
+  "rule": "open Phase B iff, for some beta: |rho*(lu) - rho*(lu=1)| > CI_halfwidth(rho*|lu=1) for a resolved lambda_u<1 cell, OR sign(rho*-anchored) flips between lu and lu=1",
+  "anchored_rho_max": 0.3632216782659768,
+  "decision": "OPEN Phase B",
+  "n_triggers": 6,
+  "triggers": [
+    {
+      "beta": 0.05,
+      "lambda_u": 0.75,
+      "rho_star": 0.374704150719493,
+      "rho_star_ref": 0.3583892645617245,
+      "move": 0.016314886157768493,
+      "ci_halfwidth_ref": 0.012100284315133408,
+      "beyond_band": true,
+      "side_flip": true,
+      "side": "right",
+      "side_ref": "left"
+    },
+    {
+      "beta": 0.05,
+      "lambda_u": 0.25,
+      "rho_star": 0.36706402596829085,
+      "rho_star_ref": 0.3583892645617245,
+      "move": 0.008674761406566367,
+      "ci_halfwidth_ref": 0.012100284315133408,
+      "beyond_band": false,
+      "side_flip": true,
+      "side": "right",
+      "side_ref": "left"
+    },
+    {
+      "beta": 0.3,
+      "lambda_u": 0.0,
+      "rho_star": 0.35772138830328354,
+      "rho_star_ref": 0.38913795645405547,
+      "move": 0.03141656815077193,
+      "ci_halfwidth_ref": 0.03012861703460168,
+      "beyond_band": true,
+      "side_flip": true,
+      "side": "left",
+      "side_ref": "right"
+    },
+    {
+      "beta": 0.5,
+      "lambda_u": 0.0,
+      "rho_star": 0.35772138830328354,
+      "rho_star_ref": 0.45196721505226095,
+      "move": 0.09424582674897741,
+      "ci_halfwidth_ref": 0.012799667203314158,
+      "beyond_band": true,
+      "side_flip": true,
+      "side": "left",
+      "side_ref": "right"
+    },
+    {
+      "beta": 0.75,
+      "lambda_u": 0.0,
+      "rho_star": 0.35772138830328354,
+      "rho_star_ref": 0.4966287113711322,
+      "move": 0.13890732306784864,
+      "ci_halfwidth_ref": 0.01595155466154502,
+      "beyond_band": true,
+      "side_flip": true,
+      "side": "left",
+      "side_ref": "right"
+    },
+    {
+      "beta": 1.0,
+      "lambda_u": 0.0,
+      "rho_star": 0.35772138830328354,
+      "rho_star_ref": 0.5337914408412927,
+      "move": 0.17607005253800917,
+      "ci_halfwidth_ref": 0.0190268061384542,
+      "beyond_band": true,
+      "side_flip": true,
+      "side": "left",
+      "side_ref": "right"
+    }
+  ],
+  "decomposition": {
+    "label": "POST-HOC decomposition, NOT the frozen rule; see 'decision' for the frozen output",
+    "trigger_classes": {
+      "degenerate_lambda_u0": 4,
+      "near_anchor_noise": 2,
+      "smoothing_gradient": 0
+    },
+    "trigger_detail": [
+      {
+        "beta": 0.05,
+        "lambda_u": 0.75,
+        "kind": "near_anchor_noise"
+      },
+      {
+        "beta": 0.05,
+        "lambda_u": 0.25,
+        "kind": "near_anchor_noise"
+      },
+      {
+        "beta": 0.3,
+        "lambda_u": 0.0,
+        "kind": "degenerate_lambda_u0"
+      },
+      {
+        "beta": 0.5,
+        "lambda_u": 0.0,
+        "kind": "degenerate_lambda_u0"
+      },
+      {
+        "beta": 0.75,
+        "lambda_u": 0.0,
+        "kind": "degenerate_lambda_u0"
+      },
+      {
+        "beta": 1.0,
+        "lambda_u": 0.0,
+        "kind": "degenerate_lambda_u0"
+      }
+    ],
+    "smoothing_range": [
+      0.25,
+      1.0
+    ],
+    "smoothing_range_max_move_over_band": {
+      "ratio": 1.3483060176829091,
+      "beta": 0.05,
+      "lambda_u": 0.75
+    },
+    "smoothing_range_max_move_over_band_excl_anchor": {
+      "ratio": 0.7232733364647106,
+      "beta": 0.75,
+      "lambda_u": 0.25
+    },
+    "systematic_smoothing_effect": "none - the only >1 band move is the beta=0.05 near-anchor cell; excluding it the max is 0.72 bands"
+  }
+}

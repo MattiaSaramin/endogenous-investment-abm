@@ -137,7 +137,8 @@ household settlement.
    pool, fill vacancies by random matching → employment;
 2. households form consumption demand (income = wage if employed, else 0; plus
    dividends for capitalists);
-3. firms plan investment (profit flow, accelerator on last utilisation);
+3. firms plan investment (profit flow, accelerator on **expected** utilisation `u^e`;
+   `lambda_u = 1` reads last realised utilisation - brief 17);
 4. firms register demand (consumption + investment);
 5. firms produce `Y = min(demand, Y*)`; the goods market rations; utilisation is
    set against **profit-max** capacity;
@@ -823,6 +824,51 @@ indistinguishable from zero (several come out slightly negative). The bridge's m
 *different* parameter sets - the bridge sweeps all fifteen, the Sobol design fixes five at
 midpoints - so they are consistent in message (the marginalised frontier sits at or above
 `sigma ~ 1`) but are not the same estimate and are not presented as one.
+
+---
+
+### 11. Respecifying the accelerator's signal does not move the headline (brief 17)
+
+The global SA put 64 % of the sign variance on `beta` (`S1(beta) = 0.64` on `slope|viable`,
+`ces_b14_sobol_indices.csv`) - and `beta` is both unanchored and attached to an arbitrary
+signal: `utilization_last_period`, realised, one-period-lagged, unfiltered. Brief 17
+respecifies that signal. The accelerator now reads an *expected* utilisation
+`u^e_t = u^e_{t-1} + lambda_u*(u_{t-1} - u^e_{t-1})` - the brief-08 partial-adjustment law
+applied to utilisation - with gain `lambda_u` (`utilization_expectation_gain`, default 1.0).
+`lambda_u = 1` reads last realised utilisation and reproduces the pre-brief-17 model
+bit-for-bit (verified: a git-stash regeneration of six cells is byte-identical; the slice
+byte-check is regime-exact on all four committed panels, its residual above 8 ULP being
+pre-existing environment drift of ~1e-11 on `Total_Capital`, not brief 17). This does **not**
+calibrate `beta`.
+
+**Pre-registered hypothesis** (in the driver before any run): smoothing shrinks the excursions
+of `u^e`, hence the variance of `util_effect`, so `lambda_u < 1` acts like a lower effective
+`beta` - `rho*` should fall, the anchored-left margin drop, wage-led points thin.
+
+**Result (Phase A, headline `c0 = 1.0`, `sigma = 0.5`, `eta = 0.10`; 6 `beta` x 5 `lambda_u`
+x 4 `rho` nodes x 20 seeds): the hypothesis is FALSIFIED.**
+
+* *The mechanism fails at the root.* The within-tail SD of `util_effect` does **not** fall with
+  `lambda_u` - it is flat across `[0.25, 1.0]` (at `beta = 1.0`: 0.026 / 0.022 / 0.025 / 0.024)
+  and only zero at `lambda_u = 0` (frozen). A genuine EWMA reduction (`lambda = 0.25` gives
+  ~0.38x) would be obvious; there is none, because `u` is **persistent** in steady state, and
+  smoothing an autocorrelated signal does not reduce its variance.
+* *`rho*`, the OLS slope and the wage-led sign are `lambda_u`-invariant* over `[0.25, 1.0]`: the
+  `rho*` spread across `lambda_u` is at or below the inter-seed CI half-width for every `beta`
+  (excluding `beta = 0.05`, whose `rho*` sits on the anchor - resolution noise; the systematic
+  maximum is 0.72 bands). `rho*` rises with `beta` (0.36 -> 0.53); wage-led appears in only 4 of
+  30 cells, all at `beta = 1.0`.
+* *The only `lambda_u` that matters is 0* (the accelerator switched off entirely): `rho*` -> 0.358
+  independent of `beta`, slope -> +130 (profit-led), no wage-led - confirming that it is `beta`,
+  not the smoothing of the signal, that places `rho*`.
+
+The primary claim therefore survives the respecification of the channel that carries 64 % of the
+sign variance: **the headline comes out stronger, not weaker.** The frozen gate
+(`ces_b17_gate.json`) reads OPEN, but its six triggers decompose into four degenerate
+`lambda_u = 0` cells and two `beta = 0.05` near-anchor-noise cells - no smoothing gradient - so the
+brief closes on the inertness, without running the marginalised Phase B "for completeness". `beta`
+**remains without an empirical referent**: this brief makes it less load-bearing (its signal no
+longer depends on an arbitrary filter), it does not anchor it.
 
 ---
 

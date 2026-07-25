@@ -1,0 +1,9 @@
+lambda_u,panel,n,ok,regime_equal,n_exceed,n_compared,max_ulp_significant,max_abs_dev,byte_equal
+0.5,ces_b05_stage_a_panel.csv,16,False,False,242,416,5086418402677263.0,13.5001466792948,False
+0.5,ces_b07_stage_a_panel.csv,32,False,False,544,928,8721100477838844.0,279.75020034158035,False
+0.5,ces_b09_stage_a_panel.csv,16,False,False,281,480,6781891203569689.0,71.38174710514397,False
+0.5,ces_b10_panel.csv,42,False,False,403,1302,7347048803867164.0,16.363529472009986,False
+1.0,ces_b05_stage_a_panel.csv,16,False,True,5,416,91.0,2.5863755581667647e-12,False
+1.0,ces_b07_stage_a_panel.csv,32,False,True,7,928,51.0,5.7980287238024175e-12,False
+1.0,ces_b09_stage_a_panel.csv,16,False,True,43,480,1342.0,7.628386811120436e-11,False
+1.0,ces_b10_panel.csv,42,True,True,0,1302,0.0,5.684341886080802e-14,False

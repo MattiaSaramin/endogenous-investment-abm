@@ -44,6 +44,7 @@
 | `initial_capital` | 40.0 | **Scelta di modellazione — NON toccare negli sweep** | seleziona il bacino: equilibri multipli e soglia di viability |
 | `target_utilization` | 0.90 | **Debole — sopra l'empirico** | utilizzo reale ~0.80 |
 | `expectation_gain` (λ_e) | **sweep**, default 1.0 | **Debole — sweep, non stima** | gain delle aspettative adattive sulla domanda (brief 08); nessuna stima puntuale affidabile per un ABM (aspettative adattive, Nerlove 1958; constant-gain learning, Evans & Honkapohja 2001). `λ_e=1` = aspettative statiche annidate bit-for-bit. **Esito misurato: σ\* e regione di collasso λ_e-invarianti entro CI/rumore** |
+| `utilization_expectation_gain` (λ_u) | **sweep**, default 1.0 | **Debole — sweep, non stima** | gain dell'aspettativa adattiva sull'*utilizzo* letta dall'acceleratore d'investimento (brief 17, punto 10-bis); stessa letteratura di λ_e; nessuna stima puntuale. `λ_u=1` = acceleratore su ultimo utilizzo realizzato, annidato bit-for-bit. **Esito misurato (Fase A): λ_u inerte entro le bande su [0.25,1.0]; il meccanismo (sd di `util_effect` cala con λ_u) è FALSIFICATO — `u` è persistente. Solo λ_u=0 (acceleratore spento) muove ρ\*. β resta senza referente** |
 | `benefit_replacement_rate` (rr) | **sweep**, default 0.0 | **Buono — ancorabile (OECD)** | sussidio di disoccupazione = frazione del salario corrente `w_t`, finanziato da flat tax a bilancio in pareggio (brief 09, punto 15). NRR netto OECD ~58% iniziale, 50–80% low earner; gross RR più bassi ~0.2–0.6. Sweep rr∈{0, 0.25, 0.5, 0.75} bracket-a la banda 0.4–0.6. `rr=0` annida il modello senza governo bit-for-bit. **Esito: crowding-in dove demand-constrained; NON stabilizza il collasso c0=2.0** |
 | `max_tax` | 0.6 | **Convenzione dichiarata — non stima** | cap sull'aliquota di bilancio in pareggio; se il sussidio desiderato richiede di più, si scala giù (budget resta in pareggio). Guardrail, non stima. `Tax_Rate` realizzato e `frac_periods_at_cap` sono **esiti misurati** |
 | `pct_capitalists` | 0.10, **ora sweepabile** (range SA 0.05–0.20) | **Scelta di modellazione — dimensione di disuguaglianza (Teglio 2025)** | quota di famiglie che possiede imprese. **Era di fatto bloccata al default da un difetto** (proprietà assegnata ciclando sulle famiglie): sotto 0.10 imprese senza proprietario ⇒ **moneta distrutta**; sopra 0.10 riferimenti obsoleti ⇒ **ricchezza contata due volte**. Corretto dal brief 12 (2026-07-20): ciclo sulle **imprese**, SFC intatta e testata su tutto il range |
@@ -529,6 +530,71 @@ limite un risultato già misurato che era stato archiviato come sensitivity.
   (σ\*, wage-led) è **robusto a λ_e**: brief 08 è un rafforzamento della robustezza,
   non una nuova leva di regime. Verifica λ_e-invarianza contro `ces_b08_sigma_star.csv`
   e la mappa `ces_b08_collapse_map.csv`.
+
+---
+
+## Blocco aspettative sull'investimento — acceleratore su u^e (brief 17, roadmap punto 10-bis)
+
+> Introdotto dal brief 17. L'acceleratore di investimento leggeva `utilization_last_period`
+> (un segnale realizzato, ritardato di un periodo, non filtrato). Ora legge un'**aspettativa di
+> utilizzo** `u^e`, aggiornata con lo stesso schema a parziale aggiustamento del brief 08:
+> `u^e_t = u^e_{t-1} + λ_u·(u_{t-1} − u^e_{t-1})`. `λ_u=1` (default) ⇒ `u^e_t = u_{t-1}` esatto
+> (branch esplicito di `adaptive_expectation`), quindi annida il modello pre-brief-17
+> **bit-for-bit** (verificato: rigenerazione git-stash di 6 celle vs pre-brief-17 dev = 0.0;
+> byte-check slice detector-first, **regime-esatto sui 4 panel**; il residuo numerico è drift
+> d'ambiente **pre-esistente**, non del brief 17). **Perché adesso:** `ces_b14_sobol_indices.csv`
+> mette `S1(beta)=0.64` della varianza del segno di dY/dρ su β, senza referente empirico e
+> agganciato a questo segnale arbitrario. Questo brief respecifica il segnale; **non calibra β**.
+
+### `utilization_expectation_gain` (λ_u) = sweep, default 1.0 — gain dell'aspettativa di utilizzo
+- **Ruolo:** `util_effect = max(0, 1 + β·(u^e − target_utilization))`, con `u^e` aggiornato in
+  `step_production` e letto in `plan_investment`. `λ_u=1` ⇒ acceleratore su ultimo utilizzo
+  realizzato (default, branch esplicito, identità bit-for-bit); `λ_u<1` liscia il segnale;
+  `λ_u=0` congela `u^e` a `target_utilization` ⇒ `util_effect ≡ 1` (acceleratore neutralizzato,
+  **degenere ma informativo**: il controllo «nessun acceleratore»). Costruttore: `0 ≤ λ_u ≤ 1`.
+- **Dial separato, non riuso di λ_e (§2.1):** λ_e è misurato inerte sul canale domanda; un dial
+  condiviso renderebbe un effetto non attribuibile ai due canali. +1 parametro il cui default non
+  cambia nulla, in cambio di identificazione pulita.
+- **Variante B scartata (§2.2):** `u^e = expected_demand / profitmax_capacity`, senza parametro
+  nuovo ed economicamente più coerente (l'impresa investe sulla domanda attesa, non sull'utilizzo
+  realizzato). **Scartata perché non annida:** con `production = min(faced_demand, capacity)`, a
+  λ_e=1 si ha `Ye = faced_demand ≠ production` ogni volta che il razionamento morde — cambierebbe
+  il default e violerebbe l'invariante di annidamento.
+- **Perché sweep e non scelta:** stessa letteratura di λ_e (Nerlove 1958, aspettative adattive;
+  Evans & Honkapohja 2001, constant-gain learning) — dà la *forma*, non un livello, e **nessuna
+  stima puntuale** per un'aspettativa di utilizzo d'impresa in un ABM. Dichiarato.
+- **Nota di design (linearità):** in steady state `u^e → u` per ogni λ_u>0, quindi la **media** di
+  `util_effect` è ~λ_u-invariante (E[u^e]=E[u]); il meccanismo dell'ipotesi vive nella **varianza
+  temporale** di `util_effect`, non nella media — è quella che il driver misura (sd within-tail).
+- **Ipotesi pre-registrata (brief 17 §4, scritta nel driver PRIMA dei run):** lo smoothing riduce
+  le escursioni di `u^e`, quindi la varianza di `util_effect`; `λ_u<1` agisce come un β efficace
+  più basso ⇒ ρ\* scende verso 0.37–0.40, la quota «a sinistra della svolta» cala, i wage-led si
+  diradano.
+- **Esito misurato (Fase A; scenario headline c0=1.0/σ=0.5/η=0.10/rr=0; 6 β × 5 λ_u × 4 nodi ρ ×
+  20 seed; 2000 step; `results/ces_b17_*`): IPOTESI FALSIFICATA.**
+  - **Meccanismo falsificato alla radice:** la **sd temporale** di `util_effect` **non cala** con
+    λ_u — è piatta su [0.25,1.0] (β=1.0: 0.026/0.022/0.025/0.024 a λ_u=0.25/0.5/0.75/1.0), = 0 solo
+    a λ_u=0 (congelato). Una riduzione EWMA vera (λ=0.25 ⇒ ~0.38×) sarebbe evidente; non c'è, perché
+    `u` è **persistente** in steady state e lisciare un segnale autocorrelato non ne riduce la varianza.
+  - **ρ\*, slope OLS, wage-led λ_u-invarianti** su [0.25,1.0]: lo spread di ρ\* fra i λ_u è **≤ la
+    semi-ampiezza CI inter-seed** per ogni β (escludendo β=0.05, che siede sull'ancora → rumore di
+    risoluzione: max **0.72 bande**). ρ\* **sale con β** (0.36→0.53), confermando §0. Wage-led solo
+    **4/30** celle, tutte a β=1.0.
+  - **L'unico λ_u che conta è 0** (acceleratore spento): ρ\* → 0.358 β-indipendente, slope → +130
+    (profit-led), nessun wage-led — conferma che è **β** (la forza dell'acceleratore), non il
+    lisciamento del segnale, a collocare ρ\*.
+  - **Gate:** la regola congelata (`ces_b17_gate.json`) è OPEN, ma la decomposizione post-hoc mostra
+    i 6 trigger come **4 degeneri (λ_u=0) + 2 rumore near-anchor (β=0.05) + 0 gradiente di
+    lisciamento**. Chiuso sulla sostanza (§5: se inerte entro le bande, chiudi; non eseguire la
+    Fase B per completezza).
+- **Verdetto:** **sweep, non stima.** `λ_u=1` è il default per l'identità col modello precedente.
+  **H1 esce più forte:** il claim primario (posizione di ρ\*, margine dell'88.7%) è **invariante
+  alla respecifica del canale** che porta il 64% della varianza del segno, per ogni λ_u∈[0.25,1.0].
+  **β resta senza referente empirico:** questo brief lo rende **meno load-bearing** (il suo segnale
+  non dipende dal filtro), **non lo ancora** — l'ancoraggio di β (accelerator/investment-Q) resta un
+  brief bibliografico separato. **Fuori scope:** smoothing di `profit_last_period` (registrato come
+  punto **10-ter**, non fatto); regole di apprendimento più ricche (RLS, switching) sul canale
+  investimento. Verifica λ_u-invarianza contro `ces_b17_rho_star.csv` / `ces_b17_util_effect.csv`.
 
 ---
 
