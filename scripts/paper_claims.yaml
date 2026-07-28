@@ -47,7 +47,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
 
@@ -62,7 +62,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
 
@@ -76,7 +76,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
 
 - claim_id: sobol_delta_S1_slope
   value: 0.331
@@ -99,7 +99,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
 
@@ -205,7 +205,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
 
@@ -220,7 +220,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
 
@@ -235,7 +235,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: false}  # notebook covers b04/b05 only
 
@@ -250,7 +250,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
 
@@ -267,7 +267,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
 
@@ -281,7 +281,7 @@
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
     - {file: README.md, required: true}
-    - {file: RESULTS.md, required: true}
+    - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
 
