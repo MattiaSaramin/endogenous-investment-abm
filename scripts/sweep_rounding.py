@@ -11,7 +11,7 @@ section, per the project instructions).
 
 DIRECTION (brief 19 §1.1): from the ``.tex`` toward the artifacts, never the
 reverse -- the printed digits are 582, the CSVs are ~59 MB.  For every numeric
-token ``t`` (regex ``-?\d+\.\d+``) in ``paper/sections/*.tex`` and
+token ``t`` (regex ``(?<!-)-?\d+\.\d+``) in ``paper/sections/*.tex`` and
 ``paper/appendices/*.tex``, with ``d`` = printed decimals:
 
   1. find every numeric cell ``x`` in the INCLUDED artifacts with
@@ -55,6 +55,35 @@ is archived (instructions §4) and excluded explicitly; JSON side-cars
 (environment / verdict / gate) are metadata, not printed cells, and are excluded
 by scope.
 
+TOKENIZER GUARD (brief 20 §1).  A ``-`` immediately preceded by another ``-`` is
+a LaTeX range dash (e.g. ``\textbf{0.075--0.090}``), not a sign.  The regex now
+carries a ``(?<!-)`` look-behind so the second dash of ``--`` is never read as a
+minus; without it the sweep invented the token ``-0.090``, which exists nowhere
+in the paper and matched an artifact cell (``ces_b14_bridge_by_sigma``) only by
+coincidence.  Real negatives are unaffected -- their minus is preceded by ``$``,
+``{`` or a space, never by ``-`` (verified: ``-0.030`` at l.97 is still caught).
+No other LaTeX normalisation is introduced here (brief 20 §1).
+
+STRUCTURAL BLIND SPOTS (brief 20 §0 -- declared, never silently "improved" by
+chasing a cleverer detector).  Two kinds of printed number this sweep cannot
+vouch for, by construction:
+
+  1. DERIVED numbers -- counts, medians and ratios computed on the fly (e.g.
+     ``0.771``, ``538``, ``0.414``, ``477``) -- exist as no cell in any CSV.
+     Proximity can only pair them with something coincidental, so a match here
+     is NOT attribution.
+  2. Tables whose SOURCE is not among the included artifacts are not covered at
+     all (``tab:baseline`` is the example: none of its numbers has an identified
+     referent in the sweep).  "Zero signatures in a section" is NOT "the section
+     is clean" -- it can equally mean the section's source is out of scope.
+
+A detector that does not declare what it cannot see gets re-read as if it saw
+everything -- the same mechanism by which brief 15's "18/18 aligned" became
+citable.  The one place the question "is this number right?" has an answer is
+where the referent is DECLARED -- the registry (``paper_claims.yaml``).  This
+sweep is a trawl over already-registered digits, not a coverage map; the check
+is generalised by EXTENDING THE REGISTRY, not by sharpening the sweep.
+
 This is a DETECTOR.  Per the same rule it is run against known-bad input before
 it is trusted (brief §1.4): the ``0.040`` already in the paper must be FOUND as
 a double-round signature unaided, and the correctly-rounded ``0.966`` control
@@ -81,7 +110,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(_HERE, ".."))
 OUT_CSV = os.path.join(ROOT, "results", "paper_rounding_sweep.csv")
 
-TOKEN_RE = re.compile(r"-?\d+\.\d+")
+TOKEN_RE = re.compile(r"(?<!-)-?\d+\.\d+")   # brief 20 §1: '-' after '-' is a range dash, not a sign
 RUN_DUMP_RE = re.compile(r"_runs|_panel|_design")   # brief §1.2, by name
 ARCHIVED = {"ces_decomposition.csv"}                # instructions §4
 ROW_THRESHOLD = 100   # > this many data rows => per-cell/per-run dump (declared)
@@ -323,7 +352,7 @@ def _report(tex_files, included, excluded, n_tokens, n_cells,
     print("sweep_rounding.py -- double-rounding signature across the paper")
     print(bar)
     print(f"\nScanned {len(tex_files)} .tex files, {n_tokens} numeric tokens "
-          r"(regex -?\d+\.\d+).")
+          r"(regex (?<!-)-?\d+\.\d+; a '-' after '-' is a range dash, not a sign).")
     print(f"Included {len(included)} table-scale artifacts, {n_cells} finite "
           "numeric cells.")
     print(f"Token classes: {n_single} SINGLE, {n_ambig} AMBIGUOUS, "
@@ -355,6 +384,16 @@ def _report(tex_files, included, excluded, n_tokens, n_cells,
 
     print(f"\n-- NO ARTIFACT CANDIDATE: {n_no_cand} token(s) "
           "(design targets / calibration / literature -- not errors) --")
+
+    print("\n-- STRUCTURAL BLIND SPOTS (brief 20 §0 -- declared, not repaired here) --")
+    print("  1. DERIVED numbers (counts/medians/ratios: 0.771, 538, 0.414, 477)")
+    print("     exist as no CSV cell; any proximity match is coincidence, not")
+    print("     attribution.")
+    print("  2. Tables whose source is NOT an included artifact are uncovered")
+    print("     (e.g. tab:baseline). 'Zero signatures' != 'section verified clean'.")
+    print("  Attribution lives only where the referent is declared -- the registry")
+    print("  (paper_claims.yaml). This sweep is a trawl over registered digits, not")
+    print("  a coverage map; it is generalised by extending the registry.")
 
     print("\n-- §1.4 DETECTOR PROBES (run against known-bad input) --")
     p1 = probes["find_0040"]

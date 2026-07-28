@@ -74069,7 +74069,6 @@ paper/sections/09_sensitivity.tex,136,0.030,3,results/ces_b13_sobol_byproducts.c
 paper/sections/09_sensitivity.tex,136,0.030,3,results/ces_b17_rho_star.csv,14,ci_halfwidth,0.0301286170346016,0.030,0.030,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,136,0.030,3,results/ces_b13_wide_indices.csv,13,S1,0.0302278366794495,0.030,0.030,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,136,0.030,3,results/ces_b13_wide_byproducts.csv,12,bin_lo,0.0302692594192922,0.030,0.030,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,136,-0.045,3,,,,,,,,NO ARTIFACT CANDIDATE
 paper/sections/09_sensitivity.tex,136,0.992,3,results/ces_b13_sobol_byproducts.csv,12,frac_viable,0.9915865384615384,0.992,0.992,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,136,0.992,3,results/ces_b17_util_effect.csv,2,util_effect_max,0.9917912410586024,0.992,0.992,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,136,0.044,3,results/ces_b13_sobol_byproducts.csv,12,P_wage_led_given_viable,0.0436363636363636,0.044,0.044,OK,AMBIGUOUS CANDIDATE
@@ -74087,7 +74086,6 @@ paper/sections/09_sensitivity.tex,137,0.045,3,results/ces_b13_sobol_byproducts.c
 paper/sections/09_sensitivity.tex,137,0.045,3,results/ces_b13_sobol_byproducts.csv,12,bin_hi,0.045016187885776,0.045,0.045,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,137,0.045,3,results/ces_b13_wide_byproducts.csv,13,bin_lo,0.0451528113987296,0.045,0.045,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,137,0.045,3,results/ces_b13_wide_byproducts.csv,12,bin_hi,0.0451528113987296,0.045,0.045,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,137,-0.060,3,,,,,,,,NO ARTIFACT CANDIDATE
 paper/sections/09_sensitivity.tex,137,0.758,3,results/ces_b13_sobol_byproducts.csv,13,frac_viable,0.7584134615384616,0.758,0.758,OK,SINGLE CANDIDATE
 paper/sections/09_sensitivity.tex,137,0.111,3,results/ces_b13_pilot.csv,2,noise_ratio,0.1105960959718103,0.111,0.111,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,137,0.111,3,results/ces_b13_sobol_byproducts.csv,13,P_wage_led_given_viable,0.1109350237717908,0.111,0.111,OK,AMBIGUOUS CANDIDATE
@@ -74103,10 +74101,6 @@ paper/sections/09_sensitivity.tex,138,0.060,3,results/ces_b13_wide_indices.csv,1
 paper/sections/09_sensitivity.tex,138,0.060,3,results/ces_b05_distribution_slopes.csv,15,dOutput_Gap_se,0.0602025738638558,0.060,0.060,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,138,0.060,3,results/ces_b11_anchoring_ratios.csv,5,K_over_Y_sd,0.0603753225536882,0.060,0.060,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,138,0.060,3,results/ces_b13_wide_indices.csv,12,S1_conf,0.0603864352289119,0.060,0.060,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,138,-0.075,3,results/ces_b13_morris.csv,19,mu,-0.075,-0.075,-0.075,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,138,-0.075,3,results/ces_b13_morris.csv,24,mu,-0.075,-0.075,-0.075,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,138,-0.075,3,results/ces_b13_morris.csv,32,mu,-0.075,-0.075,-0.075,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,138,-0.075,3,results/ces_b14_morris.csv,32,mu,-0.075,-0.075,-0.075,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,138,0.183,3,results/ces_b13_sobol_byproducts.csv,14,frac_viable,0.1827040194884287,0.183,0.183,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,138,0.183,3,results/ces_b14_morris.csv,24,mu_star_conf,0.1832425778255648,0.183,0.183,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,138,0.183,3,results/ces_derivatives.csv,1,U,0.1833333333333333,0.183,0.183,OK,AMBIGUOUS CANDIDATE
@@ -74131,7 +74125,6 @@ paper/sections/09_sensitivity.tex,139,0.075,3,results/ces_b14_sobol_indices.csv,
 paper/sections/09_sensitivity.tex,139,0.075,3,results/ces_b13_wide_indices.csv,29,S1,0.0754244504295294,0.075,0.075,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,139,0.075,3,results/ces_b05_distribution_slopes.csv,4,dOutput_Gap_se,0.0754567458778843,0.075,0.076,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,139,0.075,3,results/ces_b05_distribution_slopes.csv,13,dOutput_Gap_se,0.0754997091521278,0.075,0.076,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,139,-0.090,3,results/ces_b14_bridge_by_sigma.csv,0,mean_rho_star,-0.0894899803918723,-0.089,-0.090,DOUBLE-ROUND SIGNATURE,SINGLE CANDIDATE
 paper/sections/09_sensitivity.tex,139,0.000,3,results/ces_b05_distribution_slopes.csv,18,dWealth_Gini,-8.556105174780824e-05,-0.000,-0.000,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,139,0.000,3,results/ces_b05_anchor_comparison.csv,0,frac_undefined,0.0,0.000,0.000,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,139,0.000,3,results/ces_b05_anchor_comparison.csv,1,frac_undefined,0.0,0.000,0.000,OK,AMBIGUOUS CANDIDATE
@@ -79729,7 +79722,6 @@ paper/sections/09_sensitivity.tex,287,1.00,2,results/ces_b13_sobol_indices.csv,1
 paper/sections/09_sensitivity.tex,287,1.00,2,results/ces_b17_util_effect.csv,27,util_effect_max,1.004471338894543,1.00,1.00,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,293,0.301,3,results/ces_b13_wide_byproducts.csv,8,bin_lo,0.3005237669683993,0.301,0.301,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,293,0.301,3,results/ces_b07_wage_u_summary.csv,0,U_min,0.3012156862745098,0.301,0.301,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,293,-0.475,3,,,,,,,,NO ARTIFACT CANDIDATE
 paper/sections/09_sensitivity.tex,293,0.000,3,results/ces_b05_distribution_slopes.csv,18,dWealth_Gini,-8.556105174780824e-05,-0.000,-0.000,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,293,0.000,3,results/ces_b05_anchor_comparison.csv,0,frac_undefined,0.0,0.000,0.000,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,293,0.000,3,results/ces_b05_anchor_comparison.csv,1,frac_undefined,0.0,0.000,0.000,OK,AMBIGUOUS CANDIDATE
@@ -81166,7 +81158,6 @@ paper/sections/09_sensitivity.tex,293,0.016,3,results/ces_b17_rho_star.csv,26,ci
 paper/sections/09_sensitivity.tex,294,0.475,3,results/ces_b17_util_effect.csv,26,util_effect_range,0.4744711055967837,0.474,0.475,DOUBLE-ROUND SIGNATURE,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,294,0.475,3,results/ces_b13_wide_byproducts.csv,9,bin_lo,0.47483217343688,0.475,0.475,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,294,0.475,3,results/ces_b13_wide_byproducts.csv,8,bin_hi,0.47483217343688,0.475,0.475,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,294,-0.649,3,,,,,,,,NO ARTIFACT CANDIDATE
 paper/sections/09_sensitivity.tex,294,0.025,3,results/ces_b11_anchoring_ratios.csv,1,K_over_Y_sd,0.0247698525911098,0.025,0.025,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,294,0.025,3,results/ces_b13_sobol_indices.csv,13,S1_conf,0.0248850810971298,0.025,0.025,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,294,0.025,3,results/ces_b13_sobol_indices.csv,0,S1_conf,0.0249040097630138,0.025,0.025,OK,AMBIGUOUS CANDIDATE
@@ -81182,7 +81173,6 @@ paper/sections/09_sensitivity.tex,295,0.649,3,results/ces_b05_support_sensitivit
 paper/sections/09_sensitivity.tex,295,0.649,3,results/ces_b17_util_effect.csv,27,expected_utilization_mean,0.6489515223455651,0.649,0.649,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,295,0.649,3,results/ces_b13_wide_byproducts.csv,10,bin_lo,0.6491405799053609,0.649,0.649,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,295,0.649,3,results/ces_b13_wide_byproducts.csv,9,bin_hi,0.6491405799053609,0.649,0.649,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,295,-0.823,3,,,,,,,,NO ARTIFACT CANDIDATE
 paper/sections/09_sensitivity.tex,295,0.154,3,,,,,,,,NO ARTIFACT CANDIDATE
 paper/sections/09_sensitivity.tex,295,0.299,3,results/ces_b07_wage_u_summary.csv,1,U_min,0.2989705882352941,0.299,0.299,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,295,0.299,3,results/ces_b05_anchor_comparison.csv,7,ci_lo,0.2992864297361104,0.299,0.299,OK,AMBIGUOUS CANDIDATE
@@ -81190,7 +81180,6 @@ paper/sections/09_sensitivity.tex,296,0.823,3,results/ces_b10_summary.csv,20,Top
 paper/sections/09_sensitivity.tex,296,0.823,3,results/ces_b07_sigma_star_by_rho.csv,24,sigma_star,0.8232777276736071,0.823,0.823,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,296,0.823,3,results/ces_b13_wide_byproducts.csv,11,bin_lo,0.8234489863738417,0.823,0.823,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,296,0.823,3,results/ces_b13_wide_byproducts.csv,10,bin_hi,0.8234489863738417,0.823,0.823,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,296,-0.998,3,,,,,,,,NO ARTIFACT CANDIDATE
 paper/sections/09_sensitivity.tex,296,0.211,3,results/ces_b09_dose_response.csv,1,Unemployment_Rate_lo,0.2107843137254902,0.211,0.211,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,296,0.211,3,results/ces_b09_dose_response.csv,5,Benefit_Per_Head_lo,0.2112447903812463,0.211,0.211,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,296,0.363,3,results/ces_b10_summary.csv,9,TopK_Share,0.3626203920988524,0.363,0.363,OK,AMBIGUOUS CANDIDATE
