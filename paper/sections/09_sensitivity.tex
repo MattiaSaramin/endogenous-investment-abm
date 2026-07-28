@@ -75,12 +75,16 @@ interest genuinely selects different parameters, which is also why the earlier
 runs could not simply be recycled.
 
 \subsection{What actually governs the outcome}
+\label{sec:governs}
 
 \begin{table}[htbp]
 \centering
 \small
 \caption{Sobol' indices. $S_1$ is the first-order index, $S_T$ the total
-index; $N = 256$, bootstrap confidence intervals.}
+index; $N = 256$, bootstrap confidence intervals. Computed on the chord
+estimator (\texttt{ces\_b13}); \cref{sec:governs} reports the same
+decomposition on the OLS-repaired QoI (\texttt{ces\_b14}), shown in
+\cref{fig:sa-b14}.}
 \label{tab:sobol}
 \begin{tabular}{lrrrr}
 \toprule
@@ -121,7 +125,9 @@ answer to the first one stands under either quantity of interest.
 \begin{table}[htbp]
 \centering
 \small
-\caption{Viability by depreciation rate.}
+\caption{Viability by depreciation rate. Chord estimator, screening vintage
+(\texttt{ces\_b13}); bin edges are the sampled ones, rounded for display. See
+\cref{tab:repaired} for the OLS-repaired headline.}
 \label{tab:delta}
 \begin{tabular}{lrrr}
 \toprule
@@ -134,6 +140,11 @@ $\delta$ & Points & Fraction viable & $P(\text{wage-led} \mid \text{viable})$\\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Points and fractions above are read off the \texttt{ces\_b13} binning;
+\cref{sec:calibration}'s $\delta \approx 0.090$ anchor and the \texttt{ces\_b16}
+marginalised turning point (\cref{tab:marginalturn}) are separate artifacts and
+must not be cross-cited as if interchangeable.
 
 $\delta$ alone governs survival: its total index on viability is $1.00$, and no
 other parameter approaches it. \Cref{tab:delta} is not a robustness note but a
@@ -308,7 +319,12 @@ underlie \cref{tab:sobol,tab:delta}.
   \includegraphics[width=\linewidth]{ces_b13_sobol_indices.png}
   \caption{Sobol' indices with bootstrap CIs.}
 \end{subfigure}
-\caption{Screening and decomposition over the sixteen-parameter space.}
+\caption{Screening and decomposition. Morris (left) screens seventeen
+parameters --- the sixteen defensible parameters plus \texttt{max\_tax}, which
+is screened here only --- while the Sobol' decomposition (right) is over the
+sixteen-parameter defensible space. Both panels use the chord estimator
+(\texttt{ces\_b13}); \cref{fig:sa-b14} is the OLS-repaired counterpart
+(\texttt{ces\_b14}).}
 \label{fig:sa}
 \end{figure}
 
