@@ -1,0 +1,349 @@
+# Registry of the paper's headline numbers, each with an EXECUTABLE lookup.
+#
+# One entry per claim.  `verify_paper.py` (paper vs artifact) and `coherence.py`
+# (document vs document) both read this file; it is document-agnostic.  A claim
+# is checked by `verify_paper.py` iff at least one `appears_in` file is under
+# `paper/`; the rest (e.g. brief-17 numbers that live only in METHODOLOGY.md) are
+# the concern of `coherence.py`.
+#
+# Fields:
+#   claim_id       unique slug
+#   value          the CSV-correct value, rounded ONCE to `decimals` (see below);
+#                  null for a deliberately-missing cell (with expect_missing)
+#   decimals       how the number is printed in the document; the artifact check
+#                  is round(cell, decimals) == value, rounding ONCE from the full
+#                  value (a double rounding is exactly the §5 defect)
+#   artifact       committed CSV the number is read from
+#   filter         column==value selectors applied before reading `column`
+#   row_index      (optional) after `filter`, take this 0-based row IN CSV ORDER;
+#                  used for tab:delta, whose bins are the SAMPLED edges, so the
+#                  match is by row order, not by bin label
+#   column         the column whose cell is the number
+#   expect_missing (optional) the cell must be NaN/empty (printed "---")
+#   symbol         (optional) the paper's own notation -> CSV parameter.  In
+#                  tab:sobol the row printed "$\lambda$" is `wealth_effect`, NOT
+#                  `expectation_gain`; without this a naive verifier reports a
+#                  false MISMATCH, which is worse than no verifier
+#   appears_in     list of {file, required}: where the number is asserted.  Built
+#                  by REAL grep, not assumed (see the brief-18 report for the two
+#                  places the brief's spot-check disagreed with grep)
+#
+# THREE entries carry the CSV-correct value where the paper prints something else
+# (tab:sobol Slope column, double-rounding defect): they FAIL as
+# "CLAIM NOT FOUND IN TEX" by design and are left OPEN for a dedicated paper
+# brief (brief 18 §5/§6). They are NOT corrected here.
+
+# ---------------------------------------------------------------------------
+# tab:sobol  (Sobol' indices, chord vintage) <- ces_b13_sobol_indices.csv
+# ---------------------------------------------------------------------------
+- claim_id: sobol_delta_ST_viable
+  value: 1.002
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: viable, parameter: delta, estimator: saltelli}
+  column: ST
+  symbol: "\\delta"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+    - {file: METHODOLOGY.md, required: true}
+    - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
+
+- claim_id: sobol_delta_ST_slope
+  value: 0.966
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: delta, estimator: saltelli}
+  column: ST
+  symbol: "\\delta"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+    - {file: METHODOLOGY.md, required: true}
+    - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
+
+- claim_id: sobol_delta_S1_viable
+  value: 0.718
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: viable, parameter: delta, estimator: saltelli}
+  column: S1
+  symbol: "\\delta"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+
+- claim_id: sobol_delta_S1_slope
+  value: 0.331
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: delta, estimator: saltelli}
+  column: S1
+  symbol: "\\delta"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: sobol_sigma_ST_slope
+  value: 0.024
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: sigma, estimator: saltelli}
+  column: ST
+  symbol: "\\sigma"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+    - {file: METHODOLOGY.md, required: true}
+    - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
+
+- claim_id: sobol_sigma_ST_viable
+  value: 0.008
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: viable, parameter: sigma, estimator: saltelli}
+  column: ST
+  symbol: "\\sigma"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: sobol_sigma_S1_slope
+  value: 0.030
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: sigma, estimator: saltelli}
+  column: S1
+  symbol: "\\sigma"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: sobol_pi0_ST_slope
+  value: 0.562
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: pi0, estimator: saltelli}
+  column: ST
+  symbol: "\\pi_0"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: sobol_pi0_S1_viable
+  value: 0.116
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: viable, parameter: pi0, estimator: saltelli}
+  column: S1
+  symbol: "\\pi_0"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: sobol_c0_S1_viable
+  value: 0.069
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: viable, parameter: c0, estimator: saltelli}
+  column: S1
+  symbol: "c_0"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+# --- tab:sobol Slope column: THREE double-rounding discrepancies (left OPEN) ---
+# The paper prints the round-TWICE value; the CSV rounds ONCE to what is below.
+# All three FAIL as "CLAIM NOT FOUND IN TEX" and must NOT be corrected here.
+- claim_id: sobol_lambda_S1_slope_OPEN   # brief-18 §5: printed 0.040, measured 0.0394677
+  value: 0.039
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: wealth_effect, estimator: saltelli}
+  column: S1
+  symbol: "\\lambda"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: sobol_c0_ST_slope_OPEN       # found in brief 18: printed 0.277, measured 0.2764876
+  value: 0.276
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: c0, estimator: saltelli}
+  column: ST
+  symbol: "c_0"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: sobol_c0_S1_slope_OPEN       # found in brief 18: printed -0.030, measured -0.0294590
+  value: -0.029
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: c0, estimator: saltelli}
+  column: S1
+  symbol: "c_0"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+# ---------------------------------------------------------------------------
+# The OLS-repaired decomposition (§9 "robust to the estimator") <- ces_b14
+# ---------------------------------------------------------------------------
+- claim_id: b14_slope_delta_ST
+  value: 0.900
+  decimals: 3
+  artifact: results/ces_b14_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: delta, estimator: saltelli}
+  column: ST
+  symbol: "\\delta"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+    - {file: METHODOLOGY.md, required: true}
+    - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
+
+- claim_id: b14_slope_pi0_ST
+  value: 0.561
+  decimals: 3
+  artifact: results/ces_b14_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: pi0, estimator: saltelli}
+  column: ST
+  symbol: "\\pi_0"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+    - {file: METHODOLOGY.md, required: true}
+    - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
+
+- claim_id: b14_slope_sigma_ST
+  value: 0.021
+  decimals: 3
+  artifact: results/ces_b14_sobol_indices.csv
+  filter: {qoi: slope_raw, parameter: sigma, estimator: saltelli}
+  column: ST
+  symbol: "\\sigma"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+    - {file: METHODOLOGY.md, required: true}
+    - {file: notebooks/01_Endogenous_Investment.ipynb, required: false}  # notebook covers b04/b05 only
+
+- claim_id: b14_viable_delta_ST
+  value: 0.916
+  decimals: 3
+  artifact: results/ces_b14_sobol_indices.csv
+  filter: {qoi: viable, parameter: delta, estimator: saltelli}
+  column: ST
+  symbol: "\\delta"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+    - {file: METHODOLOGY.md, required: true}
+    - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
+
+# ---------------------------------------------------------------------------
+# tab:repaired  (headline probability) <- ces_b14_summary.csv / ces_b13_summary.csv
+# ---------------------------------------------------------------------------
+- claim_id: repaired_primary_P_wl_OLS
+  value: 0.026
+  decimals: 3
+  artifact: results/ces_b14_summary.csv
+  filter: {analysis: "primary (empirical sigma 0.40-0.60)"}
+  column: P_wage_led_OLS_given_viable
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+    - {file: METHODOLOGY.md, required: true}
+    - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
+
+- claim_id: repaired_primary_frac_viable
+  value: 0.480
+  decimals: 3
+  artifact: results/ces_b14_summary.csv
+  filter: {analysis: "primary (empirical sigma 0.40-0.60)"}
+  column: frac_viable_4rho
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+    - {file: README.md, required: true}
+    - {file: RESULTS.md, required: true}
+    - {file: METHODOLOGY.md, required: true}
+    - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
+
+- claim_id: repaired_chord_only_P_wl
+  value: 0.095
+  decimals: 3
+  artifact: results/ces_b13_summary.csv
+  filter: {analysis: "primary (empirical sigma 0.40-0.60)"}
+  column: P_wage_led_given_viable
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+# ---------------------------------------------------------------------------
+# tab:delta  (viability by depreciation bin) <- ces_b13_sobol_byproducts.csv
+# Bins are the SAMPLED edges; match by ROW ORDER, not by rounded label.
+# ---------------------------------------------------------------------------
+- claim_id: delta_row0_frac_viable
+  value: 0.992
+  decimals: 3
+  artifact: results/ces_b13_sobol_byproducts.csv
+  filter: {parameter: delta}
+  row_index: 0
+  column: frac_viable
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: delta_row2_frac_viable
+  value: 0.183
+  decimals: 3
+  artifact: results/ces_b13_sobol_byproducts.csv
+  filter: {parameter: delta}
+  row_index: 2
+  column: frac_viable
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: delta_row2_P_wage_led
+  value: 0.313
+  decimals: 3
+  artifact: results/ces_b13_sobol_byproducts.csv
+  filter: {parameter: delta}
+  row_index: 2
+  column: P_wage_led_given_viable
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: delta_row3_P_wage_led_missing
+  value: null
+  expect_missing: true
+  artifact: results/ces_b13_sobol_byproducts.csv
+  filter: {parameter: delta}
+  row_index: 3
+  column: P_wage_led_given_viable
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: delta_row3_n_points
+  value: 843
+  decimals: 0
+  artifact: results/ces_b13_sobol_byproducts.csv
+  filter: {parameter: delta}
+  row_index: 3
+  column: n_points
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+# ---------------------------------------------------------------------------
+# Brief-17 number: lives ONLY in METHODOLOGY.md, not in the paper (measured).
+# verify_paper.py SKIPS it (no paper appears_in); coherence.py handles it.
+# ---------------------------------------------------------------------------
+- claim_id: b17_beta_S1_slope_given_viable
+  value: 0.641
+  decimals: 3
+  artifact: results/ces_b14_sobol_indices.csv
+  filter: {qoi: "slope|viable", parameter: beta, estimator: rbd_fast}
+  column: S1
+  symbol: "\\beta"
+  appears_in:
+    - {file: METHODOLOGY.md, required: true}
