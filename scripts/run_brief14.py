@@ -609,10 +609,84 @@ def write_summary(rows):
     return summary
 
 
+def make_figures(tag="sobol"):
+    """One figure, THREE panels, from ``ces_b14_{tag}_indices.csv``.
+
+    Deliberately NOT a copy of ``run_brief13.make_figures``.  That one filters
+    ``estimator == "saltelli"``, which in the brief-14 index set leaves only
+    ``slope_raw`` and ``viable`` and DROPS ``slope|viable`` -- the RBD-FAST QoI in
+    which the central finding lives (``S1(beta) = 0.641``).  A figure built by
+    copy would throw away exactly the number the figure exists to show.
+
+    Panels: (1) ``slope_raw`` and (2) ``viable`` under Saltelli, S1 and ST bars
+    with bootstrap CIs; (3) ``slope|viable`` under RBD-FAST, **S1 only** -- the
+    estimator defines no total index, so ``ST``/``ST_conf`` are empty in the CSV
+    and are read as NaN and the series is OMITTED, not plotted at zero.
+    """
+    import shutil
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ipath = os.path.join(RESULTS, f"ces_b14_{tag}_indices.csv")
+    if not os.path.exists(ipath):
+        print(f"  {ipath} not found - run --phase {tag} first")
+        return []
+    idx = pd.read_csv(ipath)
+    # The RBD-FAST rows leave ST/ST_conf (and S1_conf) empty; coerce to NaN so the
+    # total-index series can be omitted rather than drawn at zero.
+    for c in ("S1", "S1_conf", "ST", "ST_conf"):
+        idx[c] = pd.to_numeric(idx[c], errors="coerce")
+
+    panels = [
+        ("slope_raw", "saltelli", True),
+        ("viable", "saltelli", True),
+        ("slope|viable", "rbd_fast", False),  # S1 only: no total index for RBD-FAST
+    ]
+    fig, axes = plt.subplots(1, len(panels), figsize=(5.7 * len(panels), 5.0),
+                             squeeze=False)
+    for ax, (qoi, est, has_total) in zip(axes[0], panels):
+        blk = idx[(idx["qoi"] == qoi) & (idx["estimator"] == est)]
+        blk = blk.sort_values("ST" if has_total else "S1")
+        y = np.arange(len(blk))
+        if has_total:
+            ax.barh(y - 0.2, blk["S1"], height=0.38, xerr=blk["S1_conf"],
+                    label="S1 (first order)", capsize=2)
+            ax.barh(y + 0.2, blk["ST"], height=0.38, xerr=blk["ST_conf"],
+                    label="ST (total)", capsize=2)
+            ax.set_title(qoi, fontsize=10)
+        else:
+            # ST is undefined for RBD-FAST: omit the total-index series entirely.
+            ax.barh(y, blk["S1"], height=0.5, label="S1 (first order)")
+            ax.set_title(f"{qoi}\nRBD-FAST, first-order only "
+                         "— no total index is defined for this estimator",
+                         fontsize=9)
+        ax.set_yticks(y)
+        ax.set_yticklabels(blk["parameter"], fontsize=8)
+        ax.axvline(0.0, color="k", lw=0.8)
+        ax.set_xlabel("Sobol index")
+        ax.legend(fontsize=8)
+    fig.suptitle("OLS-repaired QoI (ces_b14): survivor set differs from b13 "
+                 "(target_utilization in, benefit_replacement_rate out)",
+                 fontsize=11)
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+
+    p = os.path.join(RESULTS, f"ces_b14_{tag}_indices.png")
+    fig.savefig(p, dpi=140)
+    plt.close(fig)
+    dst = os.path.abspath(os.path.join(_HERE, "..", "paper", "figures",
+                                       f"ces_b14_{tag}_indices.png"))
+    shutil.copyfile(p, dst)
+    print(f"  wrote {p}")
+    print(f"  copied to {dst}")
+    return [p, dst]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--phase", default="bridge",
-                    choices=["bridge", "morris", "sobol", "wide", "report", "all"])
+                    choices=["bridge", "morris", "sobol", "wide", "report",
+                             "figures", "all"])
     ap.add_argument("--workers", type=int, default=None)
     args = ap.parse_args()
 
@@ -626,6 +700,13 @@ def main():
     print(json.dumps(env, indent=2))
     with open(os.path.join(RESULTS, "ces_b14_environment.json"), "w") as fh:
         json.dump(env, fh, indent=2)
+
+    # Figures only: reads the committed index CSV, runs NO simulation.  Kept out
+    # of "all" on purpose - "all" re-runs the sweeps, and this brief re-runs
+    # nothing (brief 18 Task 2).
+    if args.phase == "figures":
+        make_figures("sobol")
+        return 0
 
     if args.phase in ("bridge", "all"):
         fixed, _slopes, ok = fixed_arm()
