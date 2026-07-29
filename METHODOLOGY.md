@@ -237,6 +237,19 @@ di `ces_b13`):
   ma è un **cambio di vintage** verso la QoI riparata (`ces_b14` OLS, 0.9158), non la correzione
   di un errore.
 
+**Raffinamento (brief 20): ogni tabella di numeri MISURATI stampata nel paper ha un generatore
+committato.** Corollario dell'«ogni CSV committato ha un generatore» delle istruzioni: correggere a
+mano una cella di una tabella misurata lascia in piedi la causa (la trascrizione). `tab:sobol` è la
+prima a passare da un generatore (`scripts/make_tab_sobol.py`, brief 20); `tab:delta`, `tab:baseline`
+e `tab:marginalturn` restano senza — debito dichiarato.
+
+**Falsi positivi noti dello sweep — DA NON CORREGGERE MAI** (sarebbe il movimento di `667003b`):
+- **`0.771`** (§9, `tab:marginalturn`) è **1230/1596 = 0.770677**, che round-once dà 0.771: **il
+  paper è corretto**. L'abbinamento di `sweep_rounding.py` a `ces_b07_sigma_star_by_rho/ci_hi` è
+  **coincidenza** (numero derivato — punto cieco #1 del brief 19).
+- **`59.4`** ×2 (§6, `tab:baseline`) è **non attribuito**: la sorgente di `tab:baseline` non è fra i
+  51 artifact inclusi (punto cieco #2), e l'abbinamento a `ces_sigma_rho_grid` è un'altra cella.
+
 ---
 
 ## 6. Decisione architetturale: sequenziare il mercato del lavoro (ESEGUITA)
@@ -801,6 +814,11 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   riportato un accordo mai testato. Entrambi ora falliscono su un caso sintetico con
   difetti noti **prima** di essere creduti. È la stessa lezione di §9: *un check che
   riporta successo senza ispezionare nulla è peggio di nessun check.*
+  > **⚠️ Superato dal brief 18.** Il «zero discrepanze, 18/18 headline allineati» qui sopra
+  > **non è più citato**: girava su **tooling di sessione non committato** (una lista di file
+  > scritta a mano). Il verificatore committato del brief 18 (`verify_paper.py` +
+  > `paper_claims.yaml`), al **primo giro**, ha trovato **tre discrepanze vere** in `tab:sobol`
+  > (colonna Slope) — chiuse dal brief 20. È la misura di cosa valeva quel «18/18».
 
 - **Brief 17 — aspettativa sull'investimento (punto 10-bis): l'acceleratore su `u^e`.** L'acceleratore
   d'investimento passa dal segnale realizzato `utilization_last_period` a un'**aspettativa di utilizzo**
@@ -858,6 +876,64 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   §9 — tabella + figura `ces_b13` + prosa — e poggiava su aritmetica falsa). L'oggetto del commit `7e404f8`
   («six stale SA figures») è quindi impreciso su due dei sei; **non riscritto** (storia). Vedi il
   raffinamento §5 «ogni numero ha il suo artifact».
+
+- **Brief 18 — etichettatura di vintage del paper + verificatore dei numeri committato**
+  (solo `paper/` e `scripts/`; nessun `src/`, nessun run del modello). Due mosse.
+  **(a) Vintage esplicita in §9:** `tab:sobol` e `tab:delta` dichiarano `ces_b13` (corda);
+  `fig:sa` dichiara **Morris su 17 = 16 parametri difendibili + `max_tax`** (screenato solo lì)
+  e **Sobol sui 16**; nuova **`fig:sa-b14` a tre pannelli** generata da
+  `run_brief14.py --phase figures`, col terzo pannello `slope|viable` a **RBD-FAST, solo S1**
+  (nessun ST — lo stimatore ne definisce solo il primo ordine). **Zero cifre cambiate** nel paper.
+  **(b) Toolchain committata (non più tooling di sessione):** `scripts/paper_claims.yaml`
+  (registro dei numeri headline, ognuno con lookup eseguibile — artifact, filtro, colonna,
+  `decimals`, mappa simbolo→parametro), `scripts/verify_paper.py` (paper↔artifact,
+  `round(cella, decimals) == valore`, round-once) e `scripts/coherence.py` (documento↔documento).
+  **CHIUDE il debito «verificatori inesistenti»:** in brief 15 il cross-check dei 18 numeri
+  girava su una **lista di file scritta a mano**, non committata. **CHIUDE il debito «paper §9
+  chord-vintage»:** il blocco `ces_b13` non è più implicito, è etichettato. **Conseguenza tenuta
+  onesta:** il «zero discrepanze, 18/18 allineati» del brief 15 **non è più citato**; è sostituito
+  da un verificatore che gira, e che **al primo giro ha trovato tre discrepanze vere** in
+  `tab:sobol` (colonna Slope, doppio arrotondamento) — chiuse dal brief 20.
+
+- **Brief 19 — `scripts/sweep_rounding.py`: firma del doppio arrotondamento su TUTTO il paper,
+  registry-free. RISULTATO NEGATIVO, registrato come tale** (solo `scripts/`; nessun `src/`,
+  nessun run). Per ogni token numerico del paper cerca celle candidate negli artifact inclusi e
+  classifica OK / DOUBLE-ROUND / NO-CANDIDATE. **Nessuna discrepanza nuova** oltre le tre già note:
+  i quattro candidati «non ambigui» rimanenti sono **falsi positivi verificati a mano**. **Due
+  punti ciechi STRUTTURALI, registrati perché nessuno li riscopra inseguendo un detector più furbo:**
+  1. **I numeri DERIVATI non sono verificabili cella per cella** — conteggi, mediane, rapporti
+     calcolati al volo (`0.771` = 1230/1596, `538`, `0.414`, `477`) non esistono come cella in
+     nessun CSV; lo sweep li abbina solo a qualcosa di **casuale**.
+  2. **Le tabelle la cui sorgente non è fra i 51 artifact inclusi non sono coperte affatto** —
+     `tab:baseline` in primis (nessuno dei suoi numeri ha un referente identificato). «Zero firme
+     in una sezione» **non** è «la sezione è pulita».
+  **Corollario operativo: la prossimità numerica NON è attribuzione;** la copertura si estende
+  **col registro**, non affinando lo sweep. **Esclusione dichiarata dei dump a >100 righe**
+  (frattura misurata: il più grande aggregato incluso è a **88 righe** — `ces_b07_slopes.csv` —, il
+  più piccolo dump per-cella escluso a **154** — `ces_b05_stage_a_cells.csv`; niente in mezzo), e
+  ogni file escluso è elencato nel report col conteggio. `RESULTS.md` **untracked per scelta** →
+  `coherence.py` emette `DOCUMENT MISSING` (debito dichiarato), non passa in silenzio.
+
+- **Brief 20 — `tab:sobol` corretta IN BLOCCO, da un generatore committato** (solo `paper/`,
+  `scripts/`, `results/`, `README.md`, `parameter_notes.md`; nessun `src/`, nessun run). Le tre
+  discrepanze del brief 18/19 erano errori di **trascrizione a mano** (CSV → LaTeX con doppio
+  arrotondamento), **non di calcolo**. Corrette dal referente `ces_b13_sobol_indices.csv`
+  (`estimator=saltelli`, round-once **ROUND_HALF_UP** a 3 decimali), colonna Slope:
+  **`c0` S1 -0.030 → -0.029**, **`c0` S_T 0.277 → 0.276**, **λ (=`wealth_effect`) S1 0.040 → 0.039**.
+  Nessun'altra cifra cambia (generatore vs tabella, cella per cella). Chiusa da
+  **`scripts/make_tab_sobol.py`** — **prima tabella del paper con un generatore committato**
+  (estensione della regola §5, vedi lì). Propagata alle **repliche a mano** della stessa tabella
+  `ces_b13`: `README.md`, `parameter_notes.md`, `RESULTS.md`, **nello stesso commit** (working tree
+  per `RESULTS.md`, untracked). **Notebook NON toccato:** calcola la colonna `ces_b13` **live** dal
+  CSV (già `0.276`, round-once) e non conteneva **nessuna** delle tre celle — «correggerlo» sarebbe
+  stato il movimento di `667003b`. I tre claim `..._OPEN` diventano claim normali e passano;
+  `verify_paper.py` a **0 FAIL**, `coherence.py` a **0 DIVERGENT**. Resta **`sobol_sigma_ST_viable`
+  AMBIGUOUS per costruzione** (S1 e ST viability leggono entrambi `0.008` sulla stessa riga di
+  `tab:sobol`): ambiguità dichiarata, non residuo. **Copertura del registro: 26 claim contro i 574
+  token del paper** (582 prima del fix della regex dello sweep — brief 20 Task 0: un `-` dopo un `-`
+  è un trattino di range `--`, non un segno; 8 falsi negativi di range rimossi, il vero `-0.030` di
+  riga 97 conservato). **Build CI verde** (run `30468591546`: 35 pagine, 0 error, 0 overfull/underfull,
+  0 reference/citation undefined).
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
@@ -1153,6 +1229,23 @@ negoziabili.
   congelate nel sorgente PRIMA dei run** (`HYPOTHESIS`, `GATE_RULE`); thread BLAS pinnati,
   ambiente in `ces_b17_environment.json`. La `sd` raccolta per `Util_Effect` è la **within-tail**
   (temporale), perché la media è ~λ_u-invariante per linearità
+- `scripts/paper_claims.yaml` + `scripts/verify_paper.py` + `scripts/coherence.py` — **brief 18**,
+  toolchain di verifica dei numeri del paper, **committata** (non più tooling di sessione).
+  `paper_claims.yaml` è il registro (26 claim, ognuno con lookup eseguibile: artifact, filtro,
+  colonna, `decimals`, mappa simbolo→parametro — es. `$\lambda$` = `wealth_effect`).
+  `verify_paper.py` controlla paper↔artifact (round-once; `--selftest` su input noto-cattivo);
+  `coherence.py` controlla documento↔documento, con `RESULTS.md` untracked → `DOCUMENT MISSING`.
+  `sobol_sigma_ST_viable` resta AMBIGUOUS **per costruzione** (S1 e ST viability leggono entrambi
+  0.008 sulla stessa riga di `tab:sobol`)
+- `scripts/sweep_rounding.py` — **brief 19**, firma del doppio arrotondamento su tutto il paper,
+  **registry-free**; risultato negativo (nessuna discrepanza nuova). Regex `(?<!-)-?\d+\.\d+`
+  (brief 20: un `-` dopo `-` è un trattino di range, non un segno). Due punti ciechi dichiarati
+  (numeri derivati; tabelle senza sorgente inclusa), esclusione dei dump a >100 righe. Rigenera
+  `results/paper_rounding_sweep.csv`
+- `scripts/make_tab_sobol.py` — **brief 20**, genera il corpo `tabular` di `tab:sobol` da
+  `ces_b13_sobol_indices.csv` (`saltelli`, round-once ROUND_HALF_UP, mappa `$\lambda$`=`wealth_effect`,
+  stessi grassetti); stampa su stdout, il `.tex` contiene il blocco inline col marcatore
+  `do not hand-edit` sulla riga `\midrule`. **Prima tabella del paper con generatore committato**
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
 - `results/` — output misurati committati. `ces_b17_*.csv` + `ces_b17_gate.json` +
