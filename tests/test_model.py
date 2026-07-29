@@ -154,6 +154,83 @@ def test_buffer_returns_to_zero(rho, eta, lambda_e, lambda_u):
             assert f.money_buffer == pytest.approx(0.0, abs=1e-9)
 
 
+# ----------------------------------------------------------------------
+# Price probe (brief 21) — SFC parametrised on the dial, BEFORE the arithmetic
+# ----------------------------------------------------------------------
+#
+# The b12 lesson (SFC was tested only at the default and the SA found it broken elsewhere):
+# parametrise the invariant on the parameter the probe will move — ``enable_prices`` — and
+# on ``eta`` (which sets P != 1 through the wage curve) and ``c0`` (the collapse regime),
+# BEFORE the nominal/real arithmetic is written.  With ``P != 1`` money and goods separate
+# everywhere consumption and investment settle, so the conserved money stock (nominal) must
+# be re-established under the dial, not merely at the numeraire=1 default.  These tests are
+# written in the ledger commit; the arithmetic that makes ``enable_prices=True`` non-trivial
+# lands in the next one — at which point THIS test is the trap that catches a wrong ledger.
+@pytest.mark.parametrize("enable_prices", [False, True])
+@pytest.mark.parametrize("eta", [0.0, 0.10])
+@pytest.mark.parametrize("c0", [1.0, 2.0])
+def test_money_is_conserved_with_prices(enable_prices, eta, c0):
+    """Nominal money (incl. the buffer) is conserved at every period under the price dial.
+
+    Holds at eta = 0 (P = 1 identically) and eta = 0.10 (P = w_t/w_bar != 1), at both the
+    viable (c0 = 1.0) and the collapse-prone (c0 = 2.0) regime.  Conservation is a
+    per-period statement, so it is checked every step, not only at steady state.
+    """
+    m = MacroModel(retention_ratio=0.40, seed=7, eta=eta, c0=c0,
+                   enable_prices=enable_prices)
+    initial = total_money(m)
+    for _ in range(500):
+        m.step()
+        assert total_money(m) == pytest.approx(initial, abs=1e-7)
+        for f in _firms(m):
+            assert f.money_buffer == pytest.approx(0.0, abs=1e-9)
+
+
+# ----------------------------------------------------------------------
+# Known-bad input (brief 21 §3): the SFC assertion must FAIL on the §1.3 asymmetry
+# ----------------------------------------------------------------------
+#
+# "A test that passes even here is testing nothing."  Inject exactly the failure §1.3
+# warns about — households pay ``P*d`` while firms record revenue ``d`` — and verify the
+# money-conservation invariant catches it NET (money strictly destroyed, far beyond the
+# abs = 1e-7 tolerance the SFC tests use).  This validates the DETECTOR before the real
+# arithmetic exists; it does not depend on the price wiring, it fabricates the wedge.
+_ASYMMETRY_WEDGE = 1.5  # plays the role of P: households overpay, firms under-receive
+
+
+def _leaky_settlement(self):
+    """``Household.step_settlement`` with the §1.3 asymmetry: pay ``WEDGE * d``, but the
+    firm side (``sales = production``) is untouched, so it receives ``d``.  Every period
+    ``(WEDGE - 1) * consumption`` leaks out of the household->firm circuit and vanishes."""
+    self.wealth += self.income
+    self.actual_consumption = sum(
+        (self.desired_consumption / self.num_consumption_links) * firm.rationing
+        for firm in self.consumption_firms
+    )
+    self.wealth -= _ASYMMETRY_WEDGE * self.actual_consumption   # <-- pay P*d; firm booked d
+    self.savings = self.income - self.actual_consumption
+    self.income = self.next_income
+    self.next_income = 0.0
+
+
+def test_sfc_test_fails_on_price_asymmetry():
+    """The money-conservation invariant is not vacuous: the injected asymmetry breaks it."""
+    from unittest.mock import patch
+
+    with patch.object(Household, "step_settlement", _leaky_settlement):
+        m = MacroModel(retention_ratio=0.40, seed=7)
+        initial = total_money(m)
+        for _ in range(10):
+            m.step()
+        final = total_money(m)
+
+    # NET: money is strictly destroyed, by orders of magnitude more than the 1e-7 the SFC
+    # tests tolerate — so ``total_money == initial`` would fail hard.  If this assertion
+    # ever passes, the SFC tests above are testing nothing.
+    assert final < initial - 1e-3
+    assert abs(final - initial) > 1e-7
+
+
 def test_distribution_identity():
     model = MacroModel(retention_ratio=REF_RHO, seed=3)
     for _ in range(300):

@@ -185,6 +185,94 @@ DEAD_FIRM_K = 0.5
 TOPK_N = 3
 
 
+# ============================================================
+# PRICE PROBE (brief 21) — the nominal/real ledger
+# ============================================================
+#
+# STATUS: this is a PROBE, not a feature.  ``enable_prices`` is default False, does not
+# enter the defaults and does not enter the global SA.  Promoting it to a feature is a
+# separate decision that would require re-running the SA (brief 21 §6).
+#
+# THE QUESTION (brief 21 §0).  With the numeraire fixed at 1, ``w_t`` *is* the real wage,
+# and H2 ("wage flexibility does not self-correct unemployment") was read off the wage
+# curve lowering ``w_t`` as U rises.  But if a firm cut its nominal wage it would also cut
+# its unit cost and hence its price; with a constant markup the *real* wage would not move
+# at all.  So H2 might be measuring the numeraire, not the labour market.  The probe asks
+# what survives of H2 when the real wage is constant by construction.
+#
+# THE PRICE RULE (brief 21 §1.1).  Normal-cost pricing with a constant markup ``mu`` and
+# constant productivity ``A`` gives ``P_t = (1+mu)*w_t/A``.  Choosing ``A`` to normalise
+# ``P = 1`` at the reference wage (``A = (1+mu)*w_bar``) collapses this to
+#
+#     P_t = w_t / w_bar
+#
+# and ``mu`` DISAPPEARS: P is just the normalised wage, so the probe adds NO new free
+# parameter.  Analytic consequences, used as the pre-registered expectations (§4):
+#   * real wage  ``w/P = w_bar``          — constant in U and in eta;
+#   * real labour income ``w*L/P = w_bar*L`` — independent of ``w``;
+#   * real profit ``(P*Q - w*L)/P = Q - w_bar*L`` — independent of ``w``.
+# The ONLY real channel left is the revaluation of the nominal wealth stock: when U rises,
+# w falls, P falls, and accumulated wealth ``a_h/P`` is worth more — a Pigou effect, which
+# is STABILISING, the opposite of the H2 mechanism.
+#
+# THE ALTERNATIVE, SCARTED (brief 21 §1.2).  ``P_t = (1+mu)*w_t*L_t/Y_t`` (endogenous unit
+# labour cost) is more faithful to normal-cost pricing but PINS the wage share to
+# ``1/(1+mu)`` by construction.  The wage share is a measured OUTCOME of this model
+# (0.553 -> 0.394 in tab:baseline); pinning it is not a probe, it is a different model.
+# Declared as an untested variant, NOT run.
+#
+# ------------------------------------------------------------------------------------
+# §1.3 THE NOMINAL/REAL LEDGER — READ TWICE.  This is where the probe can break SFC in
+# silence, because the current code lets ``desired_consumption`` be BOTH the money spent
+# (``step_settlement`` subtracts it from wealth) and the physical quantity (``step_production``
+# treats ``faced_demand`` as a quantity).  With ``P != 1`` those two separate EVERYWHERE,
+# and if the separation is only partial money is created or destroyed.  The ledger is
+# fixed as follows (units, and treatment under ``enable_prices``):
+#
+#   quantity                                   | unit      | treatment
+#   -------------------------------------------|-----------|-------------------------------
+#   production, capacity, capital, delivered   | PHYSICAL  | unchanged
+#     investment                               |           |
+#   c0                                         | REAL      | NOT deflated (goods units)
+#   income, wealth, wages, profit, dividends,  | NOMINAL   | unchanged in the accounting
+#     taxes, benefit                           |           |
+#   household desired demand                   | REAL      | d = min( max( c0 + c1*(income/P)
+#                                              |           |     + lambda*(wealth/P), 0 ),
+#                                              |           |     (wealth+income)/P )
+#   payment for consumption                    | NOMINAL   | wealth -= P * units_delivered
+#   firm revenue (sales)                       | NOMINAL   | sales = P * units_delivered
+#   investment demand and its settlement       | REAL in   | firms buy UNITS, pay P per unit:
+#                                              | quantity, |   real demand = (I_nom/n)/P,
+#                                              | NOMINAL   |   delivered_units = (I_planned/P)
+#                                              | in money  |     * rationing,
+#                                              |           |   money paid = P * delivered_units
+#
+#   THE RISK IS ALL HERE.  If households pay ``P*d`` but firms record revenue ``d``, money
+#   is destroyed and SFC breaks — and it breaks SILENTLY, because the committed tests run
+#   only at ``P = 1``.  Hence brief 21 §3: the SFC tests are parametrised on
+#   ``enable_prices x eta x c0`` BEFORE the arithmetic is written (the b12 lesson), and a
+#   known-bad-input test injects exactly this asymmetry and checks the SFC assertion fails
+#   NET.  Money conservation (the invariant checked in tests/) stays exact under P: every
+#   good produced is either consumed or delivered as investment, so the nominal value
+#   ``P*production`` distributed as wages+dividends+retained is matched, unit for unit, by
+#   the nominal ``P*(consumption + investment)`` paid out of wealth and the firm buffers.
+#
+# §1.4 WHERE P ENTERS THE SEQUENCE.  Right after step 0 (the wage curve), before the
+# labour market: ``self.price = w_t / w_bar`` (see ``MacroModel.step``).  NO NEW STEP
+# (invariant, brief 21 §1.4).  ``P`` is a model attribute, not an agent, and draws no RNG.
+#
+# THE NESTING.  ``enable_prices = False`` runs the current code path by an EXPLICIT BRANCH
+# (never a multiply-by-1.0), so check (a) — False == main — is byte-identical by
+# construction.  ``enable_prices = True`` with ``eta = 0`` short-circuits ``w = w_bar`` so
+# ``P = w_bar/w_bar = 1.0`` EXACTLY, and every P-operation above reduces to an identity;
+# check (b) — True at eta=0 == main — is therefore the more informative detector: it
+# exercises the NEW code path, and if it is not byte-identical the ledger is wrong
+# somewhere.  Stop and report; do not adjust the numbers (brief 21 §4, P1).
+#
+# NOTE the arithmetic is wired into ``agents.py`` and ``MacroModel.step``; this block is
+# the SPEC, written before the arithmetic (brief 21 order of work, step 1).
+
+
 def productivity_fan(base, n, spread):
     """Mean-preserving linear fan of firm productivities (brief 10).
 
@@ -713,6 +801,16 @@ class MacroModel(mesa.Model):
         Cap on the balanced-budget tax rate (a declared convention/guardrail, not an
         estimate).  When the desired transfer would need more, the benefit is scaled
         down to what the cap raises — the budget stays balanced.  Must lie in [0, 1].
+    enable_prices : bool
+        **PROBE dial (brief 21), default False.**  ``False`` runs the numeraire = 1 model
+        by an explicit branch (the current path verbatim, byte-for-byte).  ``True`` turns
+        on the normal-cost price ``P_t = w_t/w_bar`` and the nominal/real ledger (see the
+        PRICE PROBE block above): it separates money from goods everywhere consumption and
+        investment settle, so the SFC invariant must be re-established under it.  It adds
+        NO new free parameter (``P`` is the normalised wage, ``mu`` cancels).  It is a
+        probe, NOT a feature: it does not enter the defaults, is excluded from the global
+        SA, and is not swept anywhere else.  At ``eta = 0`` the wage short-circuits to
+        ``w_bar`` so ``P = 1`` exactly and ``True`` nests ``main`` bit-for-bit.
     seed : int or None
         Seed for the model's random stream (network, hiring/firing order).
 
@@ -773,6 +871,9 @@ class MacroModel(mesa.Model):
         # Government (brief 09): rr = 0 nests the no-government model exactly
         benefit_replacement_rate=0.0,
         max_tax=0.6,
+
+        # Price probe (brief 21): enable_prices = False nests the numeraire=1 model exactly
+        enable_prices=False,
 
         seed=None,
     ):
@@ -867,6 +968,11 @@ class MacroModel(mesa.Model):
         # Government (brief 09): balanced-budget unemployment benefit.
         self.benefit_replacement_rate = benefit_replacement_rate
         self.max_tax = max_tax
+
+        # Price probe (brief 21): the numeraire=1 model is an explicit branch (see step()).
+        # The nominal/real arithmetic is wired in a later commit; this stores the dial and
+        # nests bit-for-bit as long as False keeps the current path.
+        self.enable_prices = bool(enable_prices)
 
         # --- economy-wide flow variables --------------------------------
         self.total_investment_demand = 0.0
