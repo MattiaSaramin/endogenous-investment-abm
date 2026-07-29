@@ -73810,8 +73810,9 @@ paper/sections/09_sensitivity.tex,97,0.086,3,results/ces_b13_wide_indices.csv,4,
 paper/sections/09_sensitivity.tex,97,0.086,3,results/ces_b13_sobol_indices.csv,18,ST,0.0860964610563326,0.086,0.086,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,97,0.086,3,results/ces_b13_sobol_indices.csv,21,ST,0.0860964610563326,0.086,0.086,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,97,0.086,3,results/ces_b14_sobol_indices.csv,21,ST,0.0860964610563326,0.086,0.086,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,97,-0.030,3,results/ces_b13_sobol_indices.csv,10,S1,-0.029458961957156,-0.029,-0.030,DOUBLE-ROUND SIGNATURE,SINGLE CANDIDATE
-paper/sections/09_sensitivity.tex,97,0.277,3,results/ces_b13_sobol_indices.csv,10,ST,0.2764875628066293,0.276,0.277,DOUBLE-ROUND SIGNATURE,SINGLE CANDIDATE
+paper/sections/09_sensitivity.tex,97,-0.029,3,results/ces_b13_sobol_indices.csv,10,S1,-0.029458961957156,-0.029,-0.030,OK,SINGLE CANDIDATE
+paper/sections/09_sensitivity.tex,97,0.276,3,results/ces_b07_sigma_star_by_rho.csv,7,ci_hi,0.2757603097051911,0.276,0.276,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,97,0.276,3,results/ces_b13_sobol_indices.csv,10,ST,0.2764875628066293,0.276,0.277,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,98,0.038,3,results/ces_b14_sobol_indices.csv,20,ST_conf,0.0376702550549814,0.038,0.038,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,98,0.038,3,results/ces_sigma_rho_grid.csv,6,Y_band_rel,0.0380634940008032,0.038,0.038,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,98,0.038,3,results/ces_b14_wide_indices.csv,9,S1_conf,0.0382182877656689,0.038,0.038,OK,AMBIGUOUS CANDIDATE
@@ -73826,13 +73827,16 @@ paper/sections/09_sensitivity.tex,98,0.086,3,results/ces_b13_wide_indices.csv,4,
 paper/sections/09_sensitivity.tex,98,0.086,3,results/ces_b13_sobol_indices.csv,18,ST,0.0860964610563326,0.086,0.086,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,98,0.086,3,results/ces_b13_sobol_indices.csv,21,ST,0.0860964610563326,0.086,0.086,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,98,0.086,3,results/ces_b14_sobol_indices.csv,21,ST,0.0860964610563326,0.086,0.086,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,98,0.040,3,results/ces_b13_sobol_indices.csv,7,S1,0.039467742970985,0.039,0.040,DOUBLE-ROUND SIGNATURE,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,98,0.040,3,results/ces_b05_anchor_comparison.csv,9,frac_multi_crossing,0.0395,0.040,0.040,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,98,0.040,3,results/ces_b13_sobol_indices.csv,19,S1_conf,0.0399897427433612,0.040,0.040,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,98,0.040,3,results/ces_b13_sobol_indices.csv,4,S1_conf,0.0400114415269474,0.040,0.040,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,98,0.040,3,results/ces_b14_wide_indices.csv,20,S1_conf,0.0400467581155527,0.040,0.040,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,98,0.040,3,results/ces_b13_sobol_indices.csv,19,ST_conf,0.0400714930949892,0.040,0.040,OK,AMBIGUOUS CANDIDATE
-paper/sections/09_sensitivity.tex,98,0.040,3,results/ces_b09_dose_response.csv,1,Tax_Rate_lo,0.0402811205782613,0.040,0.040,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b17_util_effect.csv,14,util_effect_sd_across_runs,0.0384955188045388,0.038,0.039,DOUBLE-ROUND SIGNATURE,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b17_util_effect.csv,13,util_effect_sd_across_runs,0.0385240365211291,0.039,0.039,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b13_wide_indices.csv,1,ST_conf,0.0385603886147403,0.039,0.039,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b17_util_effect.csv,11,util_effect_sd_across_runs,0.0385718735487059,0.039,0.039,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b17_util_effect.csv,12,util_effect_sd_across_runs,0.0386241937445476,0.039,0.039,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b05_distribution_slopes.csv,6,dWage_Share_se,0.0386297510152991,0.039,0.039,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b14_sobol_indices.csv,19,ST,0.0391347550256057,0.039,0.039,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b14_wide_indices.csv,8,S1_conf,0.03918008868801,0.039,0.039,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b14_sobol_indices.csv,8,S1_conf,0.0393018075302394,0.039,0.039,OK,AMBIGUOUS CANDIDATE
+paper/sections/09_sensitivity.tex,98,0.039,3,results/ces_b13_sobol_indices.csv,7,S1,0.039467742970985,0.039,0.040,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,98,0.264,3,results/ces_b14_sobol_indices.csv,10,ST,0.2634897670413393,0.263,0.264,DOUBLE-ROUND SIGNATURE,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,98,0.264,3,results/ces_b13_sobol_indices.csv,7,ST,0.2636522907006113,0.264,0.264,OK,AMBIGUOUS CANDIDATE
 paper/sections/09_sensitivity.tex,99,0.008,3,results/ces_b07_sigma_star_by_rho.csv,17,frac_multi_crossing,0.0075,0.008,0.008,OK,AMBIGUOUS CANDIDATE

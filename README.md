@@ -551,8 +551,8 @@ indices would decompose the variance of the seed draw. Uniform ranges are a decl
 |---|---|---|---|---|
 | **`delta`** | **0.718** | **1.002** | **0.331** | **0.966** |
 | `pi0` | 0.116 | 0.290 | 0.001 | 0.562 |
-| `c0` | 0.069 | 0.086 | −0.030 | 0.277 |
-| `wealth_effect` | 0.038 | 0.086 | 0.040 | 0.264 |
+| `c0` | 0.069 | 0.086 | −0.029 | 0.276 |
+| `wealth_effect` | 0.038 | 0.086 | 0.039 | 0.264 |
 | **`sigma`** | 0.008 | **0.008** | 0.030 | **0.024** |
 
 `ST >> S1` throughout: the model is dominated by **interactions**, as expected of a
