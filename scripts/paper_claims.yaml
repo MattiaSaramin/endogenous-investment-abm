@@ -589,3 +589,18 @@
   column: n_crossings
   appears_in:
     - {file: paper/sections/07_stress.tex, required: true}
+
+# ---------------------------------------------------------------------------
+# sec:frontierlocal (brief 22 §3): sigma's marginal near-inertness, cited in the
+# new discussion subsection.  Same qoi/estimator as b17_beta_S1_slope_given_viable
+# (slope|viable, rbd_fast), for sigma; vintage ces_b14 (the OLS-repaired QoI).
+# ---------------------------------------------------------------------------
+- claim_id: b14_sigma_S1_slope_given_viable
+  value: 0.019
+  decimals: 3
+  artifact: results/ces_b14_sobol_indices.csv
+  filter: {qoi: "slope|viable", parameter: sigma, estimator: rbd_fast}
+  column: S1
+  symbol: "\\sigma"
+  appears_in:
+    - {file: paper/sections/10_discussion.tex, required: true}
