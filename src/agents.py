@@ -472,14 +472,28 @@ class Firm(mesa.Agent):
         self.desired_investment = max(0.0, self.desired_investment)
 
     def register_demand(self):
-        """Aggregate consumption orders (via the network) plus investment orders."""
+        """Aggregate consumption orders (via the network) plus investment orders — all REAL.
+
+        Consumption orders are already real (``desired_consumption`` is a quantity), so the
+        sum is unchanged by the probe.  Investment is planned as a NOMINAL budget (a fraction
+        of nominal profit, see :meth:`plan_investment`); when the probe is on it buys UNITS at
+        price ``P``, so the real investment demand is ``(I_nom/n_firms)/P`` (brief 21 §1.3).
+        ``enable_prices = False`` runs the current expression verbatim (explicit branch);
+        ``/1.0`` at ``P = 1`` reproduces it bit-for-bit.
+        """
+        m = self.model
         self.consumption_demand = sum(
             h.desired_consumption / h.num_consumption_links
             for h in self.customers
         )
-        self.investment_demand = (
-            self.model.total_investment_demand / self.model.num_firms
-        )
+        if m.enable_prices:
+            self.investment_demand = (
+                m.total_investment_demand / m.num_firms
+            ) / m.price
+        else:
+            self.investment_demand = (
+                m.total_investment_demand / m.num_firms
+            )
         self.faced_demand = self.consumption_demand + self.investment_demand
 
     # ------------------------------------------------------------------
@@ -562,8 +576,19 @@ class Firm(mesa.Agent):
         employment — the demand channel.  (Any unemployment benefit is a separate,
         tax-funded transfer applied later in the period by ``MacroModel.government``,
         brief 09; it never touches this firm-level accounting.)
+
+        Price probe (brief 21 §1.3): ``sales`` is NOMINAL revenue = ``P * units delivered``.
+        ``production`` is real (units), so with the probe on the firm books ``P*production``;
+        the wage (``w_t*L``), profit, retained and dividends are all nominal and their
+        expressions are unchanged.  This is the counterpart the households' ``P*d`` payment
+        must match — booking ``production`` here while charging ``P*d`` there is exactly the
+        §1.3 asymmetry that destroys money (the known-bad-input test).  ``enable_prices =
+        False`` books ``production`` verbatim (explicit branch); ``P = 1`` reproduces it.
         """
-        self.sales = self.production
+        if self.model.enable_prices:
+            self.sales = self.model.price * self.production
+        else:
+            self.sales = self.production
         L = len(self.workers)
 
         self.wage_bill = self.model.wage_rate * L
@@ -589,11 +614,24 @@ class Firm(mesa.Agent):
         delivered goods, any residual (from goods-market rationing) is paid to the
         owner, so **the buffer returns to zero every period**.  Capital follows a
         one-period gestation lag.
-        """
-        self.investment_delivered = self.desired_investment * self.model.investment_rationing
 
-        self.money_buffer -= self.investment_delivered
-        self.capital = (1.0 - self.model.delta) * self.capital + self.investment_delivered
+        Price probe (brief 21 §1.3): investment separates into a REAL quantity and a NOMINAL
+        payment.  ``retained`` (= ``money_buffer``) is the nominal budget; it buys
+        ``desired_investment/P`` units, rationed by the goods market, and pays ``P`` per unit.
+        So ``investment_delivered`` (which enters ``capital``) is REAL, and the money leaving
+        the buffer is ``P * investment_delivered = retained * rationing`` — the residual
+        ``retained*(1-rationing)`` returns to the owner, buffer -> 0, exactly as before.
+        ``enable_prices = False`` runs the current expressions verbatim (explicit branch);
+        at ``P = 1`` both branches coincide bit-for-bit.
+        """
+        m = self.model
+        if m.enable_prices:
+            self.investment_delivered = (self.desired_investment / m.price) * m.investment_rationing
+            self.money_buffer -= m.price * self.investment_delivered
+        else:
+            self.investment_delivered = self.desired_investment * m.investment_rationing
+            self.money_buffer -= self.investment_delivered
+        self.capital = (1.0 - m.delta) * self.capital + self.investment_delivered
 
         if self.owner is not None:
             self.owner.next_income += self.money_buffer
@@ -636,13 +674,31 @@ class Household(mesa.Agent):
         return self.model.c1
 
     def step_demand(self):
-        """Form desired consumption, bounded by money actually available."""
-        target = (
-            self.model.c0
-            + self.marginal_propensity() * self.income
-            + self.model.wealth_effect * self.wealth
-        )
-        affordable = self.wealth + self.income
+        """Form desired consumption (a REAL quantity), bounded by money actually available.
+
+        Price probe (brief 21 §1.3): ``desired_consumption`` is a quantity of goods, so when
+        the probe is on nominal ``income`` and ``wealth`` are deflated by ``P`` (``c0`` is
+        already real and is NOT deflated), and the liquidity cap is the real quantity the
+        money can buy, ``(wealth+income)/P``.  ``enable_prices = False`` runs the current
+        expression verbatim by an EXPLICIT BRANCH (not ``.../1.0``); at ``P = 1`` the on-branch
+        reduces to it bit-for-bit (``income/1.0 == income``), which is what nests eta = 0.
+        """
+        m = self.model
+        if m.enable_prices:
+            P = m.price
+            target = (
+                m.c0
+                + self.marginal_propensity() * (self.income / P)
+                + m.wealth_effect * (self.wealth / P)
+            )
+            affordable = (self.wealth + self.income) / P
+        else:
+            target = (
+                m.c0
+                + self.marginal_propensity() * self.income
+                + m.wealth_effect * self.wealth
+            )
+            affordable = self.wealth + self.income
         # Diagnostic: the liquidity cap binds -> the household spends everything
         # it has (effective MPC ~ 1 at the margin).
         self.cash_constrained = target > affordable
@@ -650,7 +706,15 @@ class Household(mesa.Agent):
 
     # ------------------------------------------------------------------
     def step_settlement(self):
-        """Credit income, pay for delivered (rationed) goods, roll income forward."""
+        """Credit income, pay for delivered (rationed) goods, roll income forward.
+
+        Price probe (brief 21 §1.3): ``actual_consumption`` is the REAL quantity delivered
+        (units), and the payment out of nominal ``wealth`` is ``P * units`` — the nominal
+        counterpart of the firm's ``sales = P*production``.  Keeping ``actual_consumption``
+        real makes the ``Consumption`` reporter commensurable with real ``Output``.
+        ``enable_prices = False`` pays ``actual_consumption`` verbatim (explicit branch); at
+        ``P = 1`` the payment is bit-for-bit the same, which is what nests eta = 0.
+        """
         self.wealth += self.income
 
         self.actual_consumption = sum(
@@ -658,8 +722,12 @@ class Household(mesa.Agent):
             for firm in self.consumption_firms
         )
 
-        self.wealth -= self.actual_consumption
-        self.savings = self.income - self.actual_consumption
+        if self.model.enable_prices:
+            paid = self.model.price * self.actual_consumption
+        else:
+            paid = self.actual_consumption
+        self.wealth -= paid
+        self.savings = self.income - paid
 
         self.income = self.next_income
         self.next_income = 0.0

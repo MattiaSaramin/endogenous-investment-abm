@@ -555,6 +555,18 @@ def compute_wage_rate(model):
     return model.wage_rate
 
 
+def compute_price(model):
+    """The current price level ``P_t = w_t/w_bar`` (brief 21 probe); 1.0 when the probe is off.
+
+    A pure diagnostic, kept OUT of ``experiment._PANEL_METRICS`` (like
+    ``Capitalist_Consumption`` and the brief-17 pair): the committed panels must keep their
+    exact column set, so the byte-checks that compare against them are unaffected.  Constant
+    at 1.0 when ``enable_prices = False`` and, since ``P = w_t/w_bar``, constant at 1.0 for
+    every ``eta`` when the probe is on but the wage is fixed (``eta = 0``).
+    """
+    return model.price
+
+
 def compute_wage_floor_binding(model):
     """1.0 if the subsistence floor ``w_min`` binds this period, else 0.0.
 
@@ -970,9 +982,10 @@ class MacroModel(mesa.Model):
         self.max_tax = max_tax
 
         # Price probe (brief 21): the numeraire=1 model is an explicit branch (see step()).
-        # The nominal/real arithmetic is wired in a later commit; this stores the dial and
-        # nests bit-for-bit as long as False keeps the current path.
+        # ``price`` starts at 1.0 (the numeraire) so the t = 0 collect and the reporter have
+        # a value before the first wage is set; step() updates it only when enable_prices.
         self.enable_prices = bool(enable_prices)
+        self.price = 1.0
 
         # --- economy-wide flow variables --------------------------------
         self.total_investment_demand = 0.0
@@ -1081,6 +1094,9 @@ class MacroModel(mesa.Model):
                 # Wage curve (brief 07): current wage and floor-binding flag.
                 "Wage_Rate": compute_wage_rate,
                 "Wage_Floor_Binding": compute_wage_floor_binding,
+                # Price probe (brief 21): the price level P_t (1.0 unless enable_prices).
+                # Kept OUT of experiment._PANEL_METRICS on purpose (see compute_price).
+                "Price": compute_price,
                 "Income_Gini": compute_income_gini,
                 "Wealth_Gini": compute_wealth_gini,
                 # Which constraint bites (brief 04 §9.3)
@@ -1222,6 +1238,15 @@ class MacroModel(mesa.Model):
             self.wage_rate = wage_from_curve(
                 self.w_bar, U_prev, self.eta, U_REF, self.U_min, self.wage_floor
             )
+
+        # 0b. price (brief 21 probe): P_t = w_t/w_bar, set right after the wage and BEFORE
+        #     the labour market.  NO NEW STEP (invariant, §1.4): P is a model attribute, not
+        #     an agent, and draws no RNG.  enable_prices=False leaves P at 1.0 and every
+        #     settlement site takes its explicit no-price branch, so the numeraire=1 path is
+        #     byte-identical (never a multiply-by-1.0).  At eta=0, w_t == w_bar (same object),
+        #     so P = w_bar/w_bar = 1.0 EXACTLY and enable_prices=True nests main bit-for-bit.
+        if self.enable_prices:
+            self.price = self.wage_rate / self.w_bar
 
         # 1. labour market (employment set before demand)
         self.labour_market(firms, households)

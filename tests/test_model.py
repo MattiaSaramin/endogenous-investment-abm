@@ -231,6 +231,63 @@ def test_sfc_test_fails_on_price_asymmetry():
     assert abs(final - initial) > 1e-7
 
 
+# ----------------------------------------------------------------------
+# Price probe (brief 21) — behaviour and nesting of the arithmetic
+# ----------------------------------------------------------------------
+
+def test_price_reporter_out_of_panel_metrics():
+    """``Price`` is collected but stays OUT of the committed-panel column set."""
+    assert "Price" not in _PANEL_METRICS
+
+
+def test_price_is_one_when_disabled():
+    """enable_prices=False keeps P at the numeraire 1.0 at every step."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=1, eta=0.10, enable_prices=False)
+    for _ in range(50):
+        m.step()
+        assert m.price == 1.0
+    df = m.datacollector.get_model_vars_dataframe()
+    assert (df["Price"] == 1.0).all()
+
+
+@pytest.mark.parametrize("sigma", [0.5, 1.0])
+@pytest.mark.parametrize("c0", [1.0, 2.0])
+def test_price_nesting_eta0_is_byte_identical(sigma, c0):
+    """DETECTOR (brief 21 §2, check b): enable_prices=True at eta=0 has P=1 EXACTLY, so it
+    must reproduce enable_prices=False bit-for-bit.  If this fails the nominal/real ledger is
+    wrong somewhere — this is the in-suite version of the driver's artifact byte-check."""
+    def _run(enable_prices):
+        m = MacroModel(retention_ratio=REF_RHO, seed=3, sigma=sigma, c0=c0, eta=0.0,
+                       enable_prices=enable_prices)
+        for _ in range(400):
+            m.step()
+        return m.datacollector.get_model_vars_dataframe()
+
+    off, on = _run(False), _run(True)
+    # Exact equality on the whole collected frame (Price is 1.0 in both, so it compares too).
+    pd.testing.assert_frame_equal(on, off, check_exact=True)
+
+
+def test_price_tracks_wage_when_enabled():
+    """With the probe on and eta>0, P = w_t/w_bar every step (so P != 1 actually occurs)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=1, eta=0.10, c0=2.0, enable_prices=True)
+    saw_off_one = False
+    for _ in range(200):
+        m.step()
+        assert m.price == pytest.approx(m.wage_rate / m.w_bar, rel=0, abs=0)
+        if abs(m.price - 1.0) > 1e-6:
+            saw_off_one = True
+    assert saw_off_one, "eta=0.10 should move the wage (hence P) off 1.0 at some step"
+
+
+def test_price_real_wage_is_constant():
+    """The probe's defining property (brief 21 §1.1): the REAL wage w_t/P == w_bar always."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=4, eta=0.15, c0=2.0, enable_prices=True)
+    for _ in range(200):
+        m.step()
+        assert m.wage_rate / m.price == pytest.approx(m.w_bar, rel=1e-12)
+
+
 def test_distribution_identity():
     model = MacroModel(retention_ratio=REF_RHO, seed=3)
     for _ in range(300):
