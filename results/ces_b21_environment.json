@@ -1,0 +1,70 @@
+{
+  "python": "3.14.3",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.4.3",
+  "pandas": "3.0.1",
+  "mesa": "3.5.1",
+  "blas_threads": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "config": {
+    "etas": [
+      0.0,
+      0.05,
+      0.1,
+      0.15
+    ],
+    "c0s": [
+      1.0,
+      2.0
+    ],
+    "prices": [
+      false,
+      true
+    ],
+    "sigmas": [
+      0.05,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0,
+      1.25,
+      1.5
+    ],
+    "rhos": [
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65
+    ],
+    "steps": 2000,
+    "seeds": 12,
+    "anchored_rho": 0.3632,
+    "byte_sigmas": [
+      0.5,
+      1.0
+    ],
+    "byte_seeds": 5
+  },
+  "hypotheses": {
+    "P1": "enable_prices=True at eta=0 is byte-identical to main (ces_b05).",
+    "P2": "sigma*(eta) becomes eta-invariant with the probe (main rises 0.654->0.740).",
+    "P3": "the c0=2.0 collapse shrinks or disappears with the probe (Pigou is stabilising).",
+    "P4": "H1 (rho*, sign of margin at the anchored rho 0.3632) does not move."
+  },
+  "gate": {
+    "P1": "n_exceed==0 (8-ULP+atol) AND regime_equal on shared level cols; report abs dev too.",
+    "P2": "prices ON eta-invariant iff sigma*(0.15) and sigma*(0) CIs overlap; prices OFF must reproduce the b07 rise as a positive control (else INCONCLUSIVE).",
+    "P3": "prices ON shrinks iff #cells with any seed collapse (c0=2.0) strictly < prices OFF; disappears iff -> 0.",
+    "P4": "unmoved iff rho*(sigma) and sign(dY/drho) per sigma unchanged ON vs OFF within bands."
+  }
+}

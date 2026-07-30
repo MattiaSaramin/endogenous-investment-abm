@@ -935,12 +935,92 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   riga 97 conservato). **Build CI verde** (run `30468591546`: 35 pagine, 0 error, 0 overfull/underfull,
   0 reference/citation undefined).
 
+- **Brief 21 — PROBE sui prezzi (punto 9-bis): H2 è un artefatto del numerario?** Un dial
+  `enable_prices` (default **False**, fuori dai default e fuori dalla SA), **zero nuovi
+  parametri liberi**, byte-identico a `main` da spento. Normal-cost pricing con markup e
+  produttività costanti dà `P_t = (1+mu)·w_t/A`; normalizzando `P=1` al salario di
+  riferimento (`A=(1+mu)·w_bar`) collassa a **`P_t = w_t/w_bar`** e **`mu` sparisce** — `P` è
+  il salario normalizzato. A numerario 1, `w_t` È il salario reale, e H2 (b07: «la
+  flessibilità salariale non autocorregge la disoccupazione», meccanismo = oscillazione
+  salario-occupazione che erode capitale a c0=2.0) potrebbe misurare **il numerario, non il
+  mercato del lavoro**: con markup costante, un taglio del salario *nominale* abbassa anche il
+  prezzo e il salario *reale* `w/P=w_bar` non si muove.
+  - **Ordine di lavoro (b12): libro mastro di §1.3 come docstring + test SFC PRIMA
+    dell'aritmetica.** Il libro mastro nominale/reale separa moneta e beni: domanda desiderata
+    delle famiglie **reale** (`d=min(max(c0+c1·(income/P)+λ·(wealth/P),0),(wealth+income)/P)`,
+    `c0` reale non deflazionato), pagamento consumo e ricavo d'impresa **nominali** (`P·unità`),
+    investimento **reale in quantità/nominale in denaro** (le imprese comprano `budget/P` unità,
+    pagano `P` per unità). `enable_prices=False` è un **branch esplicito** al percorso attuale in
+    ogni sito, mai `·1.0`. **Test contro input noto come cattivo (§3):** iniettata l'asimmetria di
+    §1.3 (famiglie pagano `P·d`, imprese incassano `d`) → l'invariante SFC **FALLISCE NETTO**
+    (400.0 → 8.66 in 10 step, **391.3 distrutti = 3.9e9× la tolleranza**, monotòno); il detector
+    non è vacuo.
+  - **⚠️ La rottura silenziosa di §1.3, materializzata (reperto metodologico).** La prima
+    implementazione (5 siti monetari, §1.3 tabella) faceva **migliorare** l'allocazione reale con
+    η a prezzi ON (c0=1.0/σ=0.5: U 0.541→0.497, L 45.9→50.3): η muoveva l'allocazione per **DUE**
+    canali reali, non uno. Diagnosi: l'impresa massimizza il profitto **nominale** `P·Q−w_t·L`,
+    quindi la FOC di profit-max è `P·MPL=w_t` cioè `MPL=w_t/P=` salario **reale** `=w_bar`
+    (costante). `plan_employment` usava ancora `w_t` → secondo canale reale spurio, che viola §1.1
+    («**un solo canale reale**: Pigou»). **Né l'SFC né il byte-check a η=0 lo catturano** (verdi in
+    entrambi i casi): lo cattura solo l'economia (§1.1) e l'indizio di sequenza di §1.4 (`P`
+    calcolato **prima del mercato del lavoro** — è lì perché il mercato del lavoro usa `P`; Chekhov:
+    calcolato ma non usato nella FOC). Corretto (`agents.plan_employment` e
+    `compute_wage_share_profitmax` al salario reale `w_t/P`); P1 resta byte-identico. **È
+    esattamente il tipo di difetto che P1/SFC non vedono e che il brief avvisava di cercare.**
+  - **P1 — annidamento: CONFERMATO byte-identico.** `enable_prices=True, η=0` (dove `w=w_bar`
+    quindi `P=1` esatto) vs `main` (`ces_b05`): `n_exceed=0/3080`, `regime_equal=True`,
+    **`max_abs_dev=5.68e-14`** (solo rumore di round-trip CSV, sotto `atol`). Detector-first: il
+    self-test (`η=0.10`, P≠1, vs main) **FIRES** (2228/3080, dev 184). Regime-first col dev accanto
+    (il `byte_equal` ritirato è False solo per il drift d'ambiente dichiarato, §9/b17).
+  - **P2 — σ\*(η) η-invariante: FALSIFICATO, e nel verso opposto.** Atteso piatto (salario reale
+    indipendente da η ⇒ solo Pigou, ipotizzato trascurabile). Misurato: a prezzi ON σ\*(η) **sale
+    PIÙ ripido** (0.648→0.716→0.806→**0.871**, CI η=0 vs η=0.15 **non sovrapposte**) del controllo
+    OFF (0.648→0.680→0.726→0.711, CI sovrapposte a 12 seed). Il canale Pigou **non** è trascurabile:
+    alza l'output a η alto e spinge la banda empirica (0.40–0.60, **sotto** σ\*) **più a fondo nel
+    profit-led** al crescere di η. La predizione specifica (piattezza) cade; la *direzione* è quella
+    stabilizzante.
+  - **P3 — collasso a c0=2.0 si restringe/sparisce: CONFERMATO (la scommessa vera paga).** Celle
+    con qualche collasso (pooled su η) **36 → 10** (piene 17 → 4); e — il punto — la **crescita in η
+    del collasso è ELIMINATA**: ON `2,3,3,2` (piatto sul baseline η=0) vs OFF `2,8,12,14`. Il residuo
+    ≈ baseline di η=0 (presente anche senza flessibilità salariale). Con il salario reale costante
+    l'occupazione dell'impresa non oscilla col salario nominale, quindi **il capitale non si erode**:
+    il meccanismo di b07 è in larga parte un artefatto del numerario.
+  - **P4 — H1 non si muove: CONFERMATO dove conta.** Contro dei σ wage-led (dY/dρ<0) **4/11 in
+    entrambi**; per σ≥0.4 (banda empirica e oltre) il ρ ancorato (0.3632) resta **a sinistra della
+    svolta ρ\* in entrambi**, e dY/dρ a σ∈[0.4,0.6] è invariato di segno e ~magnitudo. Differiscono
+    solo σ∈{0.05,0.30} (sotto la banda) e σ=1.5 OFF (un outlier +62.6 tra vicini negativi).
+  - **Canale Pigou isolato (§1.1, ora l'unico canale reale).** c0=1.0, prezzi ON: η↑ ⇒ P↓
+    (1.000→0.912) ⇒ ricchezza reale↑ ⇒ domanda↑ ⇒ **U 0.528→0.487 e Y 90.9→99.2**; OFF fa l'opposto
+    (U 0.528→0.580, Y 90.9→81.8). Stabilizzante, e singolo (occupazione η-invariante per la FOC
+    corretta).
+  - **H2, forma a due tempi (b17): il MECCANISMO è UCCISO e la CONCLUSIONE è ROVESCIATA — due
+    oggetti separati.** *Meccanismo* (oscillazione che erode capitale): killed dal probe (P3, collasso
+    36→10 e non più crescente in η). *Conclusione* (nessuna autocorrezione): rovesciata — col probe
+    più flessibilità salariale **ABBASSA** la disoccupazione (U 0.528→0.487) e alza l'output, via un
+    canale **diverso** (bilanci reali/Pigou, non il loop salario-occupazione). **È la prima ipotesi di
+    stabilizzazione CONFERMATA dopo quattro falsificazioni consecutive** (λ_e b08, rr b09-E3, rr
+    b10-E2, governo esteso), e la prima da un canale diverso. **Limiti dichiarati:** è un probe
+    (`enable_prices` resta default False, non entra nella SA); la variante a costo unitario endogeno
+    (§1.2, che pinna la quota salari) **non è eseguita**; il pricing è normal-cost a markup costante
+    (l'esito è specifico a quello); la magnitudo del Pigou non è calibrata; budget **12 seed** (il
+    rialzo di σ\* del controllo OFF non è CI-risolto a 12 seed, quello ON sì). **Il probe non
+    sostituisce nessun numero canonico di `main`.**
+  - **569 test verdi** (551 invariati + 18 nuovi: SFC parametrizzata `enable_prices × η × c0`,
+    input-cattivo che fallisce netto, annidamento byte η=0, Price fuori da `_PANEL_METRICS`,
+    `P=w_t/w_bar`, salario reale costante, FOC dell'impresa al salario reale). Driver
+    `scripts/run_brief21.py` (fasi `byte-check`/`panel`/`report`, ipotesi P1–P4 e **gate congelati nel
+    sorgente PRIMA dei run**, BLAS pinnati, ambiente in `ces_b21_environment.json`); CSV
+    `results/ces_b21_*.csv` (panel, byte_check, sigma_star_eta, collapse_c0_2, h1_rho_star, pigou_c0_1)
+    + 2 figure. **Fuori scope:** la variante §1.2; markup variabile/prezzi eterogenei/stickiness/moneta
+    come stock separato; promuovere il probe a feature; rifare i numeri canonici.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
 decisione presa, lato imprese dichiarato quasi-rappresentativo con evidenza misurata,
 feature non implementata, riallocazione = future work (punto 12)**; **9) prezzi endogeni
-(parte salario FATTA col brief 07; resta il PREZZO — vedi sotto)**; **10) aspettative
+(parte salario FATTA col brief 07; il PREZZO PROBATO col brief 21 — `P=w_t/w_bar`, probe non
+feature, H2 rovesciata via Pigou — vedi sotto)**; **10) aspettative
 adattive — parte DOMANDA FATTA col brief 08** (σ\* λ_e-invariante; ipotesi di
 stabilizzazione c0=2.0 non confermata); **10-bis) aspettativa sull'INVESTIMENTO — FATTA
 col brief 17** (acceleratore su `u^e`; ipotesi §4 **falsificata**: λ_u inerte entro le bande su
@@ -960,11 +1040,16 @@ pubblico e tassazione progressiva (future work dichiarato in `brief_09_governmen
 > endogenizzare: il **salario `w̄`** e il **prezzo**. **Il salario è FATTO (brief
 > 07):** wage curve di Blanchflower–Oswald, `w̄` declassato a punto di
 > normalizzazione, `η` nuovo parametro distributivo (vedi la voce "Fatto" sopra e
-> `parameter_notes.md`). **Resta aperto il PREZZO** (oggi numerario = 1) — punto
-> **9-bis**, esplicitamente fuori scope nel brief 07 (niente spirale
-> prezzi-salari). Nota: già senza prezzi endogeni il **markup implicito**
-> (`prodotto medio / w_t`) è un **esito**. Per il blocco prezzi serviranno dati sui
-> markup (De Loecker, Eeckhout & Unger 2020).
+> `parameter_notes.md`). **Il PREZZO è ora PROBATO (brief 21, punto 9-bis):** normal-cost
+> `P=w_t/w_bar` (markup e produttività costanti, `mu` cancella, zero parametri liberi nuovi),
+> **probe non feature** (`enable_prices` default False, fuori dalla SA). Esito: col salario reale
+> costante per costruzione il meccanismo di H2 (oscillazione che erode capitale) è **ucciso** e la
+> sua conclusione è **rovesciata** via il canale Pigou (bilanci reali) — prima ipotesi di
+> stabilizzazione confermata dopo quattro falsificazioni. Fuori scope dichiarato: la variante a
+> costo unitario endogeno (§1.2, che pinna la quota salari) e la spirale prezzi-salari. Nota: già
+> senza prezzi endogeni il **markup implicito** (`prodotto medio / w_t`) è un **esito**. Per il
+> blocco prezzi come *feature* (non probe) serviranno dati sui markup (De Loecker, Eeckhout &
+> Unger 2020).
 
 **Ricerca bibliografica (continua, primo blocco FATTO → `parameter_notes.md`):**
 ogni parametro deve avere una fonte o essere dichiarato come scelta di
@@ -1136,7 +1221,13 @@ negoziabili.
   aggiornati dove i disoccupati "earn nothing" (ora salvo il sussidio brief 09). Nessuna modifica al brief 10: la `A` d'impresa era già un attributo
   di `Firm`, il ventaglio la popola dal modello; **brief 17:** stato `expected_utilization`
   (u^e) aggiornato via `adaptive_expectation` in `step_production` e **letto dall'acceleratore
-  in `plan_investment`** al posto di `utilization_last_period` (che resta come diagnostica)
+  in `plan_investment`** al posto di `utilization_last_period` (che resta come diagnostica);
+  **brief 21 (probe prezzi):** i 5 siti del libro mastro nominale/reale con **branch esplicito**
+  su `enable_prices` (`step_demand` domanda reale con `income/P`,`wealth/P`; `register_demand`
+  investimento reale `.../P`; `step_accounting` `sales=P·production`; `step_investment` unità reali
+  `budget/P`, denaro `P·unità`; `step_settlement` pagamento `P·unità`, `actual_consumption` resta
+  reale), e — completamento del libro mastro (§1.1/§1.4) — **`plan_employment` usa il salario reale
+  `w_t/P` nella FOC di profit-max** (a `P=1` == `w_t`, annida η=0)
 - `src/model.py` — MacroModel: mercato del lavoro, sequenza del periodo (step 0 =
   wage curve, brief 07; update aspettativa adattiva dentro lo step di produzione,
   brief 08; **step 8 = governo, brief 09**), settlement, metriche (incl.
@@ -1152,7 +1243,12 @@ negoziabili.
   tocca l'RNG, e validazione `pct_capitalists` ⇒ almeno 1 capitalista (brief 12);
   **brief 17:** parametro `utilization_expectation_gain` (λ_u, default 1.0, validato ∈[0,1]),
   init `expected_utilization = target_utilization`, reporter `Expected_Utilization`/`Util_Effect`
-  (media sulle imprese) tenuti **fuori da `_PANEL_METRICS`** come `Capitalist_Consumption`
+  (media sulle imprese) tenuti **fuori da `_PANEL_METRICS`** come `Capitalist_Consumption`;
+  **brief 21:** parametro `enable_prices` (bool, default False, **probe** — non nei default, non
+  nella SA), attributo `self.price` (init 1.0, aggiornato `= w_t/w_bar` nel `step()` **subito dopo
+  lo step 0, prima del mercato del lavoro**, §1.4, solo se `enable_prices`), reporter `Price`
+  (**fuori da `_PANEL_METRICS`**), e `compute_wage_share_profitmax` al salario reale sotto il probe.
+  Blocco docstring "PRICE PROBE" col libro mastro di §1.3 (la SPEC, scritta prima dell'aritmetica)
 - `src/experiment.py` — runner Monte-Carlo, sweep ρ, griglia (σ, ρ) e sign
   frontier (brief 04), stack di robustezza brief 05 (`run_grid_panel`,
   `bootstrap_sigma_star`, `slopes_by_sigma`, `quadratic_curvature`, …); `eta`,
@@ -1229,6 +1325,15 @@ negoziabili.
   congelate nel sorgente PRIMA dei run** (`HYPOTHESIS`, `GATE_RULE`); thread BLAS pinnati,
   ambiente in `ces_b17_environment.json`. La `sd` raccolta per `Util_Effect` è la **within-tail**
   (temporale), perché la media è ~λ_u-invariante per linearità
+- `scripts/run_brief21.py` — **brief 21**, driver del PROBE sui prezzi. Fasi `byte-check` (i due
+  annidamenti byte **detector-first**: self-test η=0.10 che FIRES, poi `enable_prices=False`/`=True`
+  a η=0 vs `ces_b05`) / `panel` (griglia η×c0×`enable_prices`×σ×ρ, 12 seed, **CRN** — a parità di
+  seed il probe non cambia RNG, quindi off/on condividono rete e matching) / `report` (σ\*(η),
+  mappa di collasso c0=2.0, ρ\*/H1, canale Pigou — **senza simulazione**). **Ipotesi P1–P4 e gate
+  congelati nel sorgente PRIMA dei run** (`HYPOTHESES`, `GATE`); BLAS pinnati; ambiente in
+  `ces_b21_environment.json` (conteggio seed letto dal panel per non essere sovrascritto da un
+  report-only). Il gate esclude il controllo degenere (`enable_prices=False`) dal test di movimento
+  (lezione b17: è il riferimento, non un'osservazione)
 - `scripts/paper_claims.yaml` + `scripts/verify_paper.py` + `scripts/coherence.py` — **brief 18**,
   toolchain di verifica dei numeri del paper, **committata** (non più tooling di sessione).
   `paper_claims.yaml` è il registro (26 claim, ognuno con lookup eseguibile: artifact, filtro,
@@ -1248,7 +1353,10 @@ negoziabili.
   `do not hand-edit` sulla riga `\midrule`. **Prima tabella del paper con generatore committato**
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
-- `results/` — output misurati committati. `ces_b17_*.csv` + `ces_b17_gate.json` +
+- `results/` — output misurati committati. `ces_b21_*.csv` (brief 21: `stage_a_panel`,
+  `byte_check`, `sigma_star_eta`, `collapse_c0_2`, `h1_rho_star`, `pigou_c0_1`) +
+  `ces_b21_environment.json` + 2 figure → rigenerati da `run_brief21.py` (`--phase report` non
+  simula). `ces_b17_*.csv` + `ces_b17_gate.json` +
   `ces_b17_environment.json` + figura `ces_b17_rho_star_lambda.png` (brief 17) → rigenerati da
   `run_brief17.py` (`--phase report` non simula). `ces_b13_*.csv` + `ces_b13_environment.json`
   e 3 figure (brief 13) → rigenerati da `run_brief13.py` (fasi separabili; `--phase report`
@@ -1287,7 +1395,11 @@ negoziabili.
   target/uguaglianza esatta a λ_u=1 — annidamento λ_u=1 bit-for-bit, l'acceleratore legge u^e e
   non l'utilizzo realizzato, lag di un periodo, floor di `util_effect`, SFC/determinismo
   parametrizzati su λ_u<1, validazione, neutralità a t=0 per ogni λ_u, e reporter fuori da
-  `_PANEL_METRICS`). **551 test** (527 invariati + 24 nuovi). *(Brief 11 non aggiunge test: non tocca `src/`.)*
+  `_PANEL_METRICS`), probe sui prezzi (brief 21: **SFC parametrizzata su `enable_prices × η × c0`**
+  incl. buffer=0, **input noto come cattivo** che fallisce netto sull'asimmetria di §1.3, annidamento
+  byte η=0 `enable_prices=True`≡False, `Price` fuori da `_PANEL_METRICS` e ≡1 da spento, `P=w_t/w_bar`
+  quando acceso, salario reale `w/P==w_bar`, e **la FOC dell'impresa al salario reale** `w_t/P`).
+  **569 test** (551 invariati + 18 nuovi). *(Brief 11 non aggiunge test: non tocca `src/`.)*
 - `performance/engine.cpp` — **STALE**: implementa il modello additivo di Fase 1,
   non il core CES. Non usare per risultati finché non è portato.
 - `parameter_notes.md` — note bibliografiche: fonte, stima, range e verdetto di

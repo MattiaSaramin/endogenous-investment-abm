@@ -1,0 +1,4 @@
+check,max_ulp,max_ulp_significant,max_abs_dev,byte_equal,n_exceed,n_compared,regime_equal,n_regime_diff,n_regime_cols,ulp_tol,atol,ok
+detector_selftest_eta0.10,8901232204685215.0,8901232204685215.0,109.06671628271772,False,2139,3080,False,27,24,8,1e-12,False
+a_disabled_eta0,6.0,0.0,5.684341886080802e-14,False,0,3080,True,0,24,8,1e-12,True
+b_enabled_eta0_P1,6.0,0.0,5.684341886080802e-14,False,0,3080,True,0,24,8,1e-12,True

@@ -1778,3 +1778,17 @@ ancoraggio.
   misurata (max/min ≈1.22–1.29) rispetto al dato (90/10 ≈2:1). **Nessuna mappatura
   quantitativa** fra `productivity_spread` e una dispersione di TFP stimata: unità e
   costrutti diversi (vedi la voce del parametro).
+
+### Probe sui prezzi / normal-cost pricing (brief 21)
+- **`enable_prices` (bool, default False) — DIAL DI PROBE, non un parametro.** Non entra nei
+  default, non entra nella SA globale, non si sweepa altrove: promuoverlo a feature è una
+  decisione separata che richiederebbe di rifare la SA. Da spento è byte-identico a `main`.
+- **Zero nuovi parametri liberi.** La regola di prezzo è **normal-cost** con markup `mu` e
+  produttività `A` costanti, `P_t = (1+mu)·w_t/A`. Normalizzando `P=1` al salario di riferimento
+  (`A=(1+mu)·w_bar`) collassa a **`P_t = w_t/w_bar`** e **`mu` cancella**: `P` è il salario
+  normalizzato. Non serve quindi ancorare `mu` (per un blocco prezzi come *feature* — non probe —
+  servirebbero i markup di **De Loecker, Eeckhout & Unger 2020**, ma è fuori scope qui).
+- **Salario reale della FOC dell'impresa.** L'impresa massimizza il profitto **nominale**
+  `P·Q − w_t·L`, quindi assume dove `P·MPL = w_t`, cioè al **salario reale** `w_t/P = w_bar`
+  (costante per costruzione). Non è un parametro: è l'algebra del normal-cost pricing. Lasciare la
+  FOC al salario nominale è l'errore silenzioso di §1.3 (registrato in METHODOLOGY, voce brief 21).
