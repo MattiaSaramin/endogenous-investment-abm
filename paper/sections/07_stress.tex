@@ -37,7 +37,11 @@ output.
 \centering
 \small
 \caption{$\sigstar(\eta)$ on $Y$ at $c_0 = 1.0$, estimated on the support
-viable at \emph{every} $\eta$ so that the columns are comparable.}
+viable at \emph{every} $\eta$ so that the columns are comparable. At
+$\eta = 0.10$ and $\eta = 0.15$ the slope $\mathrm{d}Y/\mathrm{d}\rho$ crosses
+zero \emph{twice} over the support (\texttt{n\_crossings} $=2$ in
+\texttt{ces\_b07\_sigma\_star.csv}); the entry is the first crossing, and is a
+single point only at the two smaller $\eta$, where the crossing is unique.}
 \label{tab:wagecurve}
 \begin{tabular}{lrlrr}
 \toprule
@@ -66,6 +70,29 @@ from the empirical range.}
 \label{fig:wagecurve}
 \end{figure}
 
+\paragraph{The price convention brackets this result.} The result above holds the
+numeraire fixed at one, which makes the nominal wage the real wage --- and that is
+a convention, not a measurement. A normal-cost probe relaxes it: with constant
+markup and productivity the price is $P_t = w_t/\bar w$, so a nominal wage cut is
+passed through to the price and the real wage $w_t/P$ stays at $\bar w$. Under this
+complete, instantaneous pass-through $\sigstar$ rises \emph{more} steeply with
+$\eta$, not less (\cref{tab:prices}): the two conventions' intervals are cleanly
+disjoint at $\eta = 0.15$ and only marginally so at $\eta = 0.10$, separated there
+by about $0.001$. The mechanism is a Pigou effect on real balances --- lower
+prices raise real wealth, which raises demand --- and it is stabilising, so a
+reader who took complete pass-through for the truth would conclude that wage
+flexibility \emph{does} auto-correct. Two cautions keep this a bracket rather than
+a verdict. The probe deliberately occupies the most stabilising corner of the
+space --- constant markup and productivity, no price stickiness --- so it is an
+upper bound on how far pass-through can stabilise. And the off control is not
+itself resolved at twelve seeds: its $\sigstar$ is non-monotone in $\eta$, the
+endpoint falling below the $\eta = 0.10$ value, and it carries two crossings at
+$\eta \ge 0.10$ where the frontier is not a single point. The honest reading is a
+bracket: at zero pass-through the wage curve does not auto-correct unemployment,
+at complete pass-through it does, and the model cannot say where between them the
+data sit. \Cref{sec:frontierlocal} returns to this as one of three senses in which
+the frontier is a local object.
+
 \paragraph{A collapse mechanism, discovered here.}
 In the secondary regime $c_0 = 2.0$, wage flexibility \emph{destabilises} the
 economy in the high-$\sigma$, low-$\rho$ corner: at $\sigma = 1.25$, 43\% of
@@ -90,6 +117,22 @@ the subsistence floor $w_{\min}$ never stably binds --- so this is genuine
 viability failure, not a floor artefact. We name this the
 \textbf{wage\,$\to U \to$\,capital-erosion channel}; \cref{sec:discussion}
 returns to it.
+
+\paragraph{The price probe separates the collapse.} Step~(2) of that mechanism
+turns on the firm reacting to the \emph{real} wage: at a fixed numeraire the
+nominal wage is the real wage, so the wage oscillation is an oscillation in the
+firm's own marginal-cost signal. Under complete pass-through it is not ---
+$w_t/P \equiv \bar w$ --- and step~(2) does not start. Running $c_0 = 2.0$ with
+prices on does not, however, abolish the collapse. At $\eta = 0$, where
+$P \equiv 1$ by construction, the two conventions are identical (two cells
+collapse, one of them fully, under each). Away from there the incidence that
+climbed with $\eta$ under the fixed numeraire --- cells with any collapse running
+$2, 8, 12, 14$ across $\eta$ --- is flat with prices on, at $2, 3, 3, 2$;
+excluding the degenerate $\eta = 0$ cell, cells with any collapse fall from $34$
+to $8$ and the fully collapsed from $16$ to $3$. The probe therefore
+\emph{separates} the collapse into two components: a wage-driven part that
+pass-through removes, and a residual, already present at $\eta = 0$ and unrelated
+to wage flexibility, that it does not.
 
 \subsection{Adaptive expectations move neither the frontier nor the collapse}
 \label{sec:expectations}
