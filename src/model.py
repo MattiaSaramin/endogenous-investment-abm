@@ -531,9 +531,14 @@ def compute_wage_share_profitmax(model):
     realised wage share.  This is the second of the two channels through which sigma
     acts: sigma changes the profit-max K/L ratio at the given wage, hence the share
     of output going to labour, *in the opposite direction* to the employment loss.
+
+    Price probe (brief 21): this is the ceiling on the *real* wage share, so it uses the
+    REAL wage ``w_t/P`` — the same wage the firm's profit-max FOC uses (agents.plan_employment).
+    At ``P = 1`` (probe off, or eta = 0) it is ``w_t`` unchanged, so eta = 0 nests bit-for-bit.
     """
+    w = model.wage_rate / model.price if model.enable_prices else model.wage_rate
     return ces_wage_share_profitmax(
-        model.productivity, model.wage_rate, model.K0, model.L0, model.pi0, model.sigma
+        model.productivity, w, model.K0, model.L0, model.pi0, model.sigma
     )
 
 

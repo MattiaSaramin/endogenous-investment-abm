@@ -417,7 +417,17 @@ class Firm(mesa.Agent):
         K = self.capital
         A = self.productivity
         m = self.model
-        w = m.wage_rate
+        # Price probe (brief 21 §1.1/§1.4): the firm maximises NOMINAL profit P*Q - w_t*L, so
+        # its profit-max FOC is P*MPL = w_t, i.e. MPL = w_t/P = the REAL wage.  With normal-cost
+        # pricing P = w_t/w_bar the real wage is w_bar (constant), so the firm's employment cap
+        # is eta-invariant and the ONLY real channel through which eta acts is the Pigou
+        # revaluation of household wealth (the demand side) — which is exactly why §1.4 computes
+        # P BEFORE the labour market.  Leaving w_t here would make the firm react to its own
+        # nominal wage without seeing that its price moved too: a spurious SECOND real channel,
+        # violating §1.1 ("un solo canale reale"), that neither the SFC test nor the eta=0
+        # byte-check can catch (the silent breakage §1.3 warns about).  enable_prices=False uses
+        # w_t verbatim (explicit branch); at P=1, w_t/P == w_t nests eta=0 bit-for-bit.
+        w = m.wage_rate / m.price if m.enable_prices else m.wage_rate
 
         if A <= 0.0:
             self.desired_employment = 0

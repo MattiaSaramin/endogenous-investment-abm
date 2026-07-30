@@ -288,6 +288,31 @@ def test_price_real_wage_is_constant():
         assert m.wage_rate / m.price == pytest.approx(m.w_bar, rel=1e-12)
 
 
+def test_price_firm_hires_at_real_wage():
+    """Brief 21 §1.1/§1.4: under the probe the firm's profit-max FOC is P*MPL = w_t, i.e. it
+    hires at the REAL wage w_t/P == w_bar — NOT the nominal wage.  Leaving it at w_t would be a
+    spurious second real channel (the silent breakage §1.3 warns about; SFC/byte-checks miss it)."""
+    m = MacroModel(retention_ratio=REF_RHO, seed=7, eta=0.10, c0=2.0, enable_prices=True)
+    for _ in range(50):
+        m.step()
+    # Controlled check: pin a known nominal wage and its normal-cost price, call plan_employment
+    # directly (so f.capital is the same before and after — the running loop changes K at
+    # settlement, which is why a post-hoc read of f.L_profitmax vs f.capital would not line up).
+    m.wage_rate = 0.95
+    m.price = m.wage_rate / m.w_bar          # P = w_t/w_bar, so w_t/P == w_bar
+    assert abs(m.price - 1.0) > 1e-6
+    for f in _firms(m):
+        f.plan_employment()
+        at_real = ces_labour_profitmax(f.capital, f.productivity, m.wage_rate / m.price,
+                                       m.K0, m.L0, m.pi0, m.sigma)
+        at_nominal = ces_labour_profitmax(f.capital, f.productivity, m.wage_rate,
+                                          m.K0, m.L0, m.pi0, m.sigma)
+        assert f.L_profitmax == pytest.approx(at_real, rel=1e-12)
+        # and the real-wage FOC really differs from the (wrong) nominal-wage version at P != 1
+        if f.capital > 0 and math.isfinite(at_real):
+            assert abs(at_real - at_nominal) > 1e-9
+
+
 def test_distribution_identity():
     model = MacroModel(retention_ratio=REF_RHO, seed=3)
     for _ in range(300):
