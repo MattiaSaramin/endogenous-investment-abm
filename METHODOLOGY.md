@@ -243,12 +243,36 @@ mano una cella di una tabella misurata lascia in piedi la causa (la trascrizione
 prima a passare da un generatore (`scripts/make_tab_sobol.py`, brief 20); `tab:delta`, `tab:baseline`
 e `tab:marginalturn` restano senza — debito dichiarato.
 
+**Raffinamento (brief 22): `tab:prices` è la SECONDA tabella con generatore committato**
+(`scripts/make_tab_prices.py`), e porta una **CLASSE DI DIFETTO NUOVA**, distinta dai tre refusi
+di `tab:sobol`. `tab:wagecurve` stampava `σ*=0.725` **senza dichiarare che i crossing sono due**:
+il numero è corretto per la sua vintage `ces_b07`, ma la trascrizione ha perso il **qualificatore**.
+Non un errore di cifra — una **perdita di informazione** nella trascrizione — corretto dichiarando
+`n_crossings` in caption **a cifre invariate** (referente `ces_b07_sigma_star.csv`, `target=Y`/`across_eta`,
+`n_crossings=2` a η=0.10 **e** η=0.15; il brief 22 ne citava solo una, seguito **artifact > brief**).
+**Debito generatori aggiornato:** `tab:wagecurve` resta **senza** generatore ma con **referente
+identificato**, quindi retrofittabile a **basso costo** — a differenza di `tab:baseline`, la cui
+sorgente non è fra gli artifact inclusi (punto cieco #2). `tab:delta`, `tab:baseline`,
+`tab:marginalturn` restano senza.
+
 **Falsi positivi noti dello sweep — DA NON CORREGGERE MAI** (sarebbe il movimento di `667003b`):
 - **`0.771`** (§9, `tab:marginalturn`) è **1230/1596 = 0.770677**, che round-once dà 0.771: **il
   paper è corretto**. L'abbinamento di `sweep_rounding.py` a `ces_b07_sigma_star_by_rho/ci_hi` è
   **coincidenza** (numero derivato — punto cieco #1 del brief 19).
 - **`59.4`** ×2 (§6, `tab:baseline`) è **non attribuito**: la sorgente di `tab:baseline` non è fra i
   51 artifact inclusi (punto cieco #2), e l'abbinamento a `ces_sigma_rho_grid` è un'altra cella.
+
+**Punto cieco #3 della toolchain (brief 22), accanto ai due del b19.** I primi due sono dello
+`sweep_rounding.py` (numeri derivati; tabelle senza sorgente inclusa); il terzo è di
+`verify_paper.py`/`coherence.py`: il matching a **substring non può verificare un intero piccolo**
+quando la sua riga porta la **stessa cifra altrove**. Caso misurato: il claim `n_crossings=2` a
+η=0.10 di `tab:prices` è **indiscriminabile** perché la sua riga porta `σ*=0.726` (la cifra «2» è
+già nel numero); nessun `context` di riga lascia un solo «2». **Rimosso dal registro** perché
+sarebbe un check vacuo (un check che passa senza ispezionare è peggio di nessun check, §6); il
+claim falsificabile «off sviluppa un secondo crossing» **sopravvive** via η=0.15, la cui riga
+(`0.711`, `[0.658, 0.800]`) non contiene «2». Gli `n_crossings=1` (interi non discriminanti) e i
+conteggi di collasso c0=2.0 (interi piccoli/derivati) sono **dichiarati e riconciliati contro
+l'artifact nel report del brief**, non auto-registrati.
 
 ---
 
@@ -1014,6 +1038,78 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     + 2 figure. **Fuori scope:** la variante §1.2; markup variabile/prezzi eterogenei/stickiness/moneta
     come stock separato; promuovere il probe a feature; rifare i numeri canonici.
 
+- **Brief 22 — qualificazione di H2 nel paper, IN BLOCCO (solo `paper/`+`scripts/`):**
+  H2 riformulata da headline incondizionato a **BRACKET fra due convenzioni sul
+  pass-through, nessuna delle due ancorata**. Commit `3f1f6a2` (prosa in blocco),
+  `d4fdbf4` (generatore + `tab:prices` + registro), `d95cfed` (nuova sottosezione
+  §10). Nessun `src/`, nessun run del modello, **569 test invariati per costruzione**.
+  - **I SEI siti di H2 toccati insieme** (individuati con **grep reale**, non a
+    memoria — lezione b18): `frontmatter.tex`, `01_introduction.tex`, `07_stress.tex`
+    (`sec:wagecurve`), `10_discussion.tex` §9, la **nuova** sottosezione
+    `sec:frontierlocal`, `11_limitations.tex`. Toccarne uno e non gli altri sarebbe
+    il movimento di `667003b`.
+  - **Enunciato a bracket — DIVIETO REGISTRATO.** A pass-through **zero** (numerario
+    ≡ 1, il modello canonico) la flessibilità salariale non autocorregge e il capitale
+    si erode; a pass-through **completo e istantaneo** (probe b21) autocorregge via
+    Pigou. **Mai «H2 cade», «H2 tiene», «H2 è rovesciata»**: sono tutti e tre un capo
+    del bracket spacciato per il bracket. Il probe occupa l'estremo **massimamente
+    stabilizzante** (markup e produttività costanti, zero vischiosità), quindi è un
+    **upper bound** sul pass-through, non un verdetto. (Nota: la voce b21 sopra usa
+    «rovesciata» come shorthand di processo per l'estremo ON — **nel paper vive solo
+    il bracket**.)
+  - **`tab:prices` da `scripts/make_tab_prices.py` committato — SECONDA tabella del
+    paper con generatore**, dopo `tab:sobol` (§5). σ\*(η) a c0=1.0, off (numerario
+    fisso) vs on (`P=w_t/w̄`): on 0.648→0.716→0.806→0.871, off 0.648→0.680→0.726→0.711
+    (**non monotona**, endpoint sotto η=0.10). Caption con **vintage `ces_b21`
+    dichiarata** (12 seed, 11 nodi σ), colonna `#cross`, e la dichiarazione esplicita
+    che **la colonna off è il controllo del probe, NON `tab:wagecurve`** (vintage non
+    commensurabili — divieto §5/b17).
+  - **`tab:wagecurve`: corpo BYTE-INVARIATO** (i suoi 0.654/0.666/0.725/0.740 sono
+    corretti per `ces_b07`). La caption ora dichiara **`n_crossings=2` a η=0.10 E
+    η=0.15** (referente `ces_b07_sigma_star.csv`, `target=Y`, `support_kind=across_eta`).
+    **Classe di difetto NUOVA** (vedi §5): non un refuso di trascrizione come le tre di
+    `tab:sobol`, ma una **perdita di informazione** nella trascrizione — il numero è
+    corretto, cade il **qualificatore**. Il brief diceva «a η=0.10» e l'artifact ne
+    aveva **due**: seguito **artifact > brief**, che è la gerarchia giusta.
+  - **Nuova sottosezione `sec:frontierlocal`** («la sign frontier non generalizza»):
+    tre canali indipendenti su tre disegni diversi convergono — §8 (b09, condizionale
+    alle istituzioni fiscali), §9 (b13/b14, `S1(slope|viable)=0.019` su σ), §7+probe
+    (b21, condizionale al numerario, σ\* su di ~un nodo). **Gerarchia — la conclusione
+    da citare:** ciò che sopravvive a tutti e tre **non è la posizione della frontiera**
+    ma il **margine ancorato di H1** (il ρ ancorato resta a sinistra della svolta per
+    σ≥0.4 in ogni configurazione testata). Headline fragile su margine robusto.
+  - **Registro 26 → 49 claim** (+22 `ces_b21`: 7 σ\*, 14 CI, 1 `n_crossings`; +1
+    `ces_b14` per 0.019); **token 574 → 611**. **Entrambe le letture:** **8%** sul
+    paper intero (49/611), ma **23 claim su 37 token nuovi = 62%** sul materiale b22.
+  - **Detector, entrambi riportati** (regola §6/b19): `verify_paper.py --selftest`
+    **ALL PASS**; iniezione deliberata `0.871→0.870` in `tab:prices` → **1 FAIL netto**
+    (`CLAIM NOT FOUND IN TEX`), ripristinato → **0 FAIL**. `sweep_rounding` probe **BOTH
+    PASS**, i **3 falsi positivi noti intatti** (59.4 ×2 in 06_shape, 0.771 in
+    09_sensitivity), **0 firme nuove** nelle sezioni toccate. `coherence.py` **0
+    DIVERGENT**.
+  - **CI: NON eseguita, in attesa di push** — è uno **stato**, non un esito. Il push
+    del b22 è ciò che fa girare `.github/workflows/paper.yml` (gated `paths: paper/**`;
+    il b21 è fuori da `paper/`, quindi l'esito resta attribuibile al solo b22).
+  - **Fuori scope (dichiarato):** retrofit dei generatori di `tab:wagecurve` (referente
+    identificato, vedi §5), `tab:delta`, `tab:baseline`, `tab:marginalturn`; promuovere
+    `enable_prices` a feature; eseguire la variante §1.2 del b21 (pinna la quota salari,
+    citata come scartata in `11_limitations`).
+
+- **Brief 22-bis — tre correzioni di documentazione/artifact (commit `c2275f6`, solo
+  `paper/`+`results/`):**
+  - **`results/paper_rounding_sweep.csv` rigenerato 84.354 → 94.125 righe.** Lo snapshot
+    committato descriveva il paper **pre-b22**. **Precedente registrato come REGOLA:**
+    uno snapshot **tracciato** deve seguire la sua sorgente; lasciarlo stale per
+    preservare un piano di commit è la classe di drift che b18–b20 hanno chiuso. **Il
+    piano di commit è una convenzione; la corrispondenza artifact↔sorgente è un
+    invariante.** (Il b22 l'aveva *ripristinato* invece di aggiornarlo — corretto qui.)
+  - **Omonimia «pass-through» disambiguata.** `03_model.tex:131` (senso cassa, già
+    «*intra-period* pass-through») resta **byte-intatto**; qualificato il senso nuovo
+    alla **prima occorrenza** in `07_stress.tex:78` («price pass-through»). Principio:
+    **il costo lo paga il testo che ha introdotto l'ambiguità**, non la prosa consolidata.
+  - **`numéraire` uniformato** alla forma maggioritaria pre-esistente (accentata): **0
+    piane / 16 accentate**. Nessuna cifra, solo grafia.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
@@ -1351,6 +1447,11 @@ negoziabili.
   `ces_b13_sobol_indices.csv` (`saltelli`, round-once ROUND_HALF_UP, mappa `$\lambda$`=`wealth_effect`,
   stessi grassetti); stampa su stdout, il `.tex` contiene il blocco inline col marcatore
   `do not hand-edit` sulla riga `\midrule`. **Prima tabella del paper con generatore committato**
+- `scripts/make_tab_prices.py` — **brief 22**, genera il corpo `tabular` di `tab:prices` da
+  `ces_b21_sigma_star_eta.csv` (`c0=1.0`, round-once ROUND_HALF_UP); a η=0 **asserisce** l'identità
+  off≡on (`P≡1` per costruzione) ed emette una riga sola. Stampa su stdout, blocco inline nel `.tex`
+  col marcatore `do not hand-edit` sulla riga `\midrule`. **Seconda tabella del paper con generatore
+  committato** (dopo `tab:sobol`)
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
   con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
 - `results/` — output misurati committati. `ces_b21_*.csv` (brief 21: `stage_a_panel`,
@@ -1406,4 +1507,10 @@ negoziabili.
   ancoraggio per ogni parametro; §"Il sistema congiunto" (α, ρ, δ, K/Y, I/Y).
   **Da estendere a ogni nuova estensione.**
 - `METHODOLOGY.md` — questo file. **Da rileggere contro il codice a ogni brief**:
-  ha già driftato una volta (§9).
+  ha già driftato una volta (§9). **Ha driftato di nuovo:** i brief 22 e 22-bis non
+  erano registrati qui — i criteri di accettazione §7 del brief 22 **omettevano il
+  record** (che b17, b18–20 e b21 avevano), e questo documento anti-drift è rimasto
+  indietro di **due brief** (chiuso dal brief 22-ter, questa voce). **Invariante d'ora
+  in poi: ogni brief ha il proprio record in `METHODOLOGY.md` FRA I CRITERI DI
+  ACCETTAZIONE.** Il record non è un extra a fine lavoro: è parte del deliverable, alla
+  pari del codice e dei detector. Un documento anti-drift che drifta è il caso peggiore.
