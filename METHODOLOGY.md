@@ -1110,6 +1110,98 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   - **`numéraire` uniformato** alla forma maggioritaria pre-esistente (accentata): **0
     piane / 16 accentate**. Nessuna cifra, solo grafia.
 
+- **Brief 23 — riposizionamento rispetto al modello base (commit `6e65ce2`, solo
+  `paper/` + lo sweep CSV):** quattro siti toccati insieme, sola prosa, solo
+  aggiunte. Nessuna cifra cambiata, nessun ambiente `tabular` sfiorato,
+  `paper_claims.yaml` intatto ⇒ registro fermo a 49 claim, 569 test invariati per
+  costruzione (nessun `src/`, nessun run). Origine: confronto integrale fra il PDF
+  di `\citet{Teglio2025}` e i sorgenti `paper/*.tex` a `fb4060a`.
+  - I quattro siti (righe post-edit): `06_shape.tex:115` (la congettura),
+    `01_introduction.tex:14` (una frase di motivazione), `02_literature.tex:21`
+    (variabili congelate + genealogia del numerario), `08_fiscal.tex:50` (la
+    replica come validazione incrociata).
+  - **IL REPERTO** — le conclusioni del paper base nominano questa estensione e ne
+    congetturano l'esito. Teglio §5: il modello «[does] not consider the relation
+    between capitalists' accumulated wealth and investments, which can affect both
+    the demand and the supply sides», e «it is hard to imagine how it could solve
+    the problem of the lack of consumption goods demand by low income households,
+    at least in a model that does not envisage income growth». Il nostro è
+    esattamente quel modello (`A` costante, `g=0`), quindi la congettura vi è
+    testabile. Il paper ci era arrivato da solo: `06_shape` diceva già «investment
+    itself becomes the leak» senza sapere che il reperto era stato previsto.
+  - **La mappatura HA TENUTO, al livello calibrato** — e la differenza di oggetto è
+    dichiarata nella stessa frase. La congettura riguarda il vincolo di ricchezza
+    sulla spesa delle famiglie a basso reddito; `tab:baseline` misura `dY/dρ` al ρ
+    ancorato. Il paper scrive «the closest available counterpart […] not a test of
+    the household constraint itself». Nessuna delle forme vietate (`confirm`,
+    `proves`, `vindicat`) compare. Il declassamento a «risuona con» era l'esito
+    accettabile previsto e non è stato necessario.
+  - La clausola condizionale di Teglio è **legata a L1, non promessa**: «income
+    growth large enough» rimanda a `\cref{sec:limits}`, e il punto 13 resta una
+    decisione non presa.
+  - **Le due variabili indipendenti del paper base sono dichiarate congelate**
+    (`02_literature`): razionalità delle famiglie (quattro livelli) e simmetria
+    della rete. Con la ragione (per attribuire un effetto al canale
+    dell'accumulazione la topologia va tenuta ferma) e il costo misurato
+    internamente, non asserito: `\cref{sec:heterogeneity}` mostra il domino che
+    passa proprio per le quote di spesa fisse, l'oggetto congelato. Individuato con
+    grep reale: `Teglio2025` compariva in 3 siti soli e mai in `02_literature`;
+    `rationality`/`network`/`topology`: zero occorrenze pertinenti in tutto
+    `paper/`.
+  - **Genealogia del numerario — DECISIONE §5.1: il blocco H2 NON è stato
+    riaperto.** Nel modello base il prezzo fisso è innocuo, perché il salario non è
+    un prezzo ma una quota di ricavi distribuita in parti uguali (Teglio, eq. 8):
+    «reale ≡ nominale» non costa nulla se nessun prezzo relativo si muove. Con una
+    wage curve il salario è un prezzo relativo, e la convenzione diventa
+    load-bearing. Il punto vive in `02_literature` come affermazione genealogica
+    (da dove viene l'assunzione, perché era innocua, perché qui non lo è più), non
+    come riformulazione di H2. H2 resta bracketed e byte-invariata nei sei siti del
+    b22: `07_stress`, `10_discussion`, `11_limitations`, `frontmatter` → zero hunk,
+    verificato.
+  - **Detector, tutti e quattro riportati (regola §6/b19):** `verify_paper.py` 0
+    FAIL, `--selftest` ALL PASS; input noto-cattivo → 1 FAIL netto → ripristino →
+    0 FAIL byte-esatto; `sweep_rounding.py` rigenerato (regola b22-bis), 0 firme
+    nuove, i 3 falsi positivi noti intatti (59.4 ×2 in `06_shape` righe 98/109,
+    0.771 in `09_sensitivity` riga 204), variazioni CSV confinate ai 4 file toccati
+    (soli shift di `tex_line`).
+  - **DEVIAZIONE DICHIARATA #1 — il bersaglio dell'iniezione, e un debito di
+    copertura scoperto così.** Il brief indicava `tab:government`; nessun claim del
+    registro copre quella tabella, quindi iniettare lì è vacuo (0 FAIL: un check
+    che passa senza ispezionare, §6). Il detector è stato provato su una cella
+    coperta (`0.718` in `tab:sobol`, unica nel file) → `CLAIM NOT FOUND IN TEX`.
+    `tab:government` si aggiunge quindi al debito di copertura, accanto a
+    `tab:baseline`: stessa classe, scoperta per caso mentre si verificava un
+    detector. È la regola §6 che si paga da sola.
+  - **DEVIAZIONE DICHIARATA #2 — `coherence.py` a 6 DIVERGENT, causa DIAGNOSTICATA
+    AL CONTRARIO nel report di sessione** (e nel messaggio di commit di `6e65ce2`,
+    che resta com'è: si corregge nel record, non si riscrive la storia). Il
+    messaggio attribuisce le 6 divergenze a una «riscrittura non committata di
+    `METHODOLOGY.md`». Falso, e verificato: il file presente nel working tree era
+    una copia di `istruzioni_progetto.md` — un documento diverso, che inizia con
+    `# Istruzioni del progetto`. `METHODOLOGY.md` a HEAD non era stale: contiene
+    569 test (riga 1032), 49 claim (riga 1081) e il record b22-ter (riga 1513). Le
+    prove usate per dichiararlo stale — «Fase 2», «345 test» — sono menzioni
+    storiche dentro un registro cronologico (righe 5, 69, 136, 1282; l'ultima dice
+    «non deve ripetersi»). Provato col detector: ripristinato `METHODOLOGY.md` da
+    HEAD, `coherence.py` passa da 6 DIVERGENT / 4 coherent a 0 DIVERGENT / 10
+    coherent. I sei valori (`1.002`, `0.966`, `0.024`, `0.900`, `0.561`, `0.021`)
+    sono presenti a HEAD e assenti dalla copia. Nessuna divergenza era reale.
+  - **REGOLA NUOVA, e costosa se ignorata:** prima di stabilire quale di due
+    versioni è stale, verificare che siano lo stesso documento. È il raffinamento
+    b17 («ogni numero ha IL SUO artifact») applicato a un documento invece che a un
+    CSV, e con una posta più alta: committare la copia avrebbe cancellato 823 righe
+    della fonte di verità del progetto. Il difetto è stato evitato dalla regola
+    «segnalare invece di sovrascrivere», non dalla diagnosi, che era invertita.
+  - **CI:** NON eseguita, in attesa di push — è uno stato, non un esito (il
+    workflow è gated `paths: paper/**`). Non citare conteggi di pagine: il workflow
+    non li emette (debito dichiarato).
+  - **Fuori scope, dichiarato:** il punto 13 (la clausola di Teglio si cita, non si
+    esegue); il credito (Teglio nomina il debito nello stesso passaggio — non
+    raccolto: il cap `I ≤ π` non morde, `investment_floor` μ\* = 0.226 in entrambe
+    le vintage Morris); retrofit dei generatori di `tab:wagecurve`, `tab:delta`,
+    `tab:baseline`, `tab:marginalturn`; `PaperV1.pdf` stale (tracciato, fermo a
+    `e9403be`) — commit a sé.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
