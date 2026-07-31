@@ -7,6 +7,7 @@
 % NOTE: amsmath/mathtools MUST be loaded before newtxmath, and amssymb must
 % NOT be loaded alongside it (newtxmath already provides the AMS symbols).
 \usepackage{amsmath,mathtools}
+\usepackage{amsthm}
 
 %---------------------------------------------------------------- fonts
 \usepackage[T1]{fontenc}
@@ -68,9 +69,6 @@
   frametitlefont=\bfseries\small,
   innerleftmargin=8pt, innerrightmargin=8pt,
   innertopmargin=6pt, innerbottommargin=6pt}
-\newenvironment{declbox}[1][]
-  {\begin{mdframed}[style=declstyle,#1]}
-  {\end{mdframed}}
 
 %----------------------------------------------------- bibliography
 \usepackage[backend=biber,style=authoryear,natbib=true,maxcitenames=2,
@@ -85,6 +83,23 @@
             pdfsubject={Agent-based macroeconomics}]{hyperref}
 \usepackage[nameinlink,capitalise]{cleveref}
 
+%------------------------------------------ numbered declaration environments
+% The declaration boxes (formerly the ad-hoc `declbox`) are now numbered,
+% \cref-able amsthm environments, still rendered in the same mdframed
+% `declstyle` callout via mdframed's \newmdtheoremenv -- the box acquires a
+% number, which is what makes it citable.  Two flavours: `modelassumption` for
+% a declared structural choice, `remark` for a recorded observation or result.
+% Defined AFTER cleveref, with explicit \crefname so \cref does not rely on
+% auto-detection through \newmdtheoremenv.
+\theoremstyle{definition}
+\newmdtheoremenv[style=declstyle]{modelassumption}{Model assumption}
+\theoremstyle{remark}
+\newmdtheoremenv[style=declstyle]{remark}{Remark}
+\crefname{modelassumption}{model assumption}{model assumptions}
+\Crefname{modelassumption}{Model assumption}{Model assumptions}
+\crefname{remark}{remark}{remarks}
+\Crefname{remark}{Remark}{Remarks}
+
 %------------------------------------------------------ custom commands
 \newcommand{\sigstar}{\sigma^{\ast}}
 \newcommand{\rhostar}{\rho^{\ast}}
@@ -92,9 +107,8 @@
 \newcommand{\Ystar}{Y^{\ast}}
 \DeclareMathOperator{\clip}{clip}
 
-% NOTE: `declbox` is defined ONCE, above, on mdframed. A second definition used to
-% sit here built on \newtcolorbox, left behind when the package was switched from
-% tcolorbox to mdframed to avoid loading TikZ/PGF. Since tcolorbox is no longer
-% loaded, \newtcolorbox was undefined and the document could not compile at all -
-% this was the fatal error in the first three CI builds. Do not reintroduce a second
-% definition here without also loading the package it needs.
+% NOTE: the declaration environments (modelassumption/remark) render on mdframed,
+% NOT tcolorbox. tcolorbox pulls in the whole of TikZ/PGF; a stray \newtcolorbox
+% left here after the switch to mdframed was undefined and could not compile at
+% all -- the fatal error in the first three CI builds. Do not reintroduce a
+% tcolorbox-based box without also loading the package it needs.

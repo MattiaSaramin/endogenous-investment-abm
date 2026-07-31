@@ -9,7 +9,7 @@
 This appendix collects the checks the paper's results rest on, the two
 occasions on which those checks failed, and the claims withdrawn as a result.
 
-\begin{declbox}[frametitle={Two principles, each learned from a measured failure}]
+\begin{remark}[Two principles, each learned from a measured failure]
 \emph{An invariant tested at a point holds at that point.} A property verified
 at one configuration carries no information about any other, and invariants
 must be parametrised over the range a sweep will reach \emph{before} the sweep
@@ -24,7 +24,7 @@ invariant of \cref{app:ownership} held only at the default configuration while
 the test suite stayed green throughout, and two of this document's own build
 detectors reported clean counts on a log that contained plenty
 (\cref{app:repro}).
-\end{declbox}
+\end{remark}
 
 \subsection{An invariant that held only at the default}
 \label{app:ownership}

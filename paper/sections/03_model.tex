@@ -53,15 +53,15 @@ labour equals the wage, and $N$ is the aggregate workforce. Which limit binds
 identifies the regime: Keynesian (involuntary) unemployment, classical
 unemployment, or full employment respectively.
 
-\begin{declbox}[frametitle={Structural invariant: the workforce cap restores
-diminishing returns}]
+\begin{modelassumption}[Structural invariant: the workforce cap restores
+diminishing returns]
 With a wage set outside the firm and an unbounded labour supply,
 $L^{\mathrm{profitmax}}_i \propto K_i$, hence $\Ystar_i \propto K_i$: the
 model becomes an $AK$ economy with constant returns to capital, unbounded
 growth and no steady state. The cap $L \le N$ is therefore not a realism
 detail but the structural feature that restores diminishing returns, and it
 is asserted as such in the test suite.
-\end{declbox}
+\end{modelassumption}
 
 Firms fire excess workers into an unemployed pool and fill vacancies by
 random matching; the discreteness of hiring and the randomness of matching are
@@ -124,7 +124,7 @@ transfer to the unemployed, indexed to the current wage, with the budget
 balanced every period by construction; a replacement rate of zero reproduces
 the no-government model bit-for-bit.
 
-\begin{declbox}[frametitle={Stock-flow consistency, and where it is tested}]
+\begin{modelassumption}[Stock-flow consistency, and where it is tested]
 The conserved quantity is
 $\sum_h (\text{wealth}_h + \text{income}_h) + \sum_i \text{buffer}_i$, and it
 is constant to within $10^{-9}$. The firm cash account is an
@@ -137,7 +137,7 @@ will reach}, not only at the default configuration. \Cref{sec:ownership}
 reports why: an ownership defect meant the invariant held at the default and
 nowhere else, destroying up to 97\% of the money stock in 200 periods at
 $\pi_c = 0.05$, while the tests --- run only at the default --- stayed green.
-\end{declbox}
+\end{modelassumption}
 
 \subsection{Period sequence}
 
