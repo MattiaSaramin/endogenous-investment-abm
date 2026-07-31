@@ -1192,9 +1192,15 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     CSV, e con una posta più alta: committare la copia avrebbe cancellato 823 righe
     della fonte di verità del progetto. Il difetto è stato evitato dalla regola
     «segnalare invece di sovrascrivere», non dalla diagnosi, che era invertita.
-  - **CI:** NON eseguita, in attesa di push — è uno stato, non un esito (il
-    workflow è gated `paths: paper/**`). Non citare conteggi di pagine: il workflow
-    non li emette (debito dichiarato).
+  - **CI: VERDE** — run `30593953273` (#11), conclusione **success**, durata
+    **2m11s** (job `build` 00:35:03→00:37:11Z, 2m08s). Il push conteneva `6e65ce2`
+    (blocco paper) e `ac98384` (questo record); il workflow ha buildato l'albero a
+    `ac98384`, e dal run #10 (`fb4060a`) l'unico cambiamento in `paper/**` è il b23,
+    quindi l'esito è attribuibile al b23. Contatori del passo diagnostico
+    (annotazioni pubbliche del run, referente = il run stesso): **error LaTeX 0,
+    reference/citation undefined 0, Overfull hbox 0, Underfull hbox 0**; unico
+    warning = deprecazione Node.js 20 (infrastruttura GitHub, non il paper). Nessun
+    conteggio di pagine: il workflow non lo emette (debito dichiarato §3).
   - **Fuori scope, dichiarato:** il punto 13 (la clausola di Teglio si cita, non si
     esegue); il credito (Teglio nomina il debito nello stesso passaggio — non
     raccolto: il cap `I ≤ π` non morde, `investment_floor` μ\* = 0.226 in entrambe
