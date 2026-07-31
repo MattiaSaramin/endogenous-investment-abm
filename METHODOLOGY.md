@@ -274,6 +274,16 @@ claim falsificabile «off sviluppa un secondo crossing» **sopravvive** via η=0
 conteggi di collasso c0=2.0 (interi piccoli/derivati) sono **dichiarati e riconciliati contro
 l'artifact nel report del brief**, non auto-registrati.
 
+**Punto cieco #4 della toolchain (brief 24): un numero MISURATO senza artifact CSV.** Il conteggio
+dei test stampato nel paper (`app:repro`) è un claim **misurato** — viene da `pytest -q` — ma non ha
+un CSV committato da cui leggerlo, quindi è **fuori dalla portata di tutti e tre i verificatori**:
+`verify_paper.py`/`coherence.py` cercano il referente in un artifact (che non c'è), e
+`sweep_rounding.py` guarda solo i token `\d+\.\d+` (un intero non lo è). Ha infatti **derivato in
+silenzio**: il paper diceva 527, `pytest -q` ne conta **569** (allineato in `a_validation.tex`,
+commit a sé). Regola operativa: **il conteggio dei test si allinea a mano da `pytest -q` prima di
+ogni push**, perché nessun detector lo farà. Distinto dal punto cieco #2 (lì la sorgente CSV esiste
+ma non è fra gli artifact inclusi; qui una sorgente CSV **non esiste per natura**).
+
 ---
 
 ## 6. Decisione architetturale: sequenziare il mercato del lavoro (ESEGUITA)
