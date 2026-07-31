@@ -116,12 +116,12 @@ reinstalling Windows.** That is a permanent reduction in the machine's
 security posture in exchange for local LaTeX compilation, which the GitHub
 Actions route already provides for free. It is not recommended.
 
-## Before submitting
+## Title block and date
 
-Placeholders to fill in `main.tex`:
-
-- `\author{Mattia \textsc{[Surname]}}` — surname, email, institution
-- the repository URL in the title footnote
+The title-page author block in `frontmatter.tex` is filled in: Mattia Saramin,
+Department of Economics, Ca' Foscari University of Venice, with the correspondence
+address and repository URL in the title footnote. `\date{}` is intentionally
+left empty, so that two compilations of the same source are the same document.
 
 ## Provenance of the numbers
 
