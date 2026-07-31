@@ -1208,6 +1208,71 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     `tab:baseline`, `tab:marginalturn`; `PaperV1.pdf` stale (tracciato, fermo a
     `e9403be`) — commit a sé.
 
+- **Brief 25 — igiene del repository prima dell'invio a Teglio (solo documentazione
+  + una eccezione §5 approvata; nessun `src/`, nessun run del modello; 569 test
+  invariati per costruzione, eseguiti e riportati prima 569 / dopo 569):** sei
+  commit locali, uno per task, STOP pre-push. Il repo era da mandare a Teglio col
+  working paper (b24, **non ancora fatto**: b25 eseguito fuori ordine).
+  - **Task 1 — nuovo `README.md` (commit `214fdd6`, 125 righe):** il vecchio README
+    era diventato un diario (1106 righe) che duplicava METHODOLOGY.md. Sostituito con
+    una porta d'ingresso convenzionale (badge CI, abstract in riuso stretto dal paper
+    + link all'artifact PDF, install, quickstart verificato in 0.2 s, tabella compatta
+    driver→artifact coi tempi e i thread BLAS, Verification in prima pagina, albero,
+    cite, licenza, further docs). **Nessun risultato per brief né cronologia.** Unico
+    numero stampato oltre l'abstract: 569 test, **letto da pytest in questo run** (§5).
+  - **Task 2 — archiviato il vecchio README in `docs/project_log.md` (commit `de193bb`):**
+    `git mv` (rename al 99%) + intestazione di congelamento (snapshot a `bcab5c0`,
+    2026-07-31; fonti correnti METHODOLOGY.md e paper/). Un log archiviato non ha una
+    sorgente da seguire — ma solo se lo dichiara (il difetto chiuso dal b22-bis).
+    **Controllo materiale orfano:** l'*Interpretive frame* (assente da METHODOLOGY.md,
+    grep=0) è **conservato dall'archiviazione stessa** (vive nel log archiviato, in
+    `RESULTS.md` e in gran parte in `11_limitations.tex`); l'operazione è uno spostamento,
+    non una cancellazione, quindi **nulla è orfano**.
+  - **Task 3 — `LICENSE` (MIT) e `CITATION.cff` (commit `8919f70`):** titolare/autore
+    **Mattia Saramin**, **chiesto e confermato dal PI** (il frontmatter del paper usa
+    ancora placeholder `[Surname]`; non inventato). CITATION.cff formato GitHub standard,
+    senza version tag (nessun tag di release esiste).
+  - **Task 4 — `.gitattributes` tracciato, `_results_body.tmp` rimosso (commit `b83cff6`):**
+    `.gitattributes` (`text=auto eol=lf` + marcatori binari) normalizza i fine-riga
+    Windows↔CI Linux; il `.tmp` era un frammento Results non tracciato (residuo di build).
+  - **PREMESSE DEL BRIEF GIÀ STALE — verificate contro il repo, non rieseguite alla
+    lettera** (il brief era scritto prima del b23): **(a)** `PaperV1.pdf` era dato per
+    tracciato → in realtà **già risolto dal b23** (`bcab5c0`: untracked + `.gitignore
+    /PaperV1.pdf` con commento che rimanda alla "Repository structure" del README —
+    era il "commit a sé" promesso qui sopra); nulla da rifare. **(b)** `RESULTS.md` dato
+    per emettere `DOCUMENT MISSING` → coherence.py riportava **0 missing**, perché il
+    file **esiste su disco** (untracked) e coherence legge il filesystem.
+  - **Task 4.3 — `RESULTS.md`: RIDICHIARATO debito, non cambiato (opzione 3).** La
+    decisione è **già presa e documentata** ("untracked by explicit decision, Mattia
+    2026-07-28", docstring di `coherence.py`; target `required:false` nel registro).
+    L'opzione "rimuoverlo dalla lista di `coherence.py`" **tocca `scripts/`** → vietata da
+    §5. Lasciato com'è: su clone pulito è assente e coherence emette il declared-debt,
+    per costruzione. **`.claude/`** resta escluso via `.git/info/exclude` (non tracciato);
+    non aggiunto a `.gitignore` committato — un clone esterno non ha un `.claude/` da
+    ignorare.
+  - **REGRESSIONE DI COHERENCE INTRODOTTA DAL TASK 1, e la sua ECCEZIONE §5 (commit
+    `f3e27c0`, approvata dal PI).** Rendere il README magro ha tolto **10 numeri headline**
+    (indici Sobol/b14, slope) che `scripts/paper_claims.yaml` marcava README.md come
+    documento **richiesto**: coherence.py è passato da **10 coherent / 0 DIVERGENT / EXIT 0**
+    a **10 DIVERGENT / EXIT 1**. Il brief prevedeva un cambio di output di coherence dal
+    **Task 4.3**, non dal Task 1: **premessa mancata, dichiarata.** La correzione onesta
+    è togliere README.md dall'`appears_in` di quei 10 claim (il registro dichiara che
+    `appears_in` è costruito con grep reale — elenca *dove* un numero appare; dopo il Task 1
+    non appare più nel README), **non** `required:false` (fingerebbe un doc opzionalmente
+    assente). Tocca `scripts/` → **eccezione §5 mirata, decisa dal PI** perché è il
+    completamento del Task 1 ed evita di spedire a Teglio un checker rosso. **Esito:
+    coherence torna a 10 coherent / 0 DIVERGENT / EXIT 0** (sommario identico al pre-brief);
+    i 10 claim restano incrociati su paper+METHODOLOGY+notebook (+RESULTS se presente);
+    solo `sobol_delta_S1_viable`, che viveva solo in paper+README+RESULTS, scende a
+    single-doc su clone pulito (onesto). `verify_paper.py` **invariato** (0 FAIL prima e dopo).
+  - **Detector prima/dopo (regola §6):** `verify_paper.py` 0 FAIL / EXIT 0 prima e dopo;
+    `coherence.py` 0 DIVERGENT / EXIT 0 prima e dopo (con la finestra rossa intermedia
+    sopra, chiusa dall'eccezione); `pytest` 569 verdi prima e dopo (nessun `src/`, `tests/`
+    toccato). **Fuori scope, dichiarato:** il paper (b24); tracciare i documenti di lavoro
+    (`brief_*.md`, `istruzioni_progetto.md` — non riunificare con METHODOLOGY.md, è la
+    confusione che ha prodotto la diagnosi invertita del b23); `performance/engine.cpp`
+    resta STALE (il README lo dichiara non in uso).
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
