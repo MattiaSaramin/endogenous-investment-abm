@@ -21,3 +21,9 @@ Thumbs.db
 
 # Smoke-mode driver output: plumbing checks, never a scientific result
 results/smoke/
+
+# Paper PDF: built ONLY in CI (no local TeX engine). The current PDF is the
+# paper-pdf artifact of the "Build paper" GitHub Actions run. Untracked so a
+# stale binary cannot drift behind paper/ (the drift that made PaperV1.pdf the
+# pre-b22/b23 paper). See README, "Repository structure".
+/PaperV1.pdf

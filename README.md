@@ -972,6 +972,9 @@ scripts/
 └── run_brief14.py                Regenerates brief 14: the chord-vs-OLS bridge (task A/B) -> Morris -> Sobol -> wide, all on the repaired QoI
 notebooks/
 └── 01_Endogenous_Investment.ipynb   consolidated results, briefs 04-14: the U-shaped response and rho* (opening), sigma=1, the sign frontier, wage curve, expectations, government, heterogeneity, anchoring, the repaired SA
+paper/
+├── main.tex         LaTeX source (sections/, figures/, references.bib); compiled ONLY in CI
+└── (compiled PDF)   NOT committed - it is the paper-pdf artifact of the "Build paper" Actions run
 results/
 ├── ces_b13_*.csv    brief-13 global SA: pilot, Morris screening, Sobol design/QoI/indices, by-products, summary; produced by scripts/run_brief13.py
 ├── ces_b14_*.csv    brief-14 QoI repair: the 2x2 bridge (fixed/marginalised x chord/OLS), task-B slopes with rho*, redone Morris/Sobol/wide, verdict; produced by scripts/run_brief14.py
@@ -992,6 +995,15 @@ performance/
 requirements.txt
 retention_sweep.png, ces_sign_frontier.png, results/ces_b07_sigma_star_eta.png, results/ces_b08_sigma_star_lambda.png, results/ces_b09_dose_response.png, results/ces_b10_aggregates_spread.png
 ```
+
+**The compiled paper is not in version control.** `paper/` holds the LaTeX source;
+the current PDF is the `paper-pdf` artifact of the latest **Build paper** run on
+the GitHub Actions tab (the build is CI-only — the local TeX Live install is
+incomplete). The formerly tracked `PaperV1.pdf` was removed from tracking
+(`git rm --cached`) because a committed binary cannot follow its source: it had
+fallen ten `paper/` commits behind, predating the H2 qualification (brief 22) and
+the Teglio repositioning (brief 23), so anyone attaching it would ship the
+superseded paper.
 
 ---
 
