@@ -1,3 +1,16 @@
+<!--
+  ARCHIVED PROJECT LOG - frozen historical snapshot, not maintained.
+-->
+> **Archived project log — a frozen historical snapshot, not maintained.**
+> This is the repository `README.md` as it stood at commit `bcab5c0`
+> (2026-07-31), kept for the record only; it is **not** updated as the project
+> moves on. The current sources of truth are **`METHODOLOGY.md`** (process:
+> briefs, decisions, debts) and **`paper/`** (the scientific results). Do not
+> read anything below as the present state of the model — the entry point is
+> the root [`README.md`](../README.md).
+
+---
+
 # Endogenous Investment and Capital Accumulation - a Normalised-CES Core with an Endogenous Labour Market
 
 ## Overview
