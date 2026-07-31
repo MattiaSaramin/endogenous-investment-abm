@@ -39,6 +39,56 @@ no longer free --- which is why the wage-flexibility result is reported as
 bracketed by the pass-through convention (\cref{sec:frontierlocal}) rather than
 as a property of the labour market alone.
 
+These inherited choices, and this paper's departures from them, are collected in
+\cref{tab:teglio}.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{The model against its base model, \citet{Teglio2025}, dimension by
+dimension. The comparison is qualitative: every entry is a structural feature,
+not a measured quantity. The first four rows are the extensions this paper
+contributes; the next two are simplifications relative to the base model, whose
+two independent variables are held fixed here (\cref{sec:heterogeneity}); the
+last three record further differences in inventories, fiscal design and method.}
+\label{tab:teglio}
+\begin{tabularx}{\textwidth}{@{}l
+    >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+Dimension & \citet{Teglio2025} & This paper \\
+\midrule
+Capacity & Labour only; output is demand-determined, with no capital
+  & Normalised CES in capital and labour (\cref{eq:ces}), with the elasticity
+    $\sigma$ swept \\
+Employment & Fixed job links --- ``a firm has always the same number of
+  employees''
+  & Endogenous: the smaller of a demand, a profit-maximising and a workforce
+    limit (\cref{eq:labour}), with firing into a pool and random matching \\
+Wage & Not a relative price; a firm's revenues are split among its workers in
+  equal parts
+  & Endogenous, set by a Blanchflower--Oswald curve \\
+Investment & Absent; capitalists' accumulated wealth is not reinvested
+  & Retained profit is invested and accumulates a capital stock --- the paper's
+    central addition \\
+Rationality & An \emph{independent variable} of the study: graded endowments,
+  from zero-intelligence to semi-rational
+  & Held fixed; spending shares are frozen \\
+Network & Its regularity is the other \emph{independent variable}
+  & Held symmetric \\
+Inventories & Explicit; production adjusts through inventory accumulation and
+  depletion
+  & None; the firm cash buffer is an intra-period pass-through that returns to
+    zero each period \\
+Fiscal & A progressive tax funding a universal basic income
+  & A flat tax funding an unemployment benefit, balanced-budget by construction
+    (\cref{sec:government}) \\
+Method & Monte Carlo over a few scenarios
+  & Global Morris/Sobol' sensitivity over sixteen parameters, with a committed
+    claim registry, executable verifiers and continuous integration \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \paragraph{The elasticity of substitution.}
 Comparing economies that differ in $\sigma$ is not straightforward: in the
 textbook CES, varying $\sigma$ at fixed distribution and efficiency parameters
