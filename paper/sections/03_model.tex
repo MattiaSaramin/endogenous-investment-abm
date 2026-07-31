@@ -10,7 +10,26 @@ The economy is closed, single-good and fixed-price (the numéraire is~1). It
 is populated by $n_f = 10$ firms and $N = 100$ households, of which a share
 $\pi_{c} = 0.10$ are \emph{capitalists} who own firms and receive dividends;
 the remainder supply labour. Time is discrete and one period is interpreted
-as one year (\cref{sec:calibration}).
+as one year (\cref{sec:calibration}). \Cref{fig:model} shows the agents and the
+money flows between them.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{model_flow.png}
+\caption{Structure of the model and its money flows. Firms produce with a
+normalised CES in capital and labour (\cref{eq:ces}) and hire endogenously
+(\cref{eq:labour}) at a wage set by a Blanchflower--Oswald curve; profit is
+split between retained earnings --- invested as $I = \rho\,\pi$, which
+accumulates the capital stock --- and dividends. Worker households supply
+labour and consume at a high marginal propensity to consume; capitalist
+households own the firms and consume at a low one, so income routed to them
+leaks from the circular flow (the channel drawn in red). The government block
+(dashed) is optional: a flat tax on all income funds a balanced-budget
+unemployment benefit (\cref{sec:government}). The figure is a schematic and
+carries no measured quantity; it is produced by a committed generator,
+\texttt{scripts/make\_fig\_model.py}.}
+\label{fig:model}
+\end{figure}
 
 \subsection{Production: a normalised CES}
 
