@@ -46,7 +46,6 @@
   symbol: "\\delta"
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
@@ -61,7 +60,6 @@
   symbol: "\\delta"
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
@@ -75,7 +73,6 @@
   symbol: "\\delta"
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
 
 - claim_id: sobol_delta_S1_slope
@@ -98,7 +95,6 @@
   symbol: "\\sigma"
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
@@ -204,7 +200,6 @@
   symbol: "\\delta"
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
@@ -219,7 +214,6 @@
   symbol: "\\pi_0"
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
@@ -234,7 +228,6 @@
   symbol: "\\sigma"
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: false}  # notebook covers b04/b05 only
@@ -249,7 +242,6 @@
   symbol: "\\delta"
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
@@ -266,7 +258,6 @@
   column: P_wage_led_OLS_given_viable
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
@@ -280,7 +271,6 @@
   column: frac_viable_4rho
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
-    - {file: README.md, required: true}
     - {file: RESULTS.md, required: false}   # untracked by design (brief 19 §3): coherence.py emits DOCUMENT MISSING if absent
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
