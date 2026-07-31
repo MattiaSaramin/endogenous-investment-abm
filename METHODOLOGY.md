@@ -1208,6 +1208,85 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     `tab:baseline`, `tab:marginalturn`; `PaperV1.pdf` stale (tracciato, fermo a
     `e9403be`) — commit a sé.
 
+- **Brief 24 — portare il paper a working paper di qualità da rivista (solo `paper/`
+  + un generatore di figura + rigenerazione dello snapshot sweep; nessun `src/`,
+  nessun run del modello; 569 test invariati per costruzione):** sette commit locali
+  per blocco, STOP pre-push. Destinazione: working paper completo da mandare ad
+  Andrea Teglio col repository (non una submission). Principio guida: **il paper è il
+  risultato, METHODOLOGY è il processo** — la voce narrante del diario esce, la
+  sostanza metodologica resta. Eseguito **dopo** il b25 (fuori ordine: il b25 aveva
+  registrato «b24 non ancora fatto»).
+  - **Blocco 1 — §1+§2 (commit `31b123c`):** blocco autore compilato (cognome
+    Saramin, email istituzionale `904394@stud.unive.it`, affiliazione Ca' Foscari,
+    URL repo nel footnote — cognome e URL **derivati da CITATION.cff/git remote**,
+    email e affiliazione **chiesti al PI**, non inventati). **DEVIAZIONE DICHIARATA:**
+    `\date{}` **vuoto** su richiesta esplicita del PI, non una data-stringa fissa come
+    da brief — ma ugualmente **build-independent** (due build della stessa sorgente
+    danno lo stesso documento), che era la preoccupazione del brief con `\today`.
+    Abstract 304 → **243 token resi** (≤250; contati escludendo/i­ncludendo i token
+    math): tolti i dettagli dello stimatore e la percentuale dei punti risolti (in
+    §9). **Bracket H2 preservato BYTE-INVARIATO**; nessuna delle tre forme vietate
+    («H2 cade/tiene/è rovesciata»). Azzerata anche la checklist stale in
+    `paper/README.md` (unico residuo del grep placeholder di criterio 1; è la guida
+    di build della cartella paper, distinta dal README-radice del b25).
+  - **Blocco 2 — §3 registro (commit `095fbb3`):** inventario del diario costruito con
+    **grep reale** (lezione b18). Nell'introduzione «A note on what this paper reports»:
+    la sostanza (regola sui numeri, negativi riportati non ricalibrati) **fusa** nel
+    paragrafo «The reported numbers» di `05_protocol`; nell'intro restano 2 frasi con
+    `\cref`. Nove occorrenze riformulate/espunte (`the project('s)`, `an earlier
+    draft`, `we set out`, `unlooked-for`). **Lasciate con ragione:** `01_intro:37`
+    «This paper's organising finding» (uso accademico standard); `paper/README.md:155`
+    (prosa di build). Solo prosa, nessuna cifra.
+  - **Blocco 3 — §4 declbox (commit `bfacf31`):** +`amsthm`; due ambienti `amsthm` resi
+    come box `mdframed` (stile `declstyle` invariato) via `\newmdtheoremenv`, definiti
+    dopo `cleveref` con `\crefname` espliciti. **8 box convertiti, testo interno
+    BYTE-INVARIATO:** `modelassumption` ×2 (invariante L≤N, SFC in `03_model`),
+    `remark` ×6. **Residuo dichiarato:** `04_calibration` porta «An earlier version of
+    this project» (voce di diario) **dentro** un box; la regola §4 «testo interno
+    invariato» prevale sul §3, quindi resta. Nessun box era `\cref`'d: nessun
+    riferimento rotto.
+  - **Blocco 4 — §5.1 figura (commit `09a9a5d`, + igiene `600cd2d`):** `03_model`
+    passa da 0 a 1 figura. Schema del flusso monetario (`fig:model`) con **generatore
+    committato** `scripts/make_fig_model.py` (matplotlib, la toolchain esistente:
+    **niente TikZ**, che il preambolo evita per il timeout Overleaf). Schema, nessuna
+    cifra misurata. La larghezza `0.92\textwidth` creava 2 firme di doppio
+    arrotondamento **spurie** (coincidenza con `ces_b17_util_effect.csv`); corretta in
+    `.92\textwidth` (zero iniziale omesso → nessun token `\d+\.\d+`) → **0 firme nuove**.
+  - **Blocco 5 — §5.2 tabella di confronto (commit `71509ef`):** nuova `tab:teglio` in
+    `02_literature`, qualitativa (nessuna cifra, nessun generatore) su 9 dimensioni.
+    **RIVERIFICATA riga per riga contro `2024_Teglio_JEIC.pdf`** (estrazione pypdf, 33
+    pagine), non copiata da `confronto_teglio.md`: fixed job links («a firm has always
+    the same number of employees»), salario come quota di ricavi «in equal parts»
+    (eq. 8), investimento assente, quattro «rationality endowments», «regularity of
+    economic interactions», inventari, «progressive tax … universal basic income»,
+    «Monte carlo». `confronto_teglio.md` resta materiale di lavoro non tracciato.
+  - **Blocco 6 — §5.3 data & code availability (commit `57e745b`):** paragrafo in coda
+    a `05_protocol`: URL repo + rimando a `CITATION.cff` (nessun hash hard-coded, non
+    auto-referenziabile); registro dei claim (**49 claim, letto live** da
+    `paper_claims.yaml`, non ricopiato dal brief); `verify_paper.py`/`coherence.py`
+    committati ed eseguibili; eccezione `ces_decomposition.csv` (archiviata, «not
+    recoverable from the committed CSV», citata da 0 file in `paper/`). **DEVIAZIONE
+    DICHIARATA (§6):** «49» stampato ma **non** aggiunto a `paper_claims.yaml` — è la
+    dimensione del registro stesso (auto-referenziale, non esprimibile come
+    artifact+filtro+cella) ed è riprodotto eseguendo `verify_paper.py`, citato nella
+    stessa frase.
+  - **Detector, tutti eseguiti e riportati (regola §6/b19):** `verify_paper.py`
+    **0 FAIL**; `--selftest` **ALL PASS**; iniezione noto-cattivo su cella coperta
+    (`sobol_delta_S1_viable`, `tab:sobol`, 0.718→0.719 — **non** `tab:government`, che
+    nessun claim copre) → **1 FAIL netto** (`CLAIM NOT FOUND IN TEX`) → ripristino
+    byte-esatto → **0 FAIL**. `coherence.py` **0 DIVERGENT**. `sweep_rounding.py`
+    rigenerato (regola b22-bis: `results/paper_rounding_sweep.csv` segue la sorgente);
+    confronto set-wise (chiave senza `tex_line`): **0 firme nuove, 0 rimosse**, i **3
+    falsi positivi noti intatti** (59.4 ×2 in `06_shape`, 0.771 in `09_sensitivity`);
+    probe **BOTH PASS**.
+  - **CI: NON eseguita, in attesa di push** (stato, non esito). Il brief tocca
+    `paper/**` e **aggiunge `amsthm`**: la build CI è l'unico banco di prova (nessun
+    motore LaTeX locale). `amsthm`/`mdframed` sono TeXLive standard, rischio basso; un
+    primo push che fallisse per un pacchetto è esito **normale** (brief §7).
+  - **Fuori scope (dichiarato):** nessuna nuova scienza, nessun run; retrofit dei
+    generatori di `tab:wagecurve`/`tab:delta`/`tab:baseline`/`tab:marginalturn` (debito
+    dichiarato); versione submission-ready JEIC (decisione separata, non presa).
+
 - **Brief 25 — igiene del repository prima dell'invio a Teglio (solo documentazione
   + una eccezione §5 approvata; nessun `src/`, nessun run del modello; 569 test
   invariati per costruzione, eseguiti e riportati prima 569 / dopo 569):** sei
