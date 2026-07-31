@@ -1,6 +1,6 @@
 # Endogenous Investment and Capital Accumulation
 
-*A normalised-CES agent-based model with an endogenous labour market — extending
+*A normalised-CES agent-based model with an endogenous labour market, extending
 the disaggregated Keynesian cross of Teglio (2025).*
 
 [![Build paper](https://github.com/MattiaSaramin/endogenous-investment-abm/actions/workflows/paper.yml/badge.svg)](https://github.com/MattiaSaramin/endogenous-investment-abm/actions/workflows/paper.yml)
@@ -12,10 +12,10 @@ investment and capital accumulation. Production is a *normalised* CES with
 elasticity of substitution `sigma`; firms hire endogenously, the wage follows a
 Blanchflower–Oswald curve, and the model is stock-flow-consistent throughout.
 Whether higher retention `rho` builds capacity (supply) or displaces workers
-(demand) is an outcome, not an assumption. Three results — a U-shaped `Y(rho)`
+(demand) is an outcome, not an assumption. Three results, a U-shaped `Y(rho)`
 with a sign frontier `sigma* ≈ 0.65`, a wage-led region that fiscal institutions
 can remove, and a wage → unemployment → capital-erosion fragility immune to
-demand instruments — are separated from what does not generalise by a
+demand instruments, are separated from what does not generalise by a
 sixteen-parameter global sensitivity analysis. It is an exploratory
 computational laboratory for *qualitative* macroeconomics, not a calibrated
 forecast.
@@ -51,7 +51,7 @@ grid  = sigma_rho_sweep()                                          # the (sigma,
 
 Every figure and table is regenerated from a committed driver into `results/`.
 The drivers pin BLAS threads (`OMP_NUM_THREADS=1` etc.) for reproducibility, so
-**do not** re-parallelise them. **Some sweeps take hours** — the ones below are
+**do not** re-parallelise them. **Some sweeps take hours**, the ones below are
 labelled; the notebook itself reads committed CSVs rather than re-simulating.
 
 | Driver | Regenerates | Cost |
@@ -73,7 +73,7 @@ python scripts/run_brief13.py --phase report     # analysis + figures only, no s
 
 ## Verification
 
-Numbers are not trusted by eye — three committed checkers keep the paper, the
+Numbers are not trusted by eye , three committed checkers keep the paper, the
 documents and the code in agreement, and are the distinctive feature of this
 repository:
 
@@ -96,8 +96,8 @@ scripts/      reproducible brief drivers (run_brief*.py), the verifiers, table g
 tests/        569 pytest checks (accounting invariants, nesting, behaviour)
 results/      committed measured CSVs, one family per brief (ces_b*_*.csv)
 paper/        LaTeX source (main.tex + sections/); the PDF is a CI artifact, not tracked
-notebooks/    01_Endogenous_Investment.ipynb — the narrative analysis
-docs/         project_log.md — a frozen snapshot of the old diary-style README
+notebooks/    01_Endogenous_Investment.ipynb , the narrative analysis
+docs/         project_log.md , a frozen snapshot of the old diary-style README
 METHODOLOGY.md   the process: briefs, decisions, debts, lessons
 parameter_notes.md   per-parameter source, estimate, range and anchoring verdict
 ```
@@ -118,8 +118,8 @@ button from it).
 
 ## Further documentation
 
-* **[`METHODOLOGY.md`](METHODOLOGY.md)** — the current source of truth on the
+* **[`METHODOLOGY.md`](METHODOLOGY.md)**, the current source of truth on the
   process: what each brief did, the decisions taken, and the standing debts.
-* **[`docs/project_log.md`](docs/project_log.md)** — a frozen historical
+* **[`docs/project_log.md`](docs/project_log.md)**, a frozen historical
   snapshot of the previous, long-form README. Kept for the record; not
   maintained.
