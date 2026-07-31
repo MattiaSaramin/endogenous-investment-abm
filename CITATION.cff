@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite it as below."
+title: >-
+  Endogenous Investment and Capital Accumulation in a Disaggregated Keynesian
+  Cross: A Normalised-CES Agent-Based Model with an Endogenous Labour Market
+authors:
+  - family-names: Saramin
+    given-names: Mattia
+type: software
+url: "https://github.com/MattiaSaramin/endogenous-investment-abm"
+repository-code: "https://github.com/MattiaSaramin/endogenous-investment-abm"
+license: MIT
+date-released: "2026-07-31"
+keywords:
+  - agent-based model
+  - macroeconomics
+  - endogenous investment
+  - capital accumulation
+  - CES production function
+  - wage curve
+  - stock-flow consistent
+  - Mesa
