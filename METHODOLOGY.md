@@ -946,7 +946,11 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   (frattura misurata: il più grande aggregato incluso è a **88 righe** — `ces_b07_slopes.csv` —, il
   più piccolo dump per-cella escluso a **154** — `ces_b05_stage_a_cells.csv`; niente in mezzo), e
   ogni file escluso è elencato nel report col conteggio. `RESULTS.md` **untracked per scelta** →
-  `coherence.py` emette `DOCUMENT MISSING` (debito dichiarato), non passa in silenzio.
+  `coherence.py` emette `DOCUMENT UNTRACKED` (debito dichiarato), non passa in silenzio. **Il check è
+  sullo stato di tracciamento git (`git ls-files --error-unmatch`), NON sull'esistenza del file
+  (riparato dal b27, `--selftest` che FIRE): spara identico su clone fresco (assente) e sulla macchina
+  dell'autore (presente ma untracked); l'ex check per esistenza taceva sulla seconda — la modalità di
+  guasto del pin 8 ULP (un detector che smette di essere letto).**
 
 - **Brief 20 — `tab:sobol` corretta IN BLOCCO, da un generatore committato** (solo `paper/`,
   `scripts/`, `results/`, `README.md`, `parameter_notes.md`; nessun `src/`, nessun run). Le tre
@@ -1742,7 +1746,8 @@ negoziabili.
   `paper_claims.yaml` è il registro (26 claim, ognuno con lookup eseguibile: artifact, filtro,
   colonna, `decimals`, mappa simbolo→parametro — es. `$\lambda$` = `wealth_effect`).
   `verify_paper.py` controlla paper↔artifact (round-once; `--selftest` su input noto-cattivo);
-  `coherence.py` controlla documento↔documento, con `RESULTS.md` untracked → `DOCUMENT MISSING`.
+  `coherence.py` controlla documento↔documento (`--selftest` su input noto-cattivo, b27), con
+  `RESULTS.md` untracked → `DOCUMENT UNTRACKED` (check su tracciamento git, non su esistenza — b27).
   `sobol_sigma_ST_viable` resta AMBIGUOUS **per costruzione** (S1 e ST viability leggono entrambi
   0.008 sulla stessa riga di `tab:sobol`)
 - `scripts/sweep_rounding.py` — **brief 19**, firma del doppio arrotondamento su tutto il paper,

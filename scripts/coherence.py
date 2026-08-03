@@ -13,18 +13,24 @@ notebook it searches MARKDOWN cell sources and saved CODE OUTPUTS (stream text
 and ``text/plain`` / ``text/html`` data) -- never code source, where a number is
 a parameter, not a claim.
 
-MISSING DOCUMENTS (brief 19 §3).  ``RESULTS.md`` is untracked by explicit
-decision (Mattia, 2026-07-28), so on a clean checkout it is absent.  In the
-registry its targets are marked ``required: false``.  When an OPTIONAL target is
-absent the script prints
+UNTRACKED / MISSING DOCUMENTS (brief 19 §3; detector repaired in brief 27).
+``RESULTS.md`` is untracked by explicit decision (Mattia, 2026-07-28).  The check
+is on the GIT TRACKING STATE (``git ls-files --error-unmatch``), NOT on the file's
+existence on disk -- because the two disagree exactly on the machine where the
+document lives.  On a fresh clone ``RESULTS.md`` is absent; on the author's machine
+it is present but untracked.  An existence check therefore fired on the clone and
+went SILENT on the author's machine -- the failure mode of a detector that stops
+being read (the 8-ULP pin).  Basing it on tracking makes it fire IDENTICALLY in
+both places::
 
-    DOCUMENT MISSING: RESULTS.md (untracked by design -- declared debt)
+    DOCUMENT UNTRACKED: RESULTS.md (untracked by design -- declared debt; git does
+                        not track it whether or not it is on disk)
 
-and CONTINUES: it does not crash and it does not silently pass.  Cross-checking
-proceeds over the documents that DO exist; a claim that a missing document leaves
-with fewer than two present documents can no longer be cross-checked and is
-counted apart (``reduced by a missing document``).  A REQUIRED document that is
-absent is still a divergence, not a declared debt.
+An UNTRACKED optional document is a declared debt and does NOT fail the build; a
+TRACKED document that is absent from disk is a ``DOCUMENT MISSING`` (a real problem,
+a divergence if the target is required).  Cross-checking proceeds over the
+documents that exist on disk; a claim left with fewer than two present documents is
+counted apart (``reduced by a missing document``).
 
 Outcomes, one per claim:
 
@@ -46,15 +52,19 @@ the registry, and it is why the ``appears_in`` map is built by real grep with
 context, not assumed.
 
 As with ``verify_paper.py`` this is a DETECTOR and is run against known-bad input
-before it is trusted: the missing-document branch is exercised by temporarily
-renaming ``RESULTS.md`` and re-running (brief 19 §3); a divergent copy injected
-into one document exercises the DIVERGENT branch (brief-18 report).
+before it is trusted: ``python coherence.py --selftest`` creates a present-but-
+UNTRACKED scratch file and asserts the tracking check FIRES on it (and does not on
+a tracked file), which is the exact condition that used to pass in silence.  A
+divergent copy injected into one document exercises the DIVERGENT branch (brief-18
+report).
 """
 from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
+import tempfile
 from collections import Counter
 
 import yaml
@@ -81,6 +91,31 @@ def _abs(rel_path: str) -> str:
 
 def _doc_exists(rel_path: str) -> bool:
     return os.path.exists(_abs(rel_path))
+
+
+_TRACKED_CACHE: dict[str, bool] = {}
+
+
+def _doc_tracked(rel_path: str) -> bool:
+    """True iff git tracks the file -- the check that is machine-independent.
+
+    ``git ls-files --error-unmatch <path>`` exits 0 iff the path is tracked, and
+    non-zero (with a message on stderr) iff it is not.  This is deliberately NOT
+    ``os.path.exists``: an untracked file present on the author's disk is absent on
+    a fresh clone, so an existence check disagrees between the two -- exactly the
+    silence this detector must not have (brief 27, §E).
+    """
+    if rel_path not in _TRACKED_CACHE:
+        try:
+            r = subprocess.run(
+                ["git", "ls-files", "--error-unmatch", "--", _abs(rel_path)],
+                cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            _TRACKED_CACHE[rel_path] = (r.returncode == 0)
+        except FileNotFoundError:
+            # git not on PATH: cannot prove tracking -- fail LOUD, not silent.
+            _TRACKED_CACHE[rel_path] = False
+    return _TRACKED_CACHE[rel_path]
 
 
 def _notebook_text(path: str) -> str:
@@ -115,7 +150,12 @@ def _fmt(value, decimals: int) -> str:
 
 
 def document_required_map(claims):
-    """file -> True if any claim marks it required, plus the set that is absent."""
+    """file -> required?, plus the untracked set and the tracked-but-absent set.
+
+    ``untracked`` (git does not track it, on disk or not) is the declared-debt branch,
+    machine-independent by construction.  ``tracked_absent`` (git tracks it yet it is
+    gone from disk) is a real problem -- a divergence if the target is required.
+    """
     required_anywhere: dict[str, bool] = {}
     for claim in claims:
         for tgt in claim.get("appears_in", []):
@@ -123,8 +163,10 @@ def document_required_map(claims):
             required_anywhere.setdefault(f, False)
             if tgt.get("required", True):
                 required_anywhere[f] = True
-    missing = [f for f in required_anywhere if not _doc_exists(f)]
-    return required_anywhere, missing
+    untracked = [f for f in required_anywhere if not _doc_tracked(f)]
+    tracked_absent = [f for f in required_anywhere
+                      if _doc_tracked(f) and not _doc_exists(f)]
+    return required_anywhere, untracked, tracked_absent
 
 
 def check_claim(claim: dict):
@@ -156,27 +198,88 @@ def check_claim(claim: dict):
     return status, needle, present, False
 
 
+def selftest() -> int:
+    """Prove the tracking check FIRES on a present-but-UNTRACKED file.
+
+    This is the exact condition the old existence check passed in silence: a file
+    that is on disk yet not tracked by git.  Model of ``verify_paper.py --selftest``.
+    """
+    print("coherence.py --selftest -- known-bad input: a present-but-untracked file\n")
+    ok = True
+
+    # A freshly written scratch file in the repo: present on disk, NOT tracked.
+    fd, abspath = tempfile.mkstemp(prefix="_coherence_selftest_untracked_",
+                                   suffix=".tmp", dir=ROOT)
+    os.close(fd)
+    rel = os.path.relpath(abspath, ROOT).replace(os.sep, "/")
+    _TRACKED_CACHE.clear()
+    try:
+        present = _doc_exists(rel)
+        tracked = _doc_tracked(rel)
+        print(f"  [1] scratch file present={present} tracked={tracked}")
+        if present and not tracked:
+            print("        expected present & UNTRACKED (detector must fire) => PASS")
+        else:
+            print("        expected present & untracked                     => FAIL")
+            ok = False
+
+        # The report path must list it as untracked (not silent), via a mini registry.
+        fake = [{"claim_id": "x", "value": 1.0, "decimals": 1,
+                 "appears_in": [{"file": rel, "required": False}]}]
+        _, untracked, missing = document_required_map(fake)
+        print(f"  [2] document_required_map -> untracked={untracked} missing={missing}")
+        if rel in untracked and rel not in missing:
+            print("        expected in UNTRACKED, not in missing            => PASS")
+        else:
+            print("        expected the untracked file to be flagged        => FAIL")
+            ok = False
+
+        # A control: a genuinely tracked file must NOT be flagged untracked.
+        ctrl = "scripts/coherence.py"
+        ctrl_tracked = _doc_tracked(ctrl)
+        print(f"  [3] control '{ctrl}' tracked={ctrl_tracked}")
+        if ctrl_tracked:
+            print("        expected TRACKED (no false positive)             => PASS")
+        else:
+            print("        expected the tracked control to read tracked     => FAIL")
+            ok = False
+    finally:
+        os.remove(abspath)
+        _TRACKED_CACHE.clear()
+
+    print("\n  SELFTEST VERDICT:", "ALL PASS -- untracked detector trusted"
+          if ok else "FAILED -- do not trust this run")
+    return 0 if ok else 1
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
+    if "--selftest" in argv:
+        return selftest()
     registry = argv[0] if argv else REGISTRY
     with open(registry, encoding="utf-8") as fh:
         claims = yaml.safe_load(fh)
 
-    required_anywhere, missing_docs = document_required_map(claims)
+    required_anywhere, untracked_docs, missing_docs = document_required_map(claims)
     print(f"coherence.py -- {len(claims)} claims from {os.path.relpath(registry, ROOT)}\n")
 
-    # Missing documents, reported once up front and never in silence.
-    missing_optional, missing_required_docs = [], []
+    # Untracked / missing documents, reported once up front and never in silence.
+    # The gate is git tracking, not disk existence (brief 27 §E), so it fires
+    # identically on the author's machine (present, untracked) and a fresh clone
+    # (absent, untracked).
+    for f in sorted(untracked_docs):
+        on_disk = "present on disk" if _doc_exists(f) else "absent on disk"
+        if required_anywhere[f]:
+            print(f"DOCUMENT UNTRACKED: {f} (REQUIRED target not tracked by git, "
+                  f"{on_disk} -- not part of the reproducible repo)")
+        else:
+            print(f"DOCUMENT UNTRACKED: {f} (untracked by design -- declared debt; "
+                  f"{on_disk}; git does not track it either way)")
     for f in sorted(missing_docs):
-        (missing_required_docs if required_anywhere[f] else missing_optional).append(f)
-    for f in missing_optional:
-        reason = ("untracked by design -- declared debt"
-                  if os.path.basename(f) == "RESULTS.md"
-                  else "optional target absent -- declared debt")
-        print(f"DOCUMENT MISSING: {f} ({reason})")
-    for f in missing_required_docs:
-        print(f"DOCUMENT MISSING: {f} (REQUIRED target absent -- divergence, not a debt)")
-    if missing_docs:
+        kind = ("REQUIRED target absent -- divergence, not a debt"
+                if required_anywhere[f] else "optional target absent -- declared debt")
+        print(f"DOCUMENT MISSING: {f} ({kind})")
+    if untracked_docs or missing_docs:
         print()
 
     width = max(len(c["claim_id"]) for c in claims)
@@ -206,8 +309,10 @@ def main(argv=None):
 
     print(f"\n{tally[COHERENT]} coherent, {tally[DIVERGENT]} DIVERGENT, "
           f"{tally[SINGLE]} single-doc, {tally[SKIP]} null.")
-    print(f"{len(missing_optional)} optional document(s) missing (declared debt); "
-          f"{n_reduced} claim(s) reduced below cross-check by a missing document.")
+    n_untracked_debt = sum(1 for f in untracked_docs if not required_anywhere[f])
+    print(f"{len(untracked_docs)} untracked document(s) ({n_untracked_debt} declared "
+          f"debt), {len(missing_docs)} tracked-but-absent; "
+          f"{n_reduced} claim(s) reduced below cross-check.")
     if diverged:
         print("\nDIVERGENCES:")
         for cid, needle, missing in diverged:
