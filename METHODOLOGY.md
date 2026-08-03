@@ -1462,6 +1462,44 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     `DOCUMENT UNTRACKED` identico ovunque; `--selftest` che **FIRE** su file presente-ma-untracked;
     invariante §6 riallineato (sopra). **0 DIVERGENT invariato.**
 
+- **Brief 27-bis — riparazione trattini + passaggio a prosa scientifica, e il paper COMPILA
+  (branch `b27-verify`; nessun `src/`; 569 test invariati). NON mergiato, NON su `main`.** Chiude
+  il de-dash del b27 (che aveva reso i `--` in trattino breve anche negli intervalli), elimina
+  liste ed enfasi, e — l'unica prova che regge — **compila in CI**. Le fasi sono commit separati
+  sul branch, sul precedente b22/b22-bis/b22-ter.
+  - **Gate §1 (deciso da Mattia):** `make_tab_sobol.py` emetteva `\textbf` dentro il blocco
+    generato di `tab:sobol` ⇒ «togliere tutto il grassetto» collideva con l'invariante b20.
+    Decisione: **Opzione A — grassetto rimosso anche dalle tabelle**, modificando il **generatore**.
+  - **Fase 1 — intervalli:** ripristinati i `--` **solo negli intervalli numerici** (`$X$--$Y$`,
+    22 math + 8 bin δ bare in `09_sensitivity`), **non** gli em-dash (restano virgole). Chiusura:
+    `sweep_rounding` torna a **611 token**, gli 8 candidati fantasma da intervallo spariscono
+    (la guardia-range b20 dello sweep, che si basa sul `--`, torna operativa).
+  - **Fase 2 — rilettura umana dei 147 siti em-dash→virgola** (punto cieco #4, nessun detector):
+    la gran parte è appositiva e legge bene; corretti **8 comma splice** (`:` dove elabora, `;`
+    dove coordina). Referto in `docs/b27bis_prosa.md`.
+  - **Fase 3 — 8 liste → prosa:** **0 `itemize` / 0 `enumerate`**; ogni `\item` mappato a una frase
+    (nessuna proposizione persa/nuova); numerazione conservata dove referenziata (`04` tier, `07`
+    step); **611 token invariati**; nessun `\label` dentro un `\item` (nessun `\cref` rotto).
+  - **Fase 4 — enfasi rimossa: `\textbf` 65 / `\textit` 7 / `\emph` 133 / `\mathbf` 3 → 0/0/0/0.**
+    19 titoli run-in → `\paragraph` (rule 1; il pattern First/Second/Third di `01` era già piano
+    dal WIP b27). Generato: `make_tab_sobol.py` de-grassettato, `tab:sobol` rigenerato e
+    **byte-identico**. Rilette le 133 `\emph`: **0 riformulazioni** necessarie (il lessico porta
+    già i contrasti — «rather than», «not…but», «only if», i numeri). `verify_paper` **0 CLAIM
+    NOT FOUND** (togliere `\textbf{0.718}`→`0.718` non ha scollegato alcun `context`).
+  - **Fase 5 — COMPILA.** Il b27 aveva lasciato il paper mai compilato dopo 158 modifiche + `\clip`;
+    il b27-bis ne aggiunge molte di più e tocca **strutture** (liste, `\paragraph`). Pushato **solo
+    `b27-verify`** (workflow su `paths: paper/**`, nessun filtro di branch; `main` intatto). **CI
+    VERDE** (run #13, sha `ea75f7f`): **Overfull hbox 0, Underfull hbox 0, errori LaTeX 0,
+    reference/citation undefined 0**. (Il conteggio pagine **non** è emesso dal workflow ⇒ non
+    citato come misurato.)
+  - **Detector (regola §6):** `pytest` 569 invariati (nessun `src/`); `verify_paper` 0 FAIL +
+    `--selftest` PASS; `coherence` 0 DIVERGENT + `DOCUMENT UNTRACKED: RESULTS.md` + `--selftest`
+    PASS; `verify_model` 19 MATCH + `--selftest` PASS; `sweep_rounding` **611**, nessuna firma nuova.
+    `paper_rounding_sweep.csv` rigenerato **dopo** l'ultimo commit del paper (b22-bis).
+  - **Fuori scope, dichiarato:** merge o push su `main` (vietato dal brief — `main` resta a `ec18707`);
+    il sito 7 (`u^e`/`λ_u`, b17 assente dal paper — è il brief 28); i due falsi positivi noti
+    (`0.771`, `59.4`).
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
