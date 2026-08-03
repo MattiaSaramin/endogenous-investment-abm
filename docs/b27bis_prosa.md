@@ -82,3 +82,42 @@ i numeri: `04` (tier), `07` (step).
 
 Nessuna proposizione nuova; ogni numero conservato (611 = 611). I `\textbf`/`\emph`
 run-in restano per la **Fase 4** (l'enfasi si rimuove lì, in blocco).
+
+---
+
+## Fase 4 — rimozione dell'enfasi (\textbf 65 / \textit 7 / \emph 133 → 0/0/0)
+
+**Conteggio finale in `sections/` + `appendices/`: 0 `\textbf`, 0 `\textit`, 0 `\emph`**
+(+ 0 `\mathbf`, rimosso anch'esso: era grassetto in una tabella, e il gate §1 ha deciso
+«niente grassetto, tabelle incluse»).
+
+**Titoli di paragrafo in linea → `\paragraph` (rule 1, 19 conversioni).** I `\textbf`
+usati come titolo run-in non si cancellano: diventano `\paragraph{...}` (stile deciso
+dalla classe). Convertiti: `03_model` (Nesting, Comparability), `04_calibration` (le 3
+tier, numero conservato), `06_shape` (2 letture), `11_limitations` (9 limiti),
+`a_validation` (3 correzioni). *Nota:* il pattern «First/Second/Third» di `01_introduction`
+era **già** in prosa piana (il WIP del b27 aveva tolto il `\textbf`), quindi non richiede
+conversione — la segnaletica (le parole «First/Second/Third») resta.
+
+**Blocco generato (gate §1, Opzione A).** `make_tab_sobol.py` **modificato** per non
+emettere `\textbf` (rimosso il set `BOLD` e il ramo in `format_cell`); rigenerato; il blocco
+inline di `tab:sobol` (`09_sensitivity`) sostituito con l'output nuovo e **verificato
+byte-identico**. `tab:prices` non aveva grassetto. Le 8 celle grassetto a mano
+(`tab:repaired`, `tab:delta`, `tab:heterogeneity`, `04_calibration`, `a_validation`) sono
+state de-grassettate (unwrap).
+
+**Enfasi che «portava significato» → riformulata nel lessico (rule 2): 0 siti.** Riletti i
+133 `\emph` (con attenzione ai contrasti). In **ogni** caso il contrasto è già portato dalle
+parole intorno, non dal markup, quindi togliere `\emph` **non indebolisce** la frase:
+- «demand is destroyed **rather than** reallocated» (07) — la porta «rather than»;
+- «quasi-representative in its aggregates, **not** in its cross-section» (07) — la porta «not»;
+- «a turn is resolved **only if** …» (09) — la porta «only if»;
+- «**not** the position of the frontier **but** the anchored margin» (10) — la porta «not…but»;
+- verbi enfatici di direzione («output falls, from $96.7$ to $86.8$»; «it enlarged it»,
+  con il «but» aggiunto in Fase 3) — li portano i numeri e le congiunzioni.
+Nessuna riformulazione necessaria: la prosa del paper porta il significato nelle parole.
+
+**Detector dopo la fase:** `verify_paper.py` **0 FAIL, 0 CLAIM NOT FOUND** (togliere
+`\textbf{0.718}`→`0.718` ecc. **non** ha scollegato alcun `context`); `make_tab_sobol`/
+`make_tab_prices` byte-identici; token decimali **611**; `coherence` 0 DIVERGENT;
+`verify_model` 19 MATCH.

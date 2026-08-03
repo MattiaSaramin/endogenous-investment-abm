@@ -9,13 +9,13 @@
 We state these as declared limitations rather than as caveats, because several
 of them are consequences of design decisions taken deliberately.
 
-\textbf{No growth, and the capital block cannot fit the data without it.} With
+\paragraph{No growth, and the capital block cannot fit the data without it} With
 $g = 0$, the model cannot match business-sector $I/Y$ and $K/Y$ simultaneously,
 and at the empirically implied $\delta$ it is not viable at all
 (\cref{sec:delta}). This is a structural limitation with a known repair (trend
 productivity growth) that is out of scope here.
 
-\textbf{Unemployment is out of scale.} At the anchored retention rate and
+\paragraph{Unemployment is out of scale} At the anchored retention rate and
 empirical $\sigma$ the model runs at roughly 50\% ($c_0 = 1.0$) or 31\%
 ($c_0 = 2.0$) unemployment. No tested value of $c_0$ brings it into a plausible
 band. This is a structural tension of the labour-market design, reported as an
@@ -23,21 +23,20 @@ open question rather than calibrated away. The \cref{sec:government} benefit is
 a genuine lever here: it lowers headline unemployment from $0.57$ to $0.37$, but
 it is a policy instrument, not a fix for the tension.
 
-\textbf{The wage share sits below its empirical range} ($0.35$--$0.61$ across
+\paragraph{The wage share sits below its empirical range} ($0.35$--$0.61$ across
 viable cells against an empirical $0.60$--$0.68$), touching it only at high
 $\sigma$ and low $\rho$.
 
-\textbf{Multiple equilibria.} Initial capital selects the basin, so it is held
+\paragraph{Multiple equilibria} Initial capital selects the basin, so it is held
 fixed across every experiment and reported. Cells that collapse are an
-\emph{outcome}, not an error.
+outcome, not an error.
 
-\textbf{No reallocation, so no genuine heterogeneity.} \Cref{sec:heterogeneity}
+\paragraph{No reallocation, so no genuine heterogeneity} \Cref{sec:heterogeneity}
 closes the firm-heterogeneity question by measuring that the model cannot absorb
 empirically realistic dispersion; entry, exit and demand rerouting are declared
 future work.
 
-\textbf{No credit, no endogenous prices, and the fixed numéraire is an
-unanchored convention.} Internal financing is a design choice to be defended as
+\paragraph{No credit, no endogenous prices, and the fixed numéraire is an unanchored convention} Internal financing is a design choice to be defended as
 such, not an omission; with the numéraire fixed at one, the implicit markup is
 already an outcome rather than a parameter. Endogenising it would require markup
 data of the kind assembled by \citet{DeLoecker2020}, and is declared future
@@ -50,20 +49,20 @@ unit cost move endogenously was declined deliberately, not overlooked: it pins
 the wage share by construction, and so would settle the question by assumption
 rather than measure it.
 
-\textbf{Sampling limits in the global analysis.} Three seeds leave roughly 4.3\%
+\paragraph{Sampling limits in the global analysis} Three seeds leave roughly 4.3\%
 of the quantity's variance as seed noise, which lands in the residual,
 depressing first-order indices and inflating apparent interaction. With
 $N = 256$ over eleven parameters, several first-order indices are
 indistinguishable from zero.
 
-\textbf{The turning point is often unresolved marginally.} The U-shaped
+\paragraph{The turning point is often unresolved marginally} The U-shaped
 statement of \cref{sec:turning} is a statement about the conditional cells. In
 the marginalised space $\rhostar$ falls inside the swept support in only
 $37.7\%$ of viable points, and below it in $58.7\%$. Where the turn is not
 observed we decline to extrapolate it, so the primary formulation is not
 available everywhere the sensitivity analysis samples.
 
-\textbf{Two estimates of the marginalised frontier, not one.} The bridging
+\paragraph{Two estimates of the marginalised frontier, not one} The bridging
 experiment sweeps all fifteen non-$\sigma$ parameters and puts
 $\sigstar \approx 0.96$; the wide Sobol' design holds five of them at midpoints
 and does not cross zero below $\sigma = 1$. They agree in message: the

@@ -14,11 +14,11 @@ meaningful.
 
 \paragraph{The sign frontier estimator.}
 The quantity of interest is the sign of $\mathrm{d}Y/\mathrm{d}\rho$. We
-estimate an OLS slope of $Y$ on $\rho$ over the \emph{common viable support}
+estimate an OLS slope of $Y$ on $\rho$ over the common viable support
 (the set of $\rho$ values at which every configuration being compared
 survives), and define $\sigstar$ as the value of $\sigma$ at which that slope
 crosses zero. Confidence intervals come from a percentile bootstrap over
-2{,}000 resamples \emph{of the seeds}. Restricting to a common support matters:
+2{,}000 resamples of the seeds. Restricting to a common support matters:
 comparing slopes estimated on different supports would confound the effect
 under study with differential survival.
 
@@ -27,7 +27,7 @@ Every extension introduces a parameter whose null value must reproduce the
 previous model exactly: $\sigma = 1$ (Cobb-Douglas), $\eta = 0$ (fixed wage),
 $\lambda_e = 1$ (static expectations), $rr = 0$ (no government),
 $\mathit{spread} = 0$ (homogeneous firms). Each is implemented as an explicit
-branch and verified \emph{artifact-against-artifact} on committed panels. The
+branch and verified artifact-against-artifact on committed panels. The
 criterion under which those checks pass or fail is itself a measured object,
 and is reported in \cref{app:bytecheck}: exact bit equality turned out not to
 be reproducible over time, and the replacement declares a tolerance on levels
@@ -45,16 +45,16 @@ than recalibrated away, so that the negative findings are the paper's substance,
 not its residue.
 
 \paragraph{Global sensitivity design.}
-For \cref{sec:sa}, $\rho$ is a \emph{treatment} rather than a swept parameter:
+For \cref{sec:sa}, $\rho$ is a treatment rather than a swept parameter:
 each design point is evaluated at several values of $\rho$ under common random
 numbers (the same seeds at each, differenced or regressed per seed, then
 averaged). The reported analysis uses four values of $\rho$, and they contain
 the two of the superseded chord, so that both estimators are computed from the
-\emph{same runs} and their difference cannot be a different sample. Without
+same runs and their difference cannot be a different sample. Without
 common random numbers the quantity of interest is a difference of two noisy
 numbers, and the sensitivity indices would decompose the variance of the seed
 draw rather than of the model. Uniform ranges over 16 parameters are a
-declared \emph{choice of ignorance}. Screening uses the elementary-effects
+declared choice of ignorance. Screening uses the elementary-effects
 method of \citet{Morris1991} with a pruning rule frozen in the source before
 any output existed; the survivors go to Sobol' estimation
 \citep{Sobol2001,Saltelli2010} with bootstrap confidence intervals, computed

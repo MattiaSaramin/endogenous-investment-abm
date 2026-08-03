@@ -23,8 +23,9 @@ This script emits exactly the rows between ``\midrule`` and ``\bottomrule`` of
   * columns Viability ``S1``, Viability ``S_T``, Slope ``S1``, Slope ``S_T``;
   * rounds ONCE, ``decimal.ROUND_HALF_UP``, to three decimals (a double rounding
     is exactly the defect this closes);
-  * the same ``\textbf{}`` emphasis on the cells that are bold today (the whole
-    ``$\delta$`` row, and the two total indices of ``$\sigma$``);
+  * NO ``\textbf`` emphasis on any cell (brief 27-bis removed all bold from the
+    paper, tables included; the generator stopped emitting it so the inline block
+    stays byte-identical to this output);
   * negatives in math mode (``$-0.029$``), matching the existing table.
 
 Output is printed to stdout: exactly the five body rows.  The paper carries them
@@ -69,17 +70,6 @@ COLUMNS = [
     ("slope_raw", "ST"),
 ]
 
-# Cells that are bold in the printed table (parameter, qoi, index) -- a layout
-# decision, not a number: the whole delta row, plus sigma's two total indices.
-BOLD = {
-    ("delta", "viable", "S1"),
-    ("delta", "viable", "ST"),
-    ("delta", "slope_raw", "S1"),
-    ("delta", "slope_raw", "ST"),
-    ("sigma", "viable", "ST"),
-    ("sigma", "slope_raw", "ST"),
-}
-
 SYMBOL_PAD = 16          # width of the parameter column in the source
 ROW_END = "\\\\"         # LaTeX end-of-row (two backslashes)
 
@@ -105,12 +95,10 @@ def load_indices() -> dict:
     return table
 
 
-def format_cell(value, bold: bool) -> str:
+def format_cell(value) -> str:
     s = str(round_half_up(value))
     if s.startswith("-"):
         s = f"${s}$"           # math-mode minus, as in the current table
-    if bold:
-        s = r"\textbf{" + s + "}"
     return s
 
 
@@ -125,7 +113,7 @@ def make_body() -> list[str]:
             if key not in table:
                 raise SystemExit(f"missing cell for {param!r} qoi={qoi!r} in {ARTIFACT}")
             value = table[key][idx]
-            cells.append(format_cell(value, (param, qoi, idx) in BOLD))
+            cells.append(format_cell(value))
         lines.append(f"{symbol:<{SYMBOL_PAD}}& " + " & ".join(cells) + ROW_END)
     return lines
 

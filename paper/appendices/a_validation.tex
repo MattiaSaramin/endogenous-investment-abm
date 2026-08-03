@@ -10,13 +10,13 @@ This appendix collects the checks the paper's results rest on, the two
 occasions on which those checks failed, and the claims withdrawn as a result.
 
 \begin{remark}[Two principles, each learned from a measured failure]
-\emph{An invariant tested at a point holds at that point.} A property verified
+An invariant tested at a point holds at that point. A property verified
 at one configuration carries no information about any other, and invariants
-must be parametrised over the range a sweep will reach \emph{before} the sweep
+must be parametrised over the range a sweep will reach before the sweep
 rather than after.
 
-\emph{A check that reports success without inspecting anything is worse than no
-check}, because it converts ``not measured'' into ``measured and sound''. The
+A check that reports success without inspecting anything is worse than no
+check, because it converts ``not measured'' into ``measured and sound''. The
 absence of a check is visible; a check that cannot fail is not.
 
 Both are stated as principles because both were measured. The stock-flow
@@ -30,8 +30,8 @@ detectors reported clean counts on a log that contained plenty
 \label{app:ownership}
 \label{sec:ownership}
 
-Firm ownership was assigned by cycling over \emph{households}: capitalist $i$
-owned firm $i \bmod n_f$. That is a bijection \emph{only} at the default
+Firm ownership was assigned by cycling over households: capitalist $i$
+owned firm $i \bmod n_f$. That is a bijection only at the default
 configuration (100 households $\times$ 0.10 $=$ 10 capitalists, 10 firms). Off
 the default it broke in both directions (\cref{tab:ownership}).
 
@@ -45,10 +45,10 @@ the default it broke in both directions (\cref{tab:ownership}).
 $\pi_c$ & Capitalists & Firms with an owner & Money $t{=}0 \to t{=}200$
 & $\sum$ net worth vs $K$\\
 \midrule
-0.05 & 5  & \textbf{5/10}  & $400.00 \to \mathbf{11.34}$ & $0.53\times$\\
-0.08 & 8  & \textbf{8/10}  & $400.00 \to \mathbf{46.15}$ & $0.84\times$\\
+0.05 & 5  & 5/10  & $400.00 \to 11.34$ & $0.53\times$\\
+0.08 & 8  & 8/10  & $400.00 \to 46.15$ & $0.84\times$\\
 0.10 & 10 & 10/10 & $400.00 \to 400.00$ & $1.05\times$\\
-0.20 & 20 & 10/10 & $400.00 \to 400.00$ & $\mathbf{2.10\times}$\\
+0.20 & 20 & 10/10 & $400.00 \to 400.00$ & $2.10\times$\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -59,11 +59,11 @@ direct violation of stock-flow consistency. Above it, the assignment overwrote
 itself, leaving capitalists holding stale references whose capital was still
 summed into net worth, inflating measured wealth inequality by a factor of two.
 
-What makes the defect worth a subsection is \emph{when} it was found:
+What makes the defect worth a subsection is when it was found:
 immediately before the global sensitivity analysis, which sweeps exactly the
 parameter that exposed it. Undetected, \cref{sec:sa} would have reported
 variance decompositions for a model that leaks money. The fix cycles over
-\emph{firms}, so every firm has exactly one owner for any number of
+firms, so every firm has exactly one owner for any number of
 capitalists; at the default the assignment is unchanged and a slice of the
 committed panels reproduces exactly, so no previously reported result moves.
 
@@ -71,21 +71,21 @@ committed panels reproduces exactly, so no previously reported result moves.
 \label{app:bytecheck}
 
 The nesting checks of \cref{sec:method} are verified
-\emph{artifact-against-artifact} on committed panels. The original criterion, deviation exactly $0.0$, proved \emph{not
-reproducible over time}. Code that had recorded 7/7 exact reproductions later
+artifact-against-artifact on committed panels. The original criterion, deviation exactly $0.0$, proved not
+reproducible over time. Code that had recorded 7/7 exact reproductions later
 deviated by 1 unit in the last place (ULP) on the same cells; eight hypotheses
 were excluded by measurement and the cause remains unidentified. The magnitude
 across 160 cells and 24 metrics is at most 2.1 ULP, does not amplify, and
-produces \emph{zero} regime flips, so no economic conclusion moves. Re-running
+produces zero regime flips, so no economic conclusion moves. Re-running
 the reference slice under the replacement gives 7/7 with a worst significant
-drift of $0.00$ ULP; it reproduces exactly \emph{today}, where the earlier
+drift of $0.00$ ULP; it reproduces exactly today, where the earlier
 measurement found 2.1 ULP on the same code. That the drift is intermittent is
 the strongest argument for retiring exact equality: a criterion that passes or
 fails by the day carries no information about what changed in the model.
 
 The replacement has two limbs that cannot compensate for each other: a declared
-tolerance on \emph{levels} (8 ULP with an absolute floor, roughly four times
-the measured envelope), and a check on \emph{regime} indicators, viability,
+tolerance on levels (8 ULP with an absolute floor, roughly four times
+the measured envelope), and a check on regime indicators, viability,
 which constraint binds, the sign of every resolvable metric, at tolerance
 exactly zero, since that is where drift would become scientific rather than
 numerical. Two limits are declared in the source. A pure ULP tolerance is
@@ -94,7 +94,7 @@ of ULP on a gap of $10^{-16}$; hence the absolute floor. And it must not be
 applied to differenced or fitted quantities, a chord, a slope, a curvature, 
 because catastrophic cancellation makes their relative error arbitrary even
 from stable inputs: the sensitivity analysis's slope deviates by 3410 ULP while
-its own inputs deviate by 4. Those are checked by \emph{sign} instead.
+its own inputs deviate by 4. Those are checked by sign instead.
 
 \subsection{The bridging experiment in full}
 \label{app:bridge}
@@ -103,7 +103,7 @@ its own inputs deviate by 4. Those are checked by \emph{sign} instead.
 The experiment is a $2\times2$: method (chord versus OLS) crossed with
 conditioning (all other parameters fixed at their defaults versus marginalised
 over the sensitivity ranges), on a shared grid of runs. The verdict rule was
-fixed \emph{before} execution: a sign flip across the method axis at fixed
+fixed before execution: a sign flip across the method axis at fixed
 parameters implicates the estimator; a flip across the conditioning axis at
 constant method implicates conditioning; both flipping means both contribute
 and the weights must be quantified; neither flipping is a finding to be
@@ -128,7 +128,7 @@ Cell & Parameters & Method & $\sigstar$ & 95\% CI\\
 1 & fixed        & chord & 0.447 & $[0.395,\,0.501]$\\
 2 & fixed        & OLS   & 0.643 & $[0.596,\,0.701]$\\
 3 & marginalised & chord & 0.938 & $[0.573,\,0.976]$\\
-4 & marginalised & OLS   & \textbf{0.962} & $[0.723,\,0.985]$\\
+4 & marginalised & OLS   & 0.962 & $[0.723,\,0.985]$\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -140,9 +140,9 @@ $[0.616, 0.691]$. The bridge is therefore measuring the same object as
 \cref{sec:frontier}, and any difference across the table is the treatment.
 
 \paragraph{What the rule does not capture, reported anyway.} The rule asks only
-whether the empirical band changes \emph{sides}, and by that test conditioning
+whether the empirical band changes sides, and by that test conditioning
 does not fire: cells 2 and 4 both place the band below $\sigstar$. But
-conditioning moves $\sigstar$ \emph{further} than the estimator does, and with
+conditioning moves $\sigstar$ further than the estimator does, and with
 non-overlapping intervals. Reporting only the verdict would let a threshold
 stand in for the measurement; both displacements push the same way, and the
 empirically supported band is profit-led more robustly than \cref{sec:frontier}
@@ -156,8 +156,8 @@ measured from a committed driver or labelled a design target
 (\cref{sec:method}). Applying it retrospectively required withdrawing three
 claims, recorded here rather than silently corrected.
 
-\textbf{A contradiction that did not exist.} An earlier summary
-reported an \emph{inverted} sign direction between the conditional and
+\paragraph{A contradiction that did not exist} An earlier summary
+reported an inverted sign direction between the conditional and
 marginal analyses and left it open as a contradiction. There was none: ``the
 empirical band sits below $\sigstar$ and is therefore not wage-led'' and
 ``below $\sigma \approx 0.65$ wage-led outcomes are rare'' are the same
@@ -166,12 +166,12 @@ experiment above was designed to explain the inversion and survived the
 discovery that half of what it set out to explain was a reading error; its
 method axis still measured a real disagreement, and is reported as it was
 fixed, not as it would have been written knowing the answer.
-\textbf{An inverted label.} A summary of the adaptive-expectations
+\paragraph{An inverted label} A summary of the adaptive-expectations
 result claimed ``the wage-led result is robust to the expectation gain'',
 citing as evidence that the empirical band stays below $\sigstar$, which is
 the profit-led side. The measured $\lambda_e$-invariance is unaffected; the
 label attached to it was wrong, and \cref{sec:expectations} states it
-correctly. \textbf{A stale identity.} The relation $I/Y = \rho\alpha$ was
+correctly. \paragraph{A stale identity} The relation $I/Y = \rho\alpha$ was
 carried forward from an earlier Cobb-Douglas core with no labour market and
 used to reason about anchoring after it had ceased to hold; measured $I/Y$ is
 cited in its place throughout (\cref{sec:calibration}). A related error mixed
@@ -194,7 +194,7 @@ parametrised over the ownership range rather than at the default alone
 parameter value, the workforce cap that restores diminishing returns
 (\cref{sec:model}), and directional regression pins on basin selection. Fifteen
 cover the repaired quantity of interest and the criterion of
-\cref{app:bytecheck}, pinning the \emph{reason} for each declared constant
+\cref{app:bytecheck}, pinning the reason for each declared constant
 rather than the constant itself, including, as an executable statement of the
 defect this paper repairs, that a chord and a whole-support slope can carry
 opposite signs on the same U-shaped response.
