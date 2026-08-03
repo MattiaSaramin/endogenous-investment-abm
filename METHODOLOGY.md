@@ -1362,6 +1362,61 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     confusione che ha prodotto la diagnosi invertita del b23); `performance/engine.cpp`
     resta STALE (il README lo dichiara non in uso).
 
+- **Brief 26 — audit di coerenza paper ↔ CODICE ↔ artifact (solo VERIFICA; nessun
+  `src/`, nessun `paper/`, nessun run del modello; 569 test invariati, eseguiti e
+  riportati 569 prima / 569 dopo):** chiude il **quarto asse** della toolchain, che era
+  il buco — nessuno strumento verificava che equazioni e parametri *stampati* nel paper
+  fossero quelli che il codice *calcola*. Referto in `docs/audit_b26_paper_codice.md`;
+  commit locale, STOP pre-push.
+  - **Fase 1 — `scripts/verify_model.py` (deliverable nuovo committato).** Confronta i
+    default reali di `MacroModel.__init__` (letti via `inspect.signature`, **import senza
+    run**) e le costanti di modulo (`U_REF`, `ANCHOR_*`) contro i valori di `tab:params`;
+    round-once `ROUND_HALF_UP`; `context` regex per pinnare la riga (come `verify_paper`).
+    `--selftest` **FALLISCE netto** su default iniettato (0.05→0.09 ⇒ MISMATCH) e su
+    needle forgiato (⇒ NOT_IN_TEX). **Esito: 19/19 MATCH** (`results/audit_b26_params.csv`).
+  - **Fase 2 — audit manuale delle 13 equazioni/sequenza.** Il sito a rischio massimo, la
+    **FOC dell'impresa** (`af27915`, `w_t/P`), è **PULITO**: il paper dice `MPL=w`, il
+    codice usa `w_t` nel default (numerario 1) e `w_t/P` solo col probe prezzi, dichiarato
+    in `07_stress`. Zero divergenze di cifra. Divergenze trovate, tutte fra un'equazione
+    stampata e una **generalizzazione del codice inerte nei risultati**: **sito 7**
+    (`eq:accelerator` scrive `u_{t-1}` realizzato; il codice legge l'aspettativa `u^e` con
+    `λ_u`, uguali a `λ_u=1` default mai sweepato — `NON_DICHIARATO`, inerte); **sito 2**
+    (il codice ha un **quarto** regime `"capital"` / soffitto `Y_max(K)` per σ<1,
+    `ces_capital_ceiling`, che il paper non nomina — `NON_DICHIARATO`); **sito 8** (cap a
+    `Π_{t-1}` nel codice vs `Π_t` nel paper, immateriale in steady state); floor intero
+    su `L` e guardia `max{·,0}` sul consumo (triviali). Siti 1,3,5,9,10,11,12,13 OK.
+  - **Fase 3 — copertura misurata:** 49 claim di registro; **611 token decimali** (=sweep)
+    + 415 interi, 423 distinti; generatore committato `scripts/audit_b26_uncovered.py` →
+    `results/audit_b26_uncovered.csv`. **Falsi positivi §5.3 verificati ancora tali e NON
+    corretti** (`0.771` derivato #1; `59.4` `tab:baseline` #2). Retrofit generatori
+    **proposti non eseguiti** (`tab:wagecurve` prossimo candidato; `tab:baseline` va prima
+    dotata di referente).
+  - **STATO EREDITATO, non mio, dichiarato:** all'avvio l'albero portava **`paper/`
+    modificato non committato** (7 file, 71+/341−: anglicizzazione + ristrutturazione
+    intro/lit) che **non ho toccato**. Una modifica del WIP è una **regressione**:
+    `eq:investment` ha perso `\clip` (HEAD corretto: `\clip(ρΠ_{t-1}φ_t,I̲,Π_t)` = il
+    codice; worktree: tupla senza operatore). La Fase 2 è classificata contro **HEAD** come
+    referente canonico. Il byte-diff del CSV `paper_rounding_sweep.csv` rigenerato è
+    **interamente spiegato dal WIP** (il committato è coerente con `HEAD:paper/`, **non è
+    stale** — token `0.42` da riga 46 in HEAD a riga 23 nel worktree); CSV ripristinato.
+  - **NUOVO PUNTO CIECO (causa diversa dai #1–#4).** I quattro punti ciechi esistenti sono
+    tutti del **toolchain dei numeri** (sweep: derivati / tabelle senza sorgente; verify/
+    coherence: substring; b24: misurato-senza-CSV). Il b26 aggiunge, di **natura diversa**:
+    **l'asse paper↔codice delle EQUAZIONI resta solo-manuale.** `verify_model.py` copre i
+    **default dei parametri**, non le equazioni: una divergenza equazione↔codice (siti 2,
+    7, 8) è colta **solo** dall'audit a mano — parsare LaTeX produrrebbe falsi positivi.
+    Regola operativa: **rieseguire l'audit manuale di Fase 2 a ogni modifica di `03_model`/
+    `agents.py`/`model.py`**, perché nessun detector lo farà. Distinto dai #1–#4: non è il
+    registro né lo sweep, è che le equazioni non sono meccanicamente confrontabili.
+  - **Detector prima/dopo (regola §6):** `pytest` 569 verdi prima e dopo (nessun `src/`,
+    `tests/` toccato); `verify_paper` 0 FAIL, `coherence` 0 DIVERGENT, `sweep_rounding`
+    0 firme invariati; nuovo `verify_model` 0 FAIL. **Osservazione, non riparata:**
+    `verify_paper` usa `round()` builtin (half-even) mentre `sweep_rounding`/`verify_model`
+    usano `ROUND_HALF_UP` — immateriale sui valori attuali (nessun caso half-way), latente.
+  - **Fuori scope, dichiarato:** riparare qualsiasi finding (gerarchia §6: paper vs codice
+    non normato ⇒ arbitrato di Mattia, non chiusura d'iniziativa); committare o toccare il
+    WIP di `paper/`; promuovere `enable_prices`; affinare `sweep_rounding.py` per i derivati.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
