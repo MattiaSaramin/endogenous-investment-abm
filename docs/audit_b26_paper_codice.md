@@ -13,6 +13,42 @@ Numerazione: l'ultimo brief registrato in `METHODOLOGY.md` §8 è **b25** (commi
 
 ---
 
+## 0. Aggiornamento Brief 27 — rieseguito sul tree PULITO (delta di classificazione)
+
+Il b26 fu misurato **contro il WIP non committato** di `paper/` (referto onesto ma
+senza referente riproducibile). Il **b27 ha landato il blocco paper** (anglicizzazione
++ ristrutturazione + `\clip` ripristinato + `.gitignore` ripristinato + **de-dash
+paper-wide** deciso da Mattia al gate). Rieseguito qui su `git diff HEAD -- paper/`
+**vuoto**. Delta rispetto alla versione contro-WIP:
+
+| item | b26 (contro-WIP) | b27 (tree pulito) |
+|---|---|---|
+| **§0.1 stato ereditato** | `paper/` WIP non committato, referto senza referente | **RISOLTO**: paper committato in blocco, referente riproducibile |
+| **Sito 8(a)** — `\clip` in `eq:investment` | **REGRESSIONE** (worktree perdeva `\clip`) | **RISOLTO**: `\clip\big(...)` ripristinato (forma HEAD = codice `min(max(·,floor),profit)`) |
+| **Sito 2** — 4° regime `"capital"` / `Y_max(K)` | `NON_DICHIARATO` (solo `03_model` esaminato) | **CONFERMATO `NON_DICHIARATO`** — ricerca **paper-wide** (tutte le sezioni + appendici): nessuna menzione di capital ceiling / `Y_max` / 4° regime (grep = 0). Il raffinamento b17 non ribalta il finding. |
+| **`coherence.py`** | `0 missing` (silenzioso su RESULTS.md presente-untracked) | **`DOCUMENT UNTRACKED: RESULTS.md`** (check su tracciamento git, `--selftest` che FIRE — Fase E) |
+| **Fase 1 (19 param)** | 19 MATCH (contro-WIP) | **19 MATCH** invariato (`04_calibration` valori non toccati dal de-dash) |
+| **Fase 3 token decimali** | 611 | **619** (+8) — vedi sotto |
+
+**Conseguenza NUOVA del de-dash sui token (dichiarata, non un errore del paper).**
+Il de-dash converte gli en-dash dei **range** in trattino (`0.030--0.045` → `0.030-0.045`):
+Mattia ha chiesto «niente doppi trattini», e un trattino singolo è conforme. Effetto
+collaterale sullo **sweep**: la regex `(?<!-)-?\d+\.\d+` con guardia b20 *«un `-` dopo
+`-` è un trattino di range»* si basava sul `--`; senza `--`, gli **estremi superiori dei
+range** vengono letti come **numeri negativi** (`-0.045, -0.060, -0.075, -0.090` e
+`-0.475, -0.649, -0.823, -0.998`, tutti in `09_sensitivity` righe 136–139 e 294–296).
+Token decimali **611 → 619**; candidati sweep 803 → 804 righe / 172 → 173 occorrenze —
+tutti **coincidenti** (blind-spot #1: la prossimità NON è attribuzione; questi token non
+hanno referente, sono artefatti del de-dash), **nessuna firma double-round confermata**.
+La guardia-range b20 dello sweep è ora **inattiva per costruzione** (niente `--` da
+guardare). Classificati `LITERATURE_OR_DESIGN` in `results/audit_b26_uncovered.csv`
+(distinti 423 → 431). **Non riparato** (lo sweep funziona; la guardia è muta, non rotta;
+il paper è corretto — un range con trattino è tipografia standard).
+
+Il resto del referto b26 sotto **regge invariato** salvo i delta in tabella.
+
+---
+
 ## 1. Sommario esecutivo
 
 Il sito a rischio massimo — la **FOC dell'impresa** (`af27915`, salario reale
