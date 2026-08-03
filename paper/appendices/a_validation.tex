@@ -78,7 +78,7 @@ were excluded by measurement and the cause remains unidentified. The magnitude
 across 160 cells and 24 metrics is at most 2.1 ULP, does not amplify, and
 produces \emph{zero} regime flips, so no economic conclusion moves. Re-running
 the reference slice under the replacement gives 7/7 with a worst significant
-drift of $0.00$ ULP, it reproduces exactly \emph{today}, where the earlier
+drift of $0.00$ ULP; it reproduces exactly \emph{today}, where the earlier
 measurement found 2.1 ULP on the same code. That the drift is intermittent is
 the strongest argument for retiring exact equality: a criterion that passes or
 fails by the day carries no information about what changed in the model.
@@ -144,7 +144,7 @@ whether the empirical band changes \emph{sides}, and by that test conditioning
 does not fire: cells 2 and 4 both place the band below $\sigstar$. But
 conditioning moves $\sigstar$ \emph{further} than the estimator does, and with
 non-overlapping intervals. Reporting only the verdict would let a threshold
-stand in for the measurement, both displacements push the same way, and the
+stand in for the measurement; both displacements push the same way, and the
 empirically supported band is profit-led more robustly than \cref{sec:frontier}
 alone claimed.
 
