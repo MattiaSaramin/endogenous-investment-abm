@@ -42,25 +42,25 @@ Parameter & Value & Anchoring \\
 \midrule
 \multicolumn{3}{l}{\textit{Anchored to a citable source}}\\
 \addlinespace[2pt]
-$\sigma$ (elasticity of substitution) & swept & $0.40$--$0.60$
-  \citep{Chirinko2008}; $0.45$--$0.87$ and Cobb-Douglas rejected
+$\sigma$ (elasticity of substitution) & swept & $0.40$-$0.60$
+  \citep{Chirinko2008}; $0.45$-$0.87$ and Cobb-Douglas rejected
   \citep{Knoblach2020}. \textbf{Swept, never chosen.}\\
 $\pi_0$ (base-point capital share) & $1/3$ & standard growth accounting
   \citep{Gollin2002,Solow1957}\\
-$\eta$ (wage-curve elasticity) & swept, $0$--$0.15$ & $\approx 0.10$
+$\eta$ (wage-curve elasticity) & swept, $0$-$0.15$ & $\approx 0.10$
   \citep{BlanchflowerOswald1994}; $\approx 0.07$ \citep{NijkampPoot2005}\\
 $\lambda$ (wealth effect) & $0.05$ & $\approx 5$ cents, 16-country mean
-  \citep{Slacalek2009}; cf.\ $3$--$4$ cents for housing wealth
+  \citep{Slacalek2009}; cf.\ $3$-$4$ cents for housing wealth
   \citep{CaseQuigleyShiller2005}\\
 $\rho$ (retention ratio) & $0.40$ & anchored \emph{through} $I/Y$, not through
   payout ratios; see \cref{sec:limits}\\
-$rr$ (benefit replacement rate) & swept, $0$--$0.75$ & OECD net replacement
+$rr$ (benefit replacement rate) & swept, $0$-$0.75$ & OECD net replacement
   rates $\approx 58\%$ initial \citep{OECD2024}\\
 \addlinespace[4pt]
-\multicolumn{3}{l}{\textit{Declared conventions --- not estimates}}\\
+\multicolumn{3}{l}{\textit{Declared conventions, not estimates}}\\
 \addlinespace[2pt]
 $\delta$ (depreciation) & $0.05$ & BEA-implied figure for this perimeter is
-  $\approx 0.090$; structures alone $2$--$3\%$. A defensible midpoint,
+  $\approx 0.090$; structures alone $2$-$3\%$. A defensible midpoint,
   \textbf{not a measurement}. See \cref{sec:delta}.\\
 $U_{\min}$, $w_{\min}$ & $0.01$, $0.45$ & guards; $w_{\min}$ never stably
   binds anywhere tested\\
@@ -70,7 +70,7 @@ $\underline{I}$ (investment floor) & $0.1$ & numerical guardrail\\
 $\bar{u}$ (target utilisation) & $0.90$ & above the observed US average
   ($\approx 0.80$)\\
 \addlinespace[4pt]
-\multicolumn{3}{l}{\textit{Modelling choices --- measured once, then frozen}}\\
+\multicolumn{3}{l}{\textit{Modelling choices, measured once, then frozen}}\\
 \addlinespace[2pt]
 $(K_0,L_0)$ & $41.87$, $7.395$ & CES normalisation anchor
   \citep{KlumpDeLaGrandville2000}; caveat per \citet{Temple2012}\\
@@ -92,10 +92,10 @@ $c_0$ (autonomous consumption) & $\{1.0, 2.0\}$ & model units have no exchange
 \begin{tablenotes}[flushleft]\footnotesize
 \item \textit{Note.} One model period $=$ one year. This is a declared
 interpretive convention, chosen as the only one consistent with the already
-anchored parameters: $\delta$ is an annual rate and the Blanchflower--Oswald
+anchored parameters: $\delta$ is an annual rate and the Blanchflower-Oswald
 elasticity is estimated on annual data. It follows that the 2{,}000 steps of
 each run are a \emph{convergence device, not 2{,}000 years of simulated
-history} --- every result in this paper is comparative statics across steady
+history}, every result in this paper is comparative statics across steady
 states, never a time series to be overlaid on data.
 \end{tablenotes}
 \end{threeparttable}
@@ -106,13 +106,13 @@ states, never a time series to be overlaid on data.
 The capital block is anchored \emph{flows first}: $\rho$ is anchored through
 the investment rate it produces rather than through corporate payout ratios,
 because $\rho$ is what fixes $I/Y$ here. The comparator is declared and held on
-both sides of the ratio --- private \emph{non-residential} fixed capital ---
+both sides of the ratio, private \emph{non-residential} fixed capital, 
 since mixing perimeters is exactly how an earlier version of these notes
 derived a $\delta$ that appeared anchored and was not.
 
-Against the BEA series for that perimeter, $I/Y$ is $0.138$--$0.141$
+Against the BEA series for that perimeter, $I/Y$ is $0.138$-$0.141$
 \citep{FRED_PNFI}. The model \emph{measured} at $\rho = 0.40$ gives $0.158$ in
-the anchor scenario and $0.182$ in the headline scenario --- above the anchor by
+the anchor scenario and $0.182$ in the headline scenario, above the anchor by
 two and four points. We quote the measured figure and never an analytical one:
 the relation $I/Y = \rho\alpha$ belongs to an earlier Cobb-Douglas core without
 a labour market and no longer holds once profit is a residual
@@ -132,13 +132,13 @@ linear interpolation between the bracketing nodes of the committed sweep
 \centering
 \small
 \caption{The anchored retention rate, derived from measured $I/Y$ against the
-BEA band $0.138$--$0.141$.}
+BEA band $0.138$-$0.141$.}
 \label{tab:anchoredrho}
 \begin{tabular}{llll}
 \toprule
 Scenario & $I/Y$ at $\rho = 0.35$ & Anchored $\rho$ & Status\\
 \midrule
-Anchor ($c_0 = 2.0$, $\sigma = 1$) & 0.135 & $0.357$--$0.363$ & interpolated
+Anchor ($c_0 = 2.0$, $\sigma = 1$) & 0.135 & $0.357$-$0.363$ & interpolated
 in support\\
 Headline ($c_0 = 1.0$, $\sigma = 0.5$) & \textbf{0.161} & $< 0.35$ & below the
 swept support\\
@@ -150,7 +150,7 @@ The two scenarios do not give the same number, and the difference cuts in the
 paper's favour rather than against it. In the anchor scenario the band is
 reached inside the support, at $\rho \approx 0.36$. In the headline scenario
 measured $I/Y$ is already $0.161$ at $\rho = 0.35$, the \emph{lowest} value
-swept --- so the anchored $\rho$ lies below the support entirely. We decline to
+swept, so the anchored $\rho$ lies below the support entirely. We decline to
 extrapolate it: a value obtained by extending the fit past the sweep would be a
 number about a region never visited.
 
@@ -162,7 +162,7 @@ of $\rhostar$ and does not depend on resolving the anchored value exactly.
 
 \begin{remark}
 An earlier version of this project carried the anchored range as
-$\rho \in [0.35, 0.45]$ --- the lower end derived as above, the upper end
+$\rho \in [0.35, 0.45]$, the lower end derived as above, the upper end
 \emph{not derived at all}. The reported figures below use the derived bound.
 The committed sensitivity artifact still carries a side column computed under
 the wider band and therefore labels two low-$\sigma$ cells as straddling the
@@ -174,8 +174,8 @@ run.
 $\delta$ is the clearest case of tier~(2). The depreciation rate implied by the
 BEA data for this perimeter is $\approx 0.090$ \citep{FRED_Depreciation},
 inflated by intellectual
-property products; structures alone sit at $2$--$3\%$, so the defensible
-empirical band spans roughly $0.02$--$0.09$ and $\delta = 0.05$ is a midpoint
+property products; structures alone sit at $2$-$3\%$, so the defensible
+empirical band spans roughly $0.02$-$0.09$ and $\delta = 0.05$ is a midpoint
 chosen within it. It is not a measurement, and it must not be recalibrated
 ``toward the centre of the literature'' late in a project: doing so would move
 every canonical number without buying any anchoring.
@@ -184,9 +184,9 @@ That decision has a structural consequence which \cref{sec:delta} makes
 quantitative. The steady-state closure is $I/K = \delta + g$. This model has
 $g = 0$, so $K/Y$ is not an anchor at all but a \emph{mechanical outcome}:
 $K/Y = (I/Y)/\delta$, and measured $I/K$ is $0.0500$, exactly $\delta$. Model
-$K/Y$ is therefore $3.17$--$3.64$ against a business-sector $1.23$
+$K/Y$ is therefore $3.17$-$3.64$ against a business-sector $1.23$
 \citep{FRED_NetStock}, and no choice of $\rho$ reconciles the two. \emph{The model cannot match business
-$I/Y$ and $K/Y$ simultaneously without trend growth} --- a declared structural
+$I/Y$ and $K/Y$ simultaneously without trend growth}, a declared structural
 limitation, not a calibration failure to be tuned away.
 
 \subsection{What is deliberately not anchored}
@@ -197,6 +197,6 @@ exists no empirical quantity of which it is an estimate. Searching for a
 citation would be cosmetic anchoring. Its sensitivity is instead handled by
 reporting both regimes $c_0 \in \{1.0, 2.0\}$ throughout, and by the global
 analysis of \cref{sec:sa}. This does not close the model's most visible
-quantitative gap --- unemployment rates far above anything observed --- which is
+quantitative gap, unemployment rates far above anything observed, which is
 a consequence of design decisions listed in \cref{sec:limits}, not of an
 unanchored parameter.

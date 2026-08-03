@@ -9,8 +9,8 @@
 Every result so far is measured at a \emph{cell}: a chosen $\sigma$, a chosen
 $c_0$, everything else at its default. We now ask what survives when all
 sixteen defensible parameters move at once. The quantity of interest is the
-one established in \cref{sec:turning} --- an OLS slope of $Y$ on $\rho$ over
-four values of the retention ratio, evaluated under common random numbers ---
+one established in \cref{sec:turning}, an OLS slope of $Y$ on $\rho$ over
+four values of the retention ratio, evaluated under common random numbers, 
 and not the two-point chord with which this analysis was first run. Why that
 distinction is worth a subsection of its own, rather than a footnote, is the
 subject of \cref{sec:estimator}.
@@ -30,13 +30,13 @@ and half of that space does not sustain an economy at all.
 
 It matters what that number is about, because it is easy to read as the
 opposite of what it says. \textbf{The quantity of interest here is the OLS slope
-over the whole $\rho$ support} --- the \emph{global} half of the statement in
+over the whole $\rho$ support}, the \emph{global} half of the statement in
 \cref{sec:turning}, the half that \cref{sec:frontier} already reports as
 positive in the empirical band. So $P = 0.026$ \emph{agrees} with the
 conditional result rather than contradicting it: it says that a response which
 rises across the sweep is the norm once all sixteen parameters move. It says
 nothing about the turn $\rhostar$, and nothing about the sign of the margin at
-the anchored $\rho$ --- which is the paper's primary statement.
+the anchored $\rho$, which is the paper's primary statement.
 \Cref{sec:marginalturn} supplies that missing half.
 
 What marginalisation genuinely destroys is the \emph{frontier}: the existence
@@ -59,7 +59,7 @@ first row is the superseded chord-only analysis, retained for comparison.}
 \toprule
 Analysis & Fraction viable & $P(\text{wl})$ chord & $P(\text{wl})$ OLS\\
 \midrule
-Chord-only, as first run             & 0.483 & 0.095 & ---\\
+Chord-only, as first run             & 0.483 & 0.095 & \\
 Primary, $\sigma \in [0.40, 0.60]$   & 0.480 & 0.094 & \textbf{0.026}\\
 Wide, $\sigma \in [0.30, 1.00]$      & 0.468 & 0.202 & \textbf{0.098}\\
 \bottomrule
@@ -133,10 +133,10 @@ answer to the first one stands under either quantity of interest.
 \toprule
 $\delta$ & Points & Fraction viable & $P(\text{wage-led} \mid \text{viable})$\\
 \midrule
-0.030--0.045 & 832 & \textbf{0.992} & 0.044\\
-0.045--0.060 & 832 & 0.758 & 0.111\\
-0.060--0.075 & 821 & 0.183 & 0.313\\
-\textbf{0.075--0.090} & \textbf{843} & \textbf{0.000} & ---\\
+0.030-0.045 & 832 & \textbf{0.992} & 0.044\\
+0.045-0.060 & 832 & 0.758 & 0.111\\
+0.060-0.075 & 821 & 0.183 & 0.313\\
+\textbf{0.075-0.090} & \textbf{843} & \textbf{0.000} & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -150,8 +150,8 @@ $\delta$ alone governs survival: its total index on viability is $1.00$, and no
 other parameter approaches it. \Cref{tab:delta} is not a robustness note but a
 structural limitation, and it becomes one only when combined with the anchoring
 exercise of \cref{sec:calibration}. The depreciation rate \emph{implied by the
-data for this model's perimeter} --- private non-residential fixed capital on
-both sides of the ratio --- is $\approx 0.090$. In that band, \textbf{zero of
+data for this model's perimeter}, private non-residential fixed capital on
+both sides of the ratio, is $\approx 0.090$. In that band, \textbf{zero of
 843 sampled points survive}.
 
 \begin{remark}[Why this cannot be recalibrated away]
@@ -166,12 +166,12 @@ investment flow: capital erodes every period and the economy dies.
 
 $\delta = 0.05$ is therefore \emph{not} where the data put it. It is where
 $g = 0$ forces it to sit for the model to exist at all. The repair is a
-mechanism --- trend productivity growth --- not a calibration.
+mechanism, trend productivity growth, not a calibration.
 \end{remark}
 
 This is the same structural signature as the model's other declared failure of
-fit. Measured $I/Y$ ($0.158$--$0.182$ at $\rho = 0.40$) sits above the BEA
-anchor of $0.138$--$0.141$, and measured $K/Y$ ($3.17$--$3.64$) sits far above
+fit. Measured $I/Y$ ($0.158$-$0.182$ at $\rho = 0.40$) sits above the BEA
+anchor of $0.138$-$0.141$, and measured $K/Y$ ($3.17$-$3.64$) sits far above
 the data's $1.23$. The second follows mechanically from the first: with
 $g = 0$, $I = \delta K$ and hence $K/Y = (I/Y)/\delta$; measured $I/K$ is
 $0.0500$, exactly $\delta$. \emph{The model cannot match business $I/Y$ and
@@ -184,7 +184,7 @@ One cause, two symptoms.
 
 The design evaluates every point at four values of $\rho$, so the turning point
 can be estimated per design point with the same quadratic fit \cref{sec:turning}
-uses on the conditional grid --- no further simulation, only a re-reading of the
+uses on the conditional grid, no further simulation, only a re-reading of the
 committed runs. This is the marginalised counterpart of the paper's first
 contribution, and it was missing from the analysis as originally reported.
 
@@ -231,7 +231,7 @@ not a contradiction but the definition of a U observed on one side of its turn.
 the conditional cells on the four SA nodes rather than their seven reproduces
 $\rhostar$ to a median of $0.005$ and a worst case of $0.014$, and in none of
 the eleven cells does the coarser grid move the anchored $\rho$ to the other
-side of the turn --- so the resolution costs precision but not the decision. And
+side of the turn, so the resolution costs precision but not the decision. And
 $\rhostar$ carries no variance decomposition: the Saltelli estimator needs a
 complete block of evaluations per base sample, and \emph{none} of the 256 base
 samples has a resolved turn at every one of its thirteen evaluations. Imputing
@@ -243,8 +243,8 @@ indices are omitted rather than reported weak.
 
 The gap between the chord and OLS columns of \cref{tab:repaired} is not a
 rounding detail, and it is not diffuse. It was measured by a $2\times2$
-experiment --- method crossed with conditioning, under a verdict rule fixed
-before execution --- whose full design, intervals and anchoring control are
+experiment, method crossed with conditioning, under a verdict rule fixed
+before execution, whose full design, intervals and anchoring control are
 reported in \cref{app:bridge}. The result of that experiment is that the
 quantity of interest was itself carrying part of the answer.
 
@@ -252,7 +252,7 @@ At identical parameters, changing only the estimator moves $\sigstar$ from
 $0.643$ to $0.447$ with \emph{non-overlapping} intervals: for any $\sigma$
 between those values the chord is negative while the whole-support slope is
 positive. The two statistics genuinely disagree in sign on the same committed
-data. Conditioning moves the frontier further still --- to $0.962$ --- but it
+data. Conditioning moves the frontier further still, to $0.962$, but it
 moves it \emph{away} from the empirical band rather than across it, so under
 the declared rule the estimator is what the verdict turns on.
 
@@ -276,7 +276,7 @@ estimators are answering different questions about the same curve, and
 \subsection{The wide-\texorpdfstring{$\sigma$}{sigma} check}
 \label{sec:widesigma}
 
-Widening the $\sigma$ range to $0.30$--$1.00$ leaves viability nearly
+Widening the $\sigma$ range to $0.30$-$1.00$ leaves viability nearly
 unchanged but raises the wage-led fraction under both estimators, and the
 change is concentrated at high $\sigma$ (\cref{tab:widesigma}).
 
@@ -290,16 +290,15 @@ estimators, on the same runs, $\sigma \in [0.30, 1.00]$.}
 \toprule
 $\sigma$ bin & $n$ viable & OLS & chord\\
 \midrule
-0.301--0.475 & 191 & 0.000 & 0.016\\
-0.475--0.649 & 197 & 0.025 & 0.127\\
-0.649--0.823 & 201 & 0.154 & 0.299\\
-0.823--0.998 & 190 & 0.211 & 0.363\\
+0.301-0.475 & 191 & 0.000 & 0.016\\
+0.475-0.649 & 197 & 0.025 & 0.127\\
+0.649-0.823 & 201 & 0.154 & 0.299\\
+0.823-0.998 & 190 & 0.211 & 0.363\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Wage-led outcomes become more common as $\sigma$ rises, under both estimators
---- the same direction as \cref{sec:frontier}, which places the empirical band
+Wage-led outcomes become more common as $\sigma$ rises, under both estimators, the same direction as \cref{sec:frontier}, which places the empirical band
 below $\sigstar$ and therefore on the side where retention raises output. The
 two analyses agree in direction; they differ in level, and the difference is
 the estimator. Note also that the probability never crosses $0.5$ at any
@@ -320,8 +319,8 @@ underlie \cref{tab:sobol,tab:delta}.
   \caption{Sobol' indices with bootstrap CIs.}
 \end{subfigure}
 \caption{Screening and decomposition. Morris (left) screens seventeen
-parameters --- the sixteen defensible parameters plus \texttt{max\_tax}, which
-is screened here only --- while the Sobol' decomposition (right) is over the
+parameters, the sixteen defensible parameters plus \texttt{max\_tax}, which
+is screened here only, while the Sobol' decomposition (right) is over the
 sixteen-parameter defensible space. Both panels use the chord estimator
 (\texttt{ces\_b13}); \cref{fig:sa-b14} is the OLS-repaired counterpart
 (\texttt{ces\_b14}).}
@@ -339,7 +338,7 @@ viability $\delta$ reads $0.916$. The survivor set differs from \cref{fig:sa}
 (\texttt{target\_utilization} enters, \texttt{benefit\_replacement\_rate}
 leaves), so the vertical axis is not identical. The third panel is the
 conditional quantity $\text{slope}\mid\text{viable}$ under RBD-FAST, which
-defines only a first-order index --- no total index is shown --- and it is the
+defines only a first-order index, no total index is shown, and it is the
 panel in which the accelerator gain $\beta$ dominates.}
 \label{fig:sa-b14}
 \end{figure}
@@ -351,7 +350,7 @@ $\Pi - I = C - W$ is a tautology and cannot settle causation. Sobol' sampling,
 however, varies the capitalists' propensity to consume \emph{independently of
 everything else}, which makes the comparison interventional. Moving from the
 lowest to the highest quartile of capitalist MPC raises capitalist consumption
-by $10.83$ and profit by $11.56$ --- near one-for-one, with a correlation of
+by $10.83$ and profit by $11.56$, near one-for-one, with a correlation of
 $+0.83$ on levels. Capitalists do earn what they spend. The profit \emph{share}
 falls slightly, because output rises faster; Kalecki's claim is about levels,
 and it is the levels that hold.
@@ -362,8 +361,8 @@ quartile of $\beta$ ($[0.002, 0.251]$) only $0.6\%$ of viable points are
 wage-led (2 of 353); in the highest ($[0.750, 0.999]$) the figure is $22.1\%$,
 and viability itself is higher ($0.523$ against $0.423$). The wage-led sign is
 therefore substantially \emph{produced by} investment reactivity rather than
-being an intrinsic property of the technology, and $\beta$ --- a parameter with
-no canonical empirical value (\cref{tab:params}) --- governs both the sign and
+being an intrinsic property of the technology, and $\beta$, a parameter with
+no canonical empirical value (\cref{tab:params}), governs both the sign and
 survival. This reverses the expectation that the instability would prove
 independent of investment reactivity, and it is an uncomfortable result: the
 headline depends on the one parameter in the model with the weakest empirical
