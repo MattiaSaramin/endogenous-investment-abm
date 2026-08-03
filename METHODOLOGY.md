@@ -1421,6 +1421,47 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     non normato ⇒ arbitrato di Mattia, non chiusura d'iniziativa); committare o toccare il
     WIP di `paper/`; promuovere `enable_prices`; affinare `sweep_rounding.py` per i derivati.
 
+- **Brief 27 — sblocca il WIP di `paper/` e ripristina la riproducibilità del b26 (blocco
+  paper + `scripts/coherence.py`; nessun `src/`; 569 test invariati, 569 prima / 569 dopo):**
+  il working tree di `paper/` era sporco dal b26 (WIP non committato, ereditato) ⇒ i finding
+  di Fase 2 del b26 erano senza referente riproducibile. Questo brief **landa il blocco** e li
+  rende citabili. **Gate rispettato:** la caratterizzazione è committata **prima** del blocco
+  paper (l'ordine dei commit è la prova). Commit locali, STOP pre-push.
+  - **Fase A — caratterizzazione (`docs/wip_paper_caratterizzazione.md`, sola lettura).** Il WIP
+    ereditato è **anglicizzazione + ristrutturazione**: contenuto e le **5 conseguenze operative
+    del b23** preservati (citati riga per riga), **H2 bracket intatto** in `frontmatter` (nessuna
+    delle 3 formulazioni vietate), token decimali invariati (614=614). **0 RIMOZIONE_DI_CONTENUTO**;
+    **2 REGRESSIONI**: `\clip` perso in `eq:investment` e **`paper/.gitignore` cancellato** (ignorava
+    solo artefatti build LaTeX). Regressione oltre `\clip` ⇒ **decisione al gate a Mattia**.
+  - **Fase B — riparato e landato IN BLOCCO** (un solo commit `paper/`). Decisioni del gate: (1)
+    `.gitignore` **ripristinato** a HEAD; (2) `\clip\big(...)` **ripristinato** (forma HEAD = codice
+    `min(max(·, investment_floor), profit_last_period)`); (3) **de-dash PAPER-WIDE** (Mattia: niente
+    em/en-dash) — 123 `---`→virgola, 35 `--`→trattino su `sections`+`appendices`; 2 celle n/a
+    `& ---`→vuote; marcatori `do-not-hand-edit` ripristinati; blocchi generati byte-identici.
+  - **CONSEGUENZA NUOVA del de-dash sui token (dichiarata).** Convertire i `--` dei **range** in
+    trattino **disattiva la guardia-range b20 dello sweep** (che si basava sul `--`): gli estremi
+    superiori dei range in `09_sensitivity` (`0.030-0.045`… e `0.475-0.649`…) sono ora letti come
+    **negativi** (`-0.045`…). Token decimali **611→619**; candidati sweep 803→804 righe / 172→173
+    occorrenze — **tutti coincidenti** (blind-spot #1: prossimità ≠ attribuzione; artefatti senza
+    referente), **nessuna firma double-round confermata**. Non riparato: lo sweep funziona, la
+    guardia è **muta non rotta**, e un range con trattino è tipografia corretta. Distinto dai punti
+    ciechi #1–#4 (è una conseguenza di una *decisione*, non un difetto latente del detector).
+  - **Fase C — verde e provato:** `pytest` **569**; `verify_paper` 0 FAIL (1 AMBIGUOUS per
+    costruzione, 1 SKIP dichiarato) + `--selftest` PASS; `coherence` 0 DIVERGENT + `--selftest` PASS;
+    `verify_model` 19 MATCH + `--selftest` PASS; `sweep_rounding` nessuna firma nuova. **CI: il PDF si
+    verifica solo su push** (nessun engine LaTeX locale) ⇒ i quattro contatori (overfull/underfull/
+    errori LaTeX/ref-cit undefined) sono **deferiti al push** (conferma di Mattia); il conteggio
+    pagine NON è emesso dal workflow, non citarlo come misurato.
+  - **Fase D — b26 rieseguito sul tree pulito** (`docs/audit_b26_paper_codice.md` §0). **RISOLTI:**
+    stato ereditato §0.1; sito 8(a) `\clip`. **CONFERMATO** sito 2 `NON_DICHIARATO` con ricerca
+    **paper-wide** (nessun capital ceiling/`Y_max`/4° regime in alcuna sezione o appendice — il
+    raffinamento b17 non lo ribalta). `verify_model` 19 MATCH invariato.
+  - **Fase E — riparato il detector `DOCUMENT MISSING` (commit a sé).** `RESULTS.md` untracked ma
+    presente su disco ⇒ il check per `os.path.exists` taceva sulla macchina dell'autore e sparava
+    solo su clone fresco. Riparato al **tracciamento git** (`git ls-files --error-unmatch`): emette
+    `DOCUMENT UNTRACKED` identico ovunque; `--selftest` che **FIRE** su file presente-ma-untracked;
+    invariante §6 riallineato (sopra). **0 DIVERGENT invariato.**
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
