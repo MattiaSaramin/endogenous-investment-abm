@@ -1528,6 +1528,40 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     PDF (artifact `paper-pdf` dell'ultima run verde) va letto da Mattia (almeno `01`, `11`, `10`,
     `12`) **prima** di qualunque merge su `main`. Nessun merge finché non lo dice.
 
+- **Brief 27-quater — quattro difetti trovati nel PDF (esito del read-gate del b27-ter;
+  branch `b27-verify`; nessun `src/`; 569 test invariati). NON mergiato, NON su `main`.**
+  Mattia ha letto il PDF e ha segnalato quattro difetti, uno sistematico.
+  - **Fase 1 — anglicizzazione a metà (sistematico).** Il WIP del b27 non era arrivato in
+    fondo: documento misto (`labour`/`labor`, `-isation`/`-ization`, `modelling`, `centre`)
+    anche in titoli e indice. Uniformato ad **American** con **lista esplicita di parole**
+    (80 sostituzioni; evitati i falsi amici `surprise`/`otherwise`/`comprise`/`rise`/
+    `raise`/`analysis`). Esenzioni rispettate (citazioni, `.bib`, nomi propri, blocchi
+    generati). **0 forme britanniche residue.**
+  - **Fase 2 — due punti sospesi (intro).** Residuo dell'`itemize` Supply/Demand convertito
+    in prosa: i due punti introducevano un'interruzione di paragrafo ⇒ **chiusi con punto**.
+    I tre due-punti che introducono equazioni in display (3.2/3.4/7.2) NON toccati.
+  - **Fase 3 — §11 limite quota salari.** Intestazione = soggetto, corpo senza verbo ⇒
+    intestazione-etichetta + frase compiuta; 4 numeri invariati.
+  - **Fase 4 — 37.7% nominato e registrato (il paper è corretto).** §11 `37.7\%` (in-support
+    602/1596) vs `tab:marginalturn` `0.337` (resolved 538/1596): righe adiacenti che
+    differiscono di una cifra, confondibili. (1) Nel paper: il 37.7% è **nominato** come
+    in-support di `tab:marginalturn`, distinto dal resolved (parole, nessun numero nuovo,
+    611 invariati). (2) Nel registro: aggiunti 2 claim (`marginal_rho_star_in_support`,
+    `..._resolved`), erano scoperti ⇒ **49 → 51**. **`verify_paper.py` esteso** con un campo
+    `fraction` (`scale*mean` di una colonna 0/1 dopo il filtro): un rapporto derivato diventa
+    verificabile cella per cella (chiude il punto cieco #1 per colonne booleane); detector
+    modificato ⇒ `--selftest` esteso ([4]: 3/4→75.0, valore sbagliato rifiutato). Il **58.7%**
+    (below-support) è identificato ma senza colonna booleana ⇒ dichiarato, non registrato.
+  - **Fase 5.5 — inventario:** 18 tabelle + glossario notazione (`\cref{app:notation}`) + 8
+    figure, tutte numerate e richiamate; i «buchi» del testo estratto sono artefatti `pdftotext`.
+  - **Detector + CI:** `pytest` **569**; `verify_paper` **51 claim, 0 FAIL** (1 AMBIGUOUS + 1
+    SKIP, 0 CLAIM NOT FOUND) + `--selftest` (incl. frac [4]) PASS; `coherence` 0 DIVERGENT +
+    `DOCUMENT UNTRACKED` + `--selftest`; `verify_model` 19 + `--selftest`; blocchi generati
+    byte-identici; **611 token**; enfasi 0/0/0/0; liste 0/0; 0 forme britanniche. `sweep`
+    rigenerato dopo l'ultimo commit del paper (b22-bis). **CI VERDE** su `b27-verify`
+    (4 contatori a 0). **Read-gate del b27-ter RISOLTO** (Mattia ha letto e segnalato); il
+    merge su `main` resta la sua decisione esplicita, non presa in questo brief.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
