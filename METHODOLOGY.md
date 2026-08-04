@@ -1836,7 +1836,8 @@ negoziabili.
   `results/paper_rounding_sweep.csv`
 - `scripts/make_tab_sobol.py` — **brief 20**, genera il corpo `tabular` di `tab:sobol` da
   `ces_b13_sobol_indices.csv` (`saltelli`, round-once ROUND_HALF_UP, mappa `$\lambda$`=`wealth_effect`,
-  stessi grassetti); stampa su stdout, il `.tex` contiene il blocco inline col marcatore
+  **nessun grassetto** — b27-bis Opzione A: il set `BOLD` e il ramo `\textbf` sono stati rimossi dal
+  generatore, così il paper non ha grassetto neppure in tabella); stampa su stdout, il `.tex` contiene il blocco inline col marcatore
   `do not hand-edit` sulla riga `\midrule`. **Prima tabella del paper con generatore committato**
 - `scripts/make_tab_prices.py` — **brief 22**, genera il corpo `tabular` di `tab:prices` da
   `ces_b21_sigma_star_eta.csv` (`c0=1.0`, round-once ROUND_HALF_UP); a η=0 **asserisce** l'identità
