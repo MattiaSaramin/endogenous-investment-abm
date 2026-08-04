@@ -168,3 +168,59 @@ non quaranta — come previsto dal brief.
 
 Regola (punto cieco #1, b19): **la prossimità NON è attribuzione**; lo screen propone, il
 giudizio è umano e per sito.
+
+---
+
+## 27-quater — difetti trovati nel PDF (esito del read-gate del b27-ter)
+
+Mattia ha letto il PDF (`PaperV2.pdf`, 39 pagine) e ha segnalato quattro difetti.
+*Limite dichiarato:* l'ispezione era su testo estratto, non sul rendering; impaginazione,
+resa dei `\paragraph`, e posizione di tabelle/figure restano a carico di Mattia.
+
+**Fase 1 — anglicizzazione a metà (difetto sistematico).** Il documento era misto
+British/American (`labour`/`labor`, `-isation`/`-ization`, `modelling`, `centre`) anche
+nei titoli e nell'indice. Uniformato ad **American** con lista esplicita di parole (80
+sostituzioni), evitando i falsi amici (`surprise`, `otherwise`, `comprise`, `rise`,
+`raise`, `analysis` restano). Esenzioni: citazioni di autori (nessuna conteneva forme
+britanniche; l'unica in `` `` '' `` era `centre` in una scare-quote *del paper*, quindi
+convertita), `references.bib`, nomi propri (`Blanchflower-Oswald`), blocchi generati.
+**0 forme britanniche residue.**
+
+**Fase 2 — due punti sospesi (intro).** I due punti che introducevano l'`itemize`
+Supply/Demand (convertito in prosa dal b27-bis) introducevano ora un'interruzione di
+paragrafo. **Chiusi con un punto**; i due canali restano leggibili come opposti nel
+paragrafo seguente (supply alza l'output, demand lo abbassa). I tre due-punti che
+introducono **equazioni in display** (3.2/3.4/7.2) **non toccati**.
+
+**Fase 3 — §11, limite quota salari.** L'intestazione era il soggetto della frase e il
+corpo iniziava con una parentesi, senza verbo principale. Reso: intestazione-etichetta
+(«The wage share is too low») + corpo con frase compiuta. I quattro numeri
+($0.35$/$0.61$/$0.60$/$0.68$) invariati. Gli altri otto limiti hanno già corpo completo.
+
+**Fase 4 — il 37.7% nominato e messo nel registro (il paper è corretto).** §11 stampa
+`37.7\%` (in-support = 602/1596); `tab:marginalturn` (§9) stampa `0.377` (in-support) **e**
+`0.337` (resolved = 538/1596), righe adiacenti che differiscono di una cifra. Un lettore
+li confonde. Due mosse: (1) nel paper, il `37.7\%` di §11 è **nominato** come «the
+in-support fraction of \cref{tab:marginalturn}, wider than the share at which the turn is
+fully resolved there» — parole, nessun numero nuovo (611 invariati); (2) nel registro,
+aggiunti **due claim** (`marginal_rho_star_in_support` 0.377, `marginal_rho_star_resolved`
+0.337) su `ces_b16_turning_points.csv`. Erano scoperti. **Registro 49 → 51.**
+- **`verify_paper.py` esteso** con un campo `fraction` (`scale*mean` di una colonna 0/1
+  dopo il filtro): un rapporto derivato diventa verificabile **cella per cella**, chiudendo
+  il punto cieco #1 per le colonne booleane. È un detector modificato ⇒ `--selftest`
+  esteso (caso [4]: 3/4 viable → 75.0, e un valore sbagliato 74.0 rifiutato). Necessario
+  perché il brief chiede «verificabile cella per cella» e la CSV non ha una cella-somma.
+- **58.7% (below-support):** referente **identificato** (sottoinsieme di not-in-support =
+  994/1596 = 62.3%) ma **senza colonna booleana** nella CSV (servirebbero i bordi del
+  supporto ρ) ⇒ dichiarato, **non registrato** (registrabile solo se esiste una colonna).
+
+**Fase 5.5 — inventario tabelle/figure.** **18 tabelle** numerate e `\cref`-ate (Tables
+1–18) + la **glossario di notazione** in `b_notation` (senza `tab:` label, referenziata via
+`\cref{app:notation}` — corretto per un glossario); **8 figure** numerate e `\cref`-ate.
+Numerazione sequenziale (auto-LaTeX). I «buchi» visti nel testo estratto (Table 2,5,14,15,17;
+Figure 4,8) sono **artefatti di `pdftotext`**: tutte esistono e sono richiamate.
+
+**Toolchain:** `pytest` 569; `verify_paper` **51 claim, 0 FAIL** (1 AMBIGUOUS + 1 SKIP,
+0 CLAIM NOT FOUND) + `--selftest` (incl. [4]) PASS; `coherence` 0 DIVERGENT +
+`DOCUMENT UNTRACKED` + `--selftest`; `verify_model` 19 + `--selftest`; blocchi generati
+byte-identici; **611 token**; enfasi 0/0/0/0; liste 0/0; 0 forme britanniche.
