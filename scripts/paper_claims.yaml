@@ -594,3 +594,29 @@
   symbol: "\\sigma"
   appears_in:
     - {file: paper/sections/10_discussion.tex, required: true}
+
+# ---------------------------------------------------------------------------
+# tab:marginalturn (09_sensitivity) -- the marginalized turning point as a PAIR
+# of derived fractions over ces_b16_turning_points.csv (brief 27-quater).  These
+# were previously uncovered.  Registered together so the in-support fraction
+# (0.377 = 602/1596) is not confused with the narrower resolved one
+# (0.337 = 538/1596): they are adjacent rows of tab:marginalturn and differ by one
+# digit.  `fraction` = scale*mean of a per-row 0/1 column over the viable points,
+# so each is verifiable cell-by-cell (closes blind-spot #1 for boolean columns).
+# ---------------------------------------------------------------------------
+- claim_id: marginal_rho_star_in_support
+  value: 0.377
+  decimals: 3
+  artifact: results/ces_b16_turning_points.csv
+  filter: {viable: 1.0}
+  fraction: {column: rho_star_in_support}
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+- claim_id: marginal_rho_star_resolved
+  value: 0.337
+  decimals: 3
+  artifact: results/ces_b16_turning_points.csv
+  filter: {viable: 1.0}
+  fraction: {column: rho_star_resolved}
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}

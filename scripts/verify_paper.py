@@ -121,11 +121,27 @@ def _tex_occurrence_status(needle: str, lines: list[str], where: str, context):
 
 
 def _select_cell(df: pd.DataFrame, claim: dict):
-    """Apply the filter (+ optional row_index) and return (cell, status_or_None)."""
+    """Apply the filter (+ optional row_index) and return (cell, status_or_None).
+
+    ``fraction`` (brief 27-quater): instead of a single cell, aggregate a per-row
+    column over the filtered rows -- ``scale * mean(column)``.  A derived fraction
+    (e.g. count(bool)/N) is then verifiable cell-by-cell, which closes blind-spot #1
+    for columns that ARE cells.  ``{column: X}`` or ``{column: X, scale: S}``
+    (``scale = 100`` prints a percentage).
+    """
     for col, val in claim.get("filter", {}).items():
         if col not in df.columns:
             return None, f"{ZERO_ROWS} (no column '{col}')"
         df = df[df[col] == val]
+    frac = claim.get("fraction")
+    if frac is not None:
+        column = frac["column"] if isinstance(frac, dict) else frac
+        scale = float(frac.get("scale", 1.0)) if isinstance(frac, dict) else 1.0
+        if column not in df.columns:
+            return None, f"{ZERO_ROWS} (no column '{column}')"
+        if len(df) == 0:
+            return None, ZERO_ROWS
+        return scale * float(df[column].mean()), None
     if "row_index" in claim:
         df = df.reset_index(drop=True)
         i = int(claim["row_index"])
@@ -235,9 +251,22 @@ def selftest() -> int:
     print(f"  [3] same via on-disk file -> {st3:9s}  => "
           f"{'PASS' if ok3 else 'FAIL'}")
 
-    both = ok1 and ok2 and ok3
+    # [4] fraction mode (brief 27-quater): aggregate a per-row column cell-by-cell,
+    #     and prove a wrong value would be caught (known-bad).
+    demo = pd.DataFrame({"viable": [1.0, 1.0, 1.0, 1.0, 0.0],
+                         "flag":   [1,   0,   1,   1,   1]})
+    fclaim = {"filter": {"viable": 1.0}, "fraction": {"column": "flag", "scale": 100}}
+    cell4, cstat4 = _select_cell(demo, fclaim)
+    got4 = round(float(cell4), 1) if cstat4 is None else None  # 3/4 * 100 = 75.0
+    ok4a = (cstat4 is None and got4 is not None and abs(got4 - 75.0) < 1e-9)
+    ok4b = (got4 is not None and abs(got4 - 74.0) > 1e-9)       # a wrong value mismatches
+    print(f"  [4] fraction 3/4 viable -> scale*mean = {got4}")
+    print(f"        expected 75.0, and value 74.0 rejected   => "
+          f"{'PASS' if (ok4a and ok4b) else 'FAIL'}")
+
+    both = ok1 and ok2 and ok3 and ok4a and ok4b
     print(f"\n  SELFTEST VERDICT: "
-          f"{'ALL PASS -- OK/AMBIGUOUS discrimination trusted' if both else 'FAIL'}")
+          f"{'ALL PASS -- OK/AMBIGUOUS + fraction checks trusted' if both else 'FAIL'}")
     return 0 if both else 1
 
 
