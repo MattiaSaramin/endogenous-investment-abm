@@ -1500,6 +1500,34 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     il sito 7 (`u^e`/`λ_u`, b17 assente dal paper — è il brief 28); i due falsi positivi noti
     (`0.771`, `59.4`).
 
+- **Brief 27-ter — incisi ambigui, record §11, e il gate di lettura (branch `b27-verify`;
+  nessun `src/`; 569 test invariati). NON mergiato, NON su `main`.** Brief piccolo a tre voci.
+  - **Fase 1 — §11 stale (commit a sé).** `METHODOLOGY.md` §11 descriveva ancora
+    `make_tab_sobol.py` con gli «stessi grassetti»: dopo l'Opzione A del b27-bis il generatore
+    **non emette più grassetto**. Allineata. Terza occorrenza della modalità «un documento
+    anti-drift che drifta» (b22-ter). `coherence.py` in §11 era **già** corretto
+    (`DOCUMENT UNTRACKED` via tracciamento git, b27 Fase E).
+  - **Fase 2 — incisi ambigui → parentesi (commit a sé).** La Fase 2 del b27-bis aveva coperto
+    solo i *comma splice*, non l'altra voce del criterio: «apposizione con lista interna, confine
+    perso». Il de-dash aveva reso in virgola em-dash che delimitavano apposizioni; con una lista
+    interna il confine sparisce. Riparati con **parentesi tonde** (nessun em-dash reintrodotto):
+    **3 confermati** (`01_intro` ×2, `02_lit`) + **6 residui** (`07_stress` ×3, `10_disc`,
+    `a_validation` ×2); **4 lasciati** con ragione (apposizione pulita / corta / lista legittima /
+    avverbio). Screen di 42 candidati sfoltito a ~10 leggendo per sito (punto cieco #1: la
+    prossimità non è attribuzione). Verdetti in `docs/b27bis_prosa.md` §27-ter.
+  - **Detector + CI:** `pytest` **569**; `verify_paper` 0 FAIL / **0 CLAIM NOT FOUND** (le parentesi
+    non hanno scollegato alcun `context`) + `--selftest`; `coherence` 0 DIVERGENT +
+    `DOCUMENT UNTRACKED` + `--selftest`; `verify_model` 19 + `--selftest`; blocchi generati
+    byte-identici; token decimali **611**; sweep rigenerato dopo l'ultimo commit del paper
+    (b22-bis; **byte-identico** — le parentesi non muovono token né righe). **CI VERDE** su
+    `b27-verify` (run su `c206e79`): **Overfull 0, Underfull 0, errori LaTeX 0, ref/cit undefined 0**
+    (pagine non emesse ⇒ non citate). Il commit verde è la **tip** del paper.
+  - **Fase 4 — GATE DI LETTURA (di Mattia).** La CI prova che il documento **compila**, non che
+    **si legge**: fra b27 e b27-ter sono cambiate 8 liste, 19 `\paragraph`, 186 unwrap di enfasi,
+    123 em-dash, 8 splice, 9 incisi. Nessun detector copre la prosa (punto cieco #4). **STOP:** il
+    PDF (artifact `paper-pdf` dell'ultima run verde) va letto da Mattia (almeno `01`, `11`, `10`,
+    `12`) **prima** di qualunque merge su `main`. Nessun merge finché non lo dice.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
