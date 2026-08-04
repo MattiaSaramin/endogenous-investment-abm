@@ -356,8 +356,15 @@
     - {file: paper/sections/09_sensitivity.tex, required: true}
 
 # ---------------------------------------------------------------------------
-# Brief-17 number: lives ONLY in METHODOLOGY.md, not in the paper (measured).
-# verify_paper.py SKIPS it (no paper appears_in); coherence.py handles it.
+# The accelerator gain beta: its role in the sign (brief 28, Voice A / b17).
+# beta ranks FIRST on the conditional slope|viable in BOTH vintages (chord
+# ces_b13 = 0.370, OLS-repaired ces_b14 = 0.641), so the finding does not depend
+# on the QoI repair; Morris puts it SIXTH (mu* = 94.9) on the UNCONDITIONED
+# slope, where delta/pi0 dominate through viability.  The two are cited together
+# in 09_sensitivity ("The accelerator produces the sign"), so all three are live
+# verify_paper claims.  b17_beta_S1_slope_given_viable was SKIP (METHODOLOGY-only)
+# until brief 28 printed 0.641 in the paper -- this is the SKIP the field existed
+# for (brief 27-quinquies note in the b17 brief).
 # ---------------------------------------------------------------------------
 - claim_id: b17_beta_S1_slope_given_viable
   value: 0.641
@@ -367,7 +374,50 @@
   column: S1
   symbol: "\\beta"
   appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}   # brief 28: now printed here
     - {file: METHODOLOGY.md, required: true}
+
+- claim_id: b17_beta_S1_slope_chord
+  value: 0.370
+  decimals: 3
+  artifact: results/ces_b13_sobol_indices.csv
+  filter: {qoi: "slope|viable", parameter: beta, estimator: rbd_fast}
+  column: S1
+  symbol: "\\beta"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: b17_beta_morris_mustar
+  value: 94.9
+  decimals: 1
+  # Morris mu* on the UNCONDITIONED slope (slope_raw): beta 6th at 94.9, behind
+  # delta/pi0 which dominate through viability -- the reading that is consistent
+  # with, not contradictory to, the conditional S1 rank-1 above.
+  artifact: results/ces_b14_morris.csv
+  filter: {qoi: slope_raw, parameter: beta}
+  column: mu_star
+  symbol: "\\beta"
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+# ---------------------------------------------------------------------------
+# tab:b17 / sec:invexpectations (brief 28): the anchored-margin resolution map.
+# The degenerate lambda_u = 0 control (accelerator off): rho* is identical for
+# every beta and the anchor lies inside its CI, so the margin VANISHES (it does
+# not invert).  This one number anchors the "load-bearing on beta strength" half
+# of the result in sec:frontierlocal.  0.363 (the rho-anchor) is NOT registered
+# here: it is the paper-wide anchored-rho upper bound, not a new b17 result.
+# ---------------------------------------------------------------------------
+- claim_id: margin_lambda0_rho_star
+  value: 0.358
+  decimals: 3
+  artifact: results/ces_b17_margin.csv
+  filter: {lambda_u: 0.0}
+  row_index: 0   # all six lambda_u=0 rows carry the identical rho* = 0.35772...
+  column: rho_star
+  appears_in:
+    - {file: paper/sections/07_stress.tex, required: true}      # tab:b17 caption
+    - {file: paper/sections/10_discussion.tex, required: true}  # sec:frontierlocal
 
 # ---------------------------------------------------------------------------
 # tab:prices  (brief 22): price-pass-through probe, sign frontier at c0=1.0
