@@ -315,3 +315,5 @@ PASS; `coherence` 0 DIVERGENT + `DOCUMENT UNTRACKED` + `--selftest`; `verify_mod
 `--selftest`; blocchi generati byte-identici; **611 token**; enfasi 0/0/0; liste 0/0;
 0 forme britanniche. `sweep_rounding.py` rigenerato dopo l'ultimo commit del paper (b22-bis;
 **byte-identico**, sha1 `bdfdefd3` invariato — i due fix non muovono né token né righe).
+**CI VERDE** su `b27-verify` (run #16, `068487e` = success): Overfull hbox 0, Underfull hbox 0,
+errori LaTeX 0, ref/cit undefined 0; green-vs-tip (`068487e` è la SHA verde e la tip del branch).

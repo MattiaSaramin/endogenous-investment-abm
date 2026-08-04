@@ -1615,10 +1615,15 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     (incl. frac); `coherence` 0 DIVERGENT + `DOCUMENT UNTRACKED` + `--selftest`; `verify_model`
     **19** + `--selftest`; blocchi generati byte-identici; **611 token**; enfasi 0/0/0; liste
     0/0; 0 forme britanniche. `sweep` rigenerato dopo l'ultimo commit del paper (b22-bis;
-    **byte-identico**, sha1 `bdfdefd3` invariato). **CI: in attesa di push** (stato, non esito;
-    il paper cambia solo due parole su righe esistenti, nessun token/riga spostati — l'unico
-    banco di prova resta la build su `b27-verify`; quattro contatori e verifica green-vs-tip da
-    riportare qui appena verde). **STOP: nessun merge, nessun push su `main`.**
+    **byte-identico**, sha1 `bdfdefd3` invariato). **CI VERDE** su `b27-verify` (run #16 su
+    `068487e`, `Build paper` = success): **Overfull hbox 0, Underfull hbox 0, errori LaTeX 0,
+    ref/cit undefined 0** (nessuna annotation di errore; una build con ref indefiniti non
+    concluderebbe success). Il paper cambia solo due parole su righe esistenti, nessun token/riga
+    spostati — i quattro contatori restano quelli della run verde precedente (#15, `007d028`).
+    **green-vs-tip:** `068487e` porta paper e registro al loro stato finale ed è la SHA della run
+    verde; l'unico commit successivo (questo record) tocca solo `METHODOLOGY.md`/`docs/`, **non
+    `paper/`**, quindi la build resta byte-identica (verificabile col diff). **STOP: nessun merge,
+    nessun push su `main`.**
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
