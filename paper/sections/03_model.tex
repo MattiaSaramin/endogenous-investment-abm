@@ -11,7 +11,7 @@ The economy is closed, single-good and fixed-price (the numéraire is~1). It is 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=.92\textwidth]{model_flow.png}
-\caption{Structure of the model and its money flows. Firms produce with a normalized CES in capital and labor (\cref{eq:ces}) and hire endogenously (\cref{eq:labour}) at a wage set by a Blanchflower-Oswald curve; profit is split between retained earnings, invested as $I = \rho\,\pi$, which accumulates the capital stock, and dividends. Worker households supply labor and consume at a high marginal propensity to consume; capitalist households own the firms and consume at a low one, so income routed to them leaks from the circular flow (the channel drawn in red). The government block (dashed) is optional: a flat tax on all income funds a balanced-budget unemployment benefit (\cref{sec:government}). The figure is a schematic and carries no measured quantity; it is produced by a committed generator, \texttt{scripts/make\_fig\_model.py}.}
+\caption{Structure of the model and its money flows. Firms produce with a normalized CES in capital and labor (\cref{eq:ces}) and hire endogenously (\cref{eq:labor}) at a wage set by a Blanchflower-Oswald curve; profit is split between retained earnings, invested as $I = \rho\,\pi$, which accumulates the capital stock, and dividends. Worker households supply labor and consume at a high marginal propensity to consume; capitalist households own the firms and consume at a low one, so income routed to them leaks from the circular flow (the channel drawn in red). The government block (dashed) is optional: a flat tax on all income funds a balanced-budget unemployment benefit (\cref{sec:government}). The figure is a schematic and carries no measured quantity; it is produced by a committed generator, \texttt{scripts/make\_fig\_model.py}.}
 \label{fig:model}
 \end{figure}
 
@@ -35,26 +35,26 @@ branch reproduces Cobb-Douglas exactly, for any base point.
 $\sigma = 1$ and $\rho = 0.40$, and then frozen across every
 experiment in the paper. Every $\sigma$-variant therefore passes through the
 same point with the same factor shares, so two economies differ only
-by $\sigma$. This is a declared modelling choice, not an estimate.
+by $\sigma$. This is a declared modeling choice, not an estimate.
 
-\subsection{The labour market: three limits}
+\subsection{The labor market: three limits}
 
 Employment at firm $i$ is the minimum of three distinct constraints:
 \begin{equation}
   L_i \;=\; \min\big\{\; L^{\mathrm{demand}}_i,\;\;
                         L^{\mathrm{profitmax}}_i,\;\;
                         N \;\big\},
-  \label{eq:labour}
+  \label{eq:labor}
 \end{equation}
-where $L^{\mathrm{demand}}_i$ is the labour needed to serve expected demand,
+where $L^{\mathrm{demand}}_i$ is the labor needed to serve expected demand,
 $L^{\mathrm{profitmax}}_i$ is the point at which the marginal product of
-labour equals the wage, and $N$ is the aggregate workforce. Which limit binds
+labor equals the wage, and $N$ is the aggregate workforce. Which limit binds
 identifies the regime: Keynesian (involuntary) unemployment, classical
 unemployment, or full employment respectively.
 
 \begin{modelassumption}[Structural invariant: the workforce cap restores
 diminishing returns]
-With a wage set outside the firm and an unbounded labour supply,
+With a wage set outside the firm and an unbounded labor supply,
 $L^{\mathrm{profitmax}}_i \propto K_i$, hence $\Ystar_i \propto K_i$: the
 model becomes an $AK$ economy with constant returns to capital, unbounded
 growth and no steady state. The cap $L \le N$ is therefore not a realism
@@ -93,7 +93,7 @@ bounded above by the $\sigma$-dependent profit-max wage share.
 
 Firms finance investment entirely from retained earnings; there is no
 credit. Planned investment applies a retention ratio $\rho$ to last period's
-profit, modulated by a capacity-utilisation accelerator:
+profit, modulated by a capacity-utilization accelerator:
 \begin{align}
   \phi_t      &= \max\{0,\; 1 + \beta (u_{t-1} - \bar{u})\},
   \label{eq:accelerator}\\
@@ -104,8 +104,8 @@ profit, modulated by a capacity-utilisation accelerator:
   \label{eq:capital}
 \end{align}
 The firm retains exactly what it invests and distributes the remainder as
-dividends. Utilisation $u$ is measured against profit-max capacity, not
-against realised output: with $L$ chosen to serve expected demand, $\Ystar$
+dividends. Utilization $u$ is measured against profit-max capacity, not
+against realized output: with $L$ chosen to serve expected demand, $\Ystar$
 would otherwise track $Y$ by construction and the accelerator would receive a
 dead signal.
 
@@ -153,7 +153,7 @@ one-period lag as a wage.
 \begin{algorithmic}[1]
 \State wage determination: set $w_t$ from \cref{eq:wagecurve} on
        $U_{t-1}$
-\State labour market: firms plan employment via \cref{eq:labour};
+\State labor market: firms plan employment via \cref{eq:labor};
        fire into pool; random matching fills vacancies
 \State demand formation: households compute $C_h$
        (\cref{eq:consumption}); income is $w_t$ if employed, else $0$, plus
@@ -162,7 +162,7 @@ one-period lag as a wage.
        \cref{eq:investment}
 \State demand registration: consumption $+$ investment orders
 \State production: $Y_i = \min\{D_i, \Ystar_i\}$; goods market
-       rations; utilisation measured against profit-max capacity
+       rations; utilization measured against profit-max capacity
 \State firm accounting: wages paid, retention set aside, residual
        dividends declared
 \State investment settlement: capital goods paid for,

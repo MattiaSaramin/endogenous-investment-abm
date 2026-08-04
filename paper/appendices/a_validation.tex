@@ -12,7 +12,7 @@ occasions on which those checks failed, and the claims withdrawn as a result.
 \begin{remark}[Two principles, each learned from a measured failure]
 An invariant tested at a point holds at that point. A property verified
 at one configuration carries no information about any other, and invariants
-must be parametrised over the range a sweep will reach before the sweep
+must be parametrized over the range a sweep will reach before the sweep
 rather than after.
 
 A check that reports success without inspecting anything is worse than no
@@ -101,7 +101,7 @@ its own inputs deviate by 4. Those are checked by sign instead.
 
 \Cref{sec:estimator} reports the verdict; this is the design that produced it.
 The experiment is a $2\times2$: method (chord versus OLS) crossed with
-conditioning (all other parameters fixed at their defaults versus marginalised
+conditioning (all other parameters fixed at their defaults versus marginalized
 over the sensitivity ranges), on a shared grid of runs. The verdict rule was
 fixed before execution: a sign flip across the method axis at fixed
 parameters implicates the estimator; a flip across the conditioning axis at
@@ -109,14 +109,14 @@ constant method implicates conditioning; both flipping means both contribute
 and the weights must be quantified; neither flipping is a finding to be
 reported, not forced. The fixed-parameter arm cost no simulation, the committed
 panels already carrying the canonical grid at twenty seeds, so only the
-marginalised arm required new runs. \Cref{tab:bridge} reports the design.
+marginalized arm required new runs. \Cref{tab:bridge} reports the design.
 
 \begin{table}[htbp]
 \centering
 \small
 \caption{Bridging experiment, complete. The fixed arm holds every parameter at
 the configuration in which \cref{sec:frontier} identified $\sigstar$
-($c_0 = 1.0$, $\eta = 0$); the marginalised arm draws the other fifteen
+($c_0 = 1.0$, $\eta = 0$); the marginalized arm draws the other fifteen
 parameters from the \cref{sec:sa} ranges on the same $\sigma$ grid. All rows
 use the four-point $\rho$ support shared by both arms, so the comparison is not
 confounded by the support.}
@@ -127,8 +127,8 @@ Cell & Parameters & Method & $\sigstar$ & 95\% CI\\
 \midrule
 1 & fixed        & chord & 0.447 & $[0.395,\,0.501]$\\
 2 & fixed        & OLS   & 0.643 & $[0.596,\,0.701]$\\
-3 & marginalised & chord & 0.938 & $[0.573,\,0.976]$\\
-4 & marginalised & OLS   & 0.962 & $[0.723,\,0.985]$\\
+3 & marginalized & chord & 0.938 & $[0.573,\,0.976]$\\
+4 & marginalized & OLS   & 0.962 & $[0.723,\,0.985]$\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -152,7 +152,7 @@ alone claimed.
 \label{app:retractions}
 
 The declared rule is that every number entering a table must be
-measured from a committed driver or labelled a design target
+measured from a committed driver or labeled a design target
 (\cref{sec:method}). Applying it retrospectively required withdrawing three
 claims, recorded here rather than silently corrected.
 
@@ -172,7 +172,7 @@ citing as evidence that the empirical band stays below $\sigstar$, which is
 the profit-led side. The measured $\lambda_e$-invariance is unaffected; the
 label attached to it was wrong, and \cref{sec:expectations} states it
 correctly. \paragraph{A stale identity} The relation $I/Y = \rho\alpha$ was
-carried forward from an earlier Cobb-Douglas core with no labour market and
+carried forward from an earlier Cobb-Douglas core with no labor market and
 used to reason about anchoring after it had ceased to hold; measured $I/Y$ is
 cited in its place throughout (\cref{sec:calibration}). A related error mixed
 comparators, business-sector $I/Y$ against whole-economy $K/Y$, and produced a
@@ -189,7 +189,7 @@ and the execution environment, library versions and the frozen sampling seed, is
 
 The suite comprises 569 automated tests. Beyond conventional unit coverage they
 assert the model's economic invariants directly: stock-flow consistency
-parametrised over the ownership range rather than at the default alone
+parametrized over the ownership range rather than at the default alone
 (\cref{app:ownership}), per-seed determinism, exact nesting at every limiting
 parameter value, the workforce cap that restores diminishing returns
 (\cref{sec:model}), and directional regression pins on basin selection. Fifteen
