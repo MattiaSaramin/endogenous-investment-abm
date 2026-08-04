@@ -138,15 +138,24 @@ def _lines(rel_path: str) -> list[str]:
     return _LINES[rel_path]
 
 
+def _match_lines(needle: str, lines: list[str], context: str) -> list[int]:
+    """1-based line numbers where ``context`` (regex) matches AND ``needle`` occurs.
+
+    Factored out of ``tex_status`` so the selftest can exercise the exact matching
+    logic on synthetic lines (the style-rewrite robustness test, brief 28).
+    """
+    rx = re.compile(context)
+    return [i for i, line in enumerate(lines, 1)
+            if rx.search(line) and needle in line]
+
+
 def tex_status(needle: str, rel_path: str, context: str):
     """Count ``needle`` on lines of ``rel_path`` matching ``context``; classify.
 
     ``context`` is required for every entry: it pins the parameter's own row, so a
     digit shared with another row cannot make the check pass vacuously.
     """
-    rx = re.compile(context)
-    hits = [i for i, line in enumerate(_lines(rel_path), 1)
-            if rx.search(line) and needle in line]
+    hits = _match_lines(needle, _lines(rel_path), context)
     if not hits:
         return NOT_IN_TEX, f"'{needle}' not on any /{context}/ line in {rel_path}"
     if len(hits) == 1:
@@ -161,47 +170,59 @@ def tex_status(needle: str, rel_path: str, context: str):
 # which is committed (not part of the paper working-tree WIP).  code = how to read
 # the ACTUAL default; needle = the value as printed; context = a regex that lands on
 # the parameter's own table row.
+#
+# CONTEXT ANCHORING (brief 28, Voice B): each `context` is the row's math SYMBOL,
+# $...$-delimited, NOT an English phrase.  A style pass on the paper (anglicization,
+# de-emphasis, em-dash removal) rewords prose but never touches $\sigma$, $\bar{u}$,
+# $(K_0,L_0)$; anchoring to the symbol is what a style pass cannot silently break.
+# This is the exact defect that made brief 27-quater's "19 MATCH" stale (the
+# anglicization of tab:params changed `utilisation`->`utilization` under prose-
+# coupled patterns; see METHODOLOGY sec 9).  ONE residual: `delta` cannot be pinned
+# by the bare symbol, because $\delta$ recurs in the $K/Y = (I/Y)/\delta$ prose
+# (l.182) where $0.0500$ contains the substring "0.05"; it is anchored to the
+# symbol PLUS its table-label "(depreciation)" and declared as such here and in
+# docs/detector_prose_coupling.md.
 PARAMS_TEX = "paper/sections/04_calibration.tex"
 
 REGISTRY: list[dict] = [
     # --- anchored to a citable source -------------------------------------
     {"symbol": "sigma", "code": ("signature", "sigma"), "kind": "swept",
      "nesting": 1.0, "decimals": 1, "needle": "swept",
-     "tex": PARAMS_TEX, "context": r"elasticity of substitution"},
+     "tex": PARAMS_TEX, "context": r"\$\\sigma\$"},
     {"symbol": "pi0", "code": ("signature", "pi0"), "kind": "exact",
      "value": 1.0 / 3.0, "decimals": 4, "needle": "1/3",
-     "tex": PARAMS_TEX, "context": r"base-point capital share"},
+     "tex": PARAMS_TEX, "context": r"\$\\pi_0\$"},
     {"symbol": "eta", "code": ("signature", "eta"), "kind": "swept",
      "nesting": 0.0, "decimals": 2, "needle": "swept",
-     "tex": PARAMS_TEX, "context": r"wage-curve elasticity"},
+     "tex": PARAMS_TEX, "context": r"\$\\eta\$"},
     {"symbol": "lambda (wealth effect)", "code": ("signature", "wealth_effect"),
      "kind": "exact", "value": 0.05, "decimals": 2, "needle": "0.05",
-     "tex": PARAMS_TEX, "context": r"wealth effect"},
+     "tex": PARAMS_TEX, "context": r"\$\\lambda\$"},
     {"symbol": "rho (retention)", "code": ("signature", "retention_ratio"),
      "kind": "exact", "value": 0.40, "decimals": 2, "needle": "0.40",
-     "tex": PARAMS_TEX, "context": r"retention ratio"},
+     "tex": PARAMS_TEX, "context": r"\$\\rho\$"},
     {"symbol": "rr (replacement)", "code": ("signature", "benefit_replacement_rate"),
      "kind": "swept", "nesting": 0.0, "decimals": 2, "needle": "swept",
-     "tex": PARAMS_TEX, "context": r"replacement rate"},
+     "tex": PARAMS_TEX, "context": r"\$rr\$"},
     # --- declared conventions ---------------------------------------------
     {"symbol": "delta (depreciation)", "code": ("signature", "delta"),
      "kind": "exact", "value": 0.05, "decimals": 2, "needle": "0.05",
-     "tex": PARAMS_TEX, "context": r"depreciation"},
+     "tex": PARAMS_TEX, "context": r"\$\\delta\$ \(depreciation\)"},
     {"symbol": "U_min", "code": ("derived", "u_min_default"),
      "kind": "derived", "value": 0.01, "decimals": 2, "needle": "0.01",
-     "tex": PARAMS_TEX, "context": r"w_\{\\min\}"},
+     "tex": PARAMS_TEX, "context": r"\$U_\{\\min\}\$"},
     {"symbol": "w_min", "code": ("signature", "wage_floor"),
      "kind": "exact", "value": 0.45, "decimals": 2, "needle": "0.45",
-     "tex": PARAMS_TEX, "context": r"w_\{\\min\}"},
+     "tex": PARAMS_TEX, "context": r"\$w_\{\\min\}\$"},
     {"symbol": "max tau (tax cap)", "code": ("signature", "max_tax"),
      "kind": "exact", "value": 0.6, "decimals": 1, "needle": "0.6",
-     "tex": PARAMS_TEX, "context": r"tax cap"},
+     "tex": PARAMS_TEX, "context": r"\$\\max\\tau\$"},
     {"symbol": "I (investment floor)", "code": ("signature", "investment_floor"),
      "kind": "exact", "value": 0.1, "decimals": 1, "needle": "0.1",
-     "tex": PARAMS_TEX, "context": r"investment floor"},
+     "tex": PARAMS_TEX, "context": r"\$\\underline\{I\}\$"},
     {"symbol": "u-bar (target util)", "code": ("signature", "target_utilization"),
      "kind": "exact", "value": 0.90, "decimals": 2, "needle": "0.90",
-     "tex": PARAMS_TEX, "context": r"target utilization"},
+     "tex": PARAMS_TEX, "context": r"\$\\bar\{u\}\$"},
     # --- modeling choices, measured once then frozen ----------------------
     # brief 27-quinquies: these context regexes matched the paper's British
     # spelling; brief 27-quater anglicized tab:params to American (utilization,
@@ -209,26 +230,26 @@ REGISTRY: list[dict] = [
     # NOT_IN_TEX (4 FAIL).  Aligned to American to finish the anglicization.
     {"symbol": "K0", "code": ("signature", "K0"), "kind": "exact",
      "value": M.ANCHOR_K0, "decimals": 2, "needle": "41.87",
-     "tex": PARAMS_TEX, "context": r"normalization anchor"},
+     "tex": PARAMS_TEX, "context": r"\$\(K_0,L_0\)\$"},
     {"symbol": "L0", "code": ("signature", "L0"), "kind": "exact",
      "value": M.ANCHOR_L0, "decimals": 3, "needle": "7.395",
-     "tex": PARAMS_TEX, "context": r"normalization anchor"},
+     "tex": PARAMS_TEX, "context": r"\$\(K_0,L_0\)\$"},
     {"symbol": "U_REF", "code": ("module", "U_REF"), "kind": "exact",
      "value": M.U_REF, "decimals": 5, "needle": "0.26047",
-     "tex": PARAMS_TEX, "context": r"REF"},
+     "tex": PARAMS_TEX, "context": r"\$U_\{\\mathrm\{REF\}\}\$"},
     {"symbol": "w-bar", "code": ("signature", "wage_rate"), "kind": "exact",
      "value": 0.9, "decimals": 1, "needle": "0.9",
-     "tex": PARAMS_TEX, "context": r"normalization point once"},
+     "tex": PARAMS_TEX, "context": r"\$\\bar\{w\}\$"},
     {"symbol": "K_init", "code": ("signature", "initial_capital"), "kind": "exact",
      "value": 40.0, "decimals": 1, "needle": "40.0",
-     "tex": PARAMS_TEX, "context": r"selects the basin"},
+     "tex": PARAMS_TEX, "context": r"\$K_\{\\text\{init\}\}\$"},
     {"symbol": "beta (accelerator)", "code": ("signature", "beta"), "kind": "exact",
      "value": 0.5, "decimals": 1, "needle": "0.5",
-     "tex": PARAMS_TEX, "context": r"accelerator"},
+     "tex": PARAMS_TEX, "context": r"\$\\beta\$"},
     # --- declared non-anchorable ------------------------------------------
     {"symbol": "c0", "code": ("signature", "c0"), "kind": "set",
      "members": [1.0, 2.0], "decimals": 1, "needles": ["1.0", "2.0"],
-     "tex": PARAMS_TEX, "context": r"autonomous consumption"},
+     "tex": PARAMS_TEX, "context": r"\$c_0\$"},
 ]
 
 
@@ -388,6 +409,28 @@ def selftest() -> int:
         ok = False
     else:
         print("        expected NOT_IN_TEX               => PASS")
+
+    # [4] STYLE-REWRITE ROBUSTNESS (brief 28, Voice B).  A style pass rewords the
+    # PROSE on a tab:params row without touching the math symbol.  A SYMBOL-anchored
+    # context must still match (the detector keeps agganciare); the OLD prose-
+    # anchored context must BREAK (NOT_IN_TEX).  A detector that cannot tell the two
+    # apart is not measuring anything -- and a prose-coupled pattern that silently
+    # broke is exactly how b27-quater's "19 MATCH" went stale (METHODOLOGY sec 9).
+    original = r"$\sigma$ (elasticity of substitution) & swept & $0.40$--$0.60$\\"
+    restyled = r"$\sigma$ (substitution elasticity) & swept & $0.40$--$0.60$\\"  # prose reworded
+    sym_ctx = r"\$\\sigma\$"                      # the decoupled anchor now in REGISTRY
+    prose_ctx = r"elasticity of substitution"    # the pattern the registry used to carry
+    sym_survives = (_match_lines("swept", [original], sym_ctx) == [1]
+                    and _match_lines("swept", [restyled], sym_ctx) == [1])
+    prose_breaks = (_match_lines("swept", [original], prose_ctx) == [1]
+                    and _match_lines("swept", [restyled], prose_ctx) == [])
+    ok4 = sym_survives and prose_breaks
+    print(f"  [4] prose reworded on the row -> symbol anchor "
+          f"{'survives' if sym_survives else 'BROKE'}, prose anchor "
+          f"{'breaks' if prose_breaks else 'did NOT break'}")
+    print(f"        expected symbol-survives AND prose-breaks => "
+          f"{'PASS' if ok4 else 'FAIL'}")
+    ok = ok and ok4
 
     print("\n  SELFTEST VERDICT:", "ALL PASS -- code+tex comparison trusted"
           if ok else "FAILED -- do not trust this run")

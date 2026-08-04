@@ -1800,6 +1800,21 @@ negoziabili.
 - **Ancoraggio bibliografico:** ogni scelta di modellazione e ogni parametro
   motivato su due piani — teorico ed empirico (fonte citabile). Se una fonte non
   esiste o non è nota, **dichiararlo e cercarla, non inventarla.**
+- **Un detector che matcha PROSA va rieseguito, non citato, dopo ogni passata di
+  stile sul paper — e il suo numero nel record deve venire dal run di QUEL brief,
+  non da uno precedente** (brief 28, Voce B). Classe di difetto distinta dai punti
+  ciechi #1–#4: un pattern di matching **accoppiato alla prosa** si sgancia in
+  silenzio a ogni anglicizzazione/de-enfasi/de-em-dash, e il record lo copre
+  asserendo un numero di un run pre-passata. Caso misurato: i quattro pattern
+  britannici di `verify_model.py` (`utilisation`/`normalisation`) resi stale dal
+  27-quater, «19 MATCH» dichiarato mentre erano 15/4 (brief 27-quinquies).
+  **Preferenza d'ancora: simbolo `$...$` → `\label` → prosa** (solo dove non c'è
+  alternativa, e dichiarato nel sorgente come residuo accoppiato). `verify_model.py`
+  è ora 19/19 su simbolo (b28); l'esposizione residua di `paper_claims.yaml`
+  (5 context su prosa) è censita in `docs/detector_prose_coupling.md` — misura del
+  debito, non ancora saldata. Il `--selftest` di un detector prosa-sensibile deve
+  **distinguere** i due casi (ancora al simbolo che sopravvive vs ancora alla prosa
+  che si rompe), altrimenti non misura nulla.
 
 ---
 
