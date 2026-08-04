@@ -1627,6 +1627,68 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     build resta quella di `068487e`, e la build non può differire perché `paper/` non cambia
     (verificabile col diff). **STOP: nessun merge, nessun push su `main`.**
 
+- **Brief 28 — il b17 nel paper, e detector disaccoppiati dalla prosa (branch
+  `b28-b17` da `main`; nessun `src/`; 569 test invariati). Due voci, commit separati.**
+  Primo brief di **contenuto** dopo molti di prosa/strumenti. **Merge fatto:**
+  `b27-verify` → `main` (fast-forward, gate confermato da Mattia); `b28-b17` aperto da
+  `main`. Il push di `main` per il lavoro b28 resta decisione esplicita di Mattia.
+  - **Fase 0 — GATE (sola lettura, commit a sé).** Piano prodotto e **confermato**
+    (`docs/b28_fase0_gate.md`): §9 **già** porta la versione forte su β (i quartili +
+    «the headline depends on the one parameter with the weakest empirical claim»), cosa
+    che il brief non sapeva. Tre correzioni di collocazione confermate: **R1** §11 come
+    rimando a §9 (non ripetere i quartili); **R2** il numero `S1(slope|viable)` in §9 non
+    §7; **R3** l'episodio del gate in `app:validation` (nulla ritirato). L'ordine dei
+    commit dimostra il gate: piano → conferma → blocco `paper/`.
+  - **Voce A — il b17 nel paper (un commit `paper/`, in blocco).** §3.4: specifica
+    `u^e_t = u^e_{t-1}+λ_u(u_{t-1}−u^e_{t-1})`, `eq:accelerator` = caso **λ_u=1**
+    (annidamento byte-identico, si generalizza non si corregge). §7 `sec:invexpectations`
+    (dopo `sec:expectations`): parte **(a)**, falsificazione del **segnale** (meccanismo
+    alla radice: `sd` di `util_effect` piatta su [0.25,1.0], zero solo a λ_u=0;
+    λ_u-invarianza). §9: `S1(slope|viable)` di β **primo in entrambe le vintage** (corda
+    0.370, OLS 0.641) + Morris **6°** (μ\*=94.9, non condizionato) nella stessa frase.
+    §10 accanto a `sec:frontierlocal`: parte **(b)**, H1 **load-bearing sulla forza**
+    (margine risolto solo β≥0.5, default sul bordo; λ_u=0 → margine svanisce, non inverte).
+    §11: limite (rimando a §9 + load-bearing). `app:validation`: episodio del **gate**
+    (regola congelata → OPEN 6 trigger = 4 degeneri λ_u=0 + 2 near-anchor β=0.05 + 0
+    gradiente; chiusura sulla sostanza sopra gate aperto, verdetto meccanico intatto;
+    difetto nel **disegno del gate**). **Conclusione a due tempi**; **due limiti di scope**
+    (64% marginalizzato/Fase B non eseguita; c0=2.0 non testato, lacuna di disegno del b17
+    coperta dal b21). Formulazioni vietate **evitate**.
+  - **Voce A — tabella `tab:b17` a TRE stati + registro.** `scripts/make_tab_b17.py`
+    (terza tabella con generatore): griglia β×λ_u di simboli `$\downarrow$` risolto /
+    `$\sim$` non risolto (ancora nella CI) / `$\emptyset$` non risolto (CI non stimabile),
+    con `λ_u=0` colonna a sé. Il generatore **asserisce la partizione** (13 risolti + 15
+    ancora-in-CI + 2 CI-vuota = 30 righe, disgiunte). **Vuoto ≠ falso** (le 2 celle a CI
+    vuota, β=0.15, sono uno stato a sé, non «risolto»): l'errore che il 27-quinquies aveva
+    intercettato su `anchored_left_of_turn`. **Tutti i numeri ricalcolati dall'artifact.**
+    Registro **57 → 60**: `b17_beta_S1_slope_given_viable` da SKIP a claim vivo (era la
+    SKIP per cui il campo esisteva), + chord 0.370, + Morris 94.9, + ρ\*=0.358 a λ_u=0.
+  - **Voce B — detector disaccoppiati dalla prosa (commit a sé, nessun `paper/`).** I 19
+    `context` di `verify_model.py` (prosa: `elasticity of substitution`, `retention ratio`,
+    ...) → **simbolo `$...$` della riga** (18 puri; `delta` = simbolo+label perché δ ricorre
+    nella prosa `$K/Y=(I/Y)/\delta$`). **19/19 MATCH** invariato, ma ora **style-proof**.
+    `--selftest` esteso (caso [4]): riscritta la prosa di una riga, l'ancora al simbolo
+    **sopravvive**, quella alla prosa **si rompe**. Censimento dell'esposizione residua in
+    `docs/detector_prose_coupling.md`: `verify_model` 0 prosa (era ~16); `paper_claims.yaml`
+    **5 context su prosa** (`reads` ×4, `Fraction viable`) = debito misurato, non saldato
+    (fuori scope). **Invariante nuovo in §9:** un detector che matcha prosa va rieseguito,
+    non citato, dopo ogni passata di stile; il suo numero nel record viene dal run di quel
+    brief. Classe di difetto distinta dai punti ciechi #1–#4 (è quella che rese stale il
+    «19 MATCH» del 27-quater).
+  - **Detector + CI:** `verify_paper` **60 claim, 0 FAIL** (1 AMBIGUOUS + 1 SKIP→0 SKIP,
+    0 CLAIM NOT FOUND) + `--selftest`; `verify_model` **19 MATCH** + `--selftest` (incl.
+    [4]); `coherence` 0 DIVERGENT + `DOCUMENT UNTRACKED` + `--selftest`; `check_anglicization`
+    **0**; `pytest` **569**; `tab:b17` byte-identico; blocchi generati byte-identici;
+    enfasi/liste/em-dash **0**; token decimali **645** (misurati, era 611: si aggiungono
+    numeri), sweep rigenerato dopo l'ultimo commit `paper/` (b22-bis), **0 firme nuove**, i 2
+    falsi positivi noti intatti. **CI VERDE** su `b28-b17` (run su `9f784c8`, `Build paper`
+    = success): **Overfull 0, Underfull 0, errori LaTeX 0, ref/cit undefined 0** (il paper
+    compila con `tab:b17` e i nuovi `\cref`). **green-vs-tip:** `9f784c8` porta il paper al
+    suo stato finale ed è la SHA verde; i commit successivi (Voce B, questo record) toccano
+    solo `scripts/`/`docs/`/`METHODOLOGY.md`, e `paper.yml` è path-filtered a `paper/**`,
+    quindi non fanno partire una build. **STOP: il merge di `b28-b17` su `main` resta
+    decisione esplicita di Mattia.**
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
