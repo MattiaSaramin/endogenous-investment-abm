@@ -257,8 +257,15 @@ sorgente non è fra gli artifact inclusi (punto cieco #2). `tab:delta`, `tab:bas
 
 **Falsi positivi noti dello sweep — DA NON CORREGGERE MAI** (sarebbe il movimento di `667003b`):
 - **`0.771`** (§9, `tab:marginalturn`) è **1230/1596 = 0.770677**, che round-once dà 0.771: **il
-  paper è corretto**. L'abbinamento di `sweep_rounding.py` a `ces_b07_sigma_star_by_rho/ci_hi` è
-  **coincidenza** (numero derivato — punto cieco #1 del brief 19).
+  paper è corretto**. L'abbinamento di `sweep_rounding.py` a `ces_b07_sigma_star_by_rho/ci_hi`
+  **resta una coincidenza** (numero derivato — punto cieco #1 del brief 19). **Aggiornamento brief
+  27-quinquies: il numero non è più *solo asserito*.** È ora registrato e **verificato cella per
+  cella** da `verify_paper.py` in `fraction` mode (`marginal_curvature_resolved`: media di
+  `curvature_resolved` sui punti `viable` di `results/ces_b16_turning_points.csv` = 1230/1596). Lo
+  `sweep_rounding.py` continua a segnalarlo come firma coincidente — è una proprietà **dello sweep**,
+  non del claim — quindi il monito «DA NON CORREGGERE MAI» qui vale per l'**abbinamento dello sweep**
+  e non è più l'unica copertura del numero. È un **cambio di categoria** (da falso positivo dichiarato
+  a numero verificato da un detector), non di copertura.
 - **`59.4`** ×2 (§6, `tab:baseline`) è **non attribuito**: la sorgente di `tab:baseline` non è fra i
   51 artifact inclusi (punto cieco #2), e l'abbinamento a `ces_sigma_rho_grid` è un'altra cella.
 
@@ -1561,6 +1568,57 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     rigenerato dopo l'ultimo commit del paper (b22-bis). **CI VERDE** su `b27-verify`
     (4 contatori a 0). **Read-gate del b27-ter RISOLTO** (Mattia ha letto e segnalato); il
     merge su `main` resta la sua decisione esplicita, non presa in questo brief.
+
+- **Brief 27-quinquies — anglicizzazione sui RADICALI, e le frazioni derivate nel registro
+  (branch `b27-verify`; nessun `src/`; 569 test invariati). NON mergiato, NON su `main`.**
+  Due voci: chiude ciò che l'anglicizzazione del 27-quater aveva lasciato a metà, e rende
+  utile il `fraction` mode.
+  - **Fase 1 — check dell'anglicizzazione rifatto per RADICALE (detector committato).**
+    Il 27-quater dichiarava «0 forme britanniche» ma due erano rimaste (`Modelling` in un
+    `\multicolumn`, `stabiliser` nella conclusione): il suo check verificava la lista di
+    **inflessioni già osservate**, cioè il proprio input, non la proprietà (invariante §6).
+    Nuovo `scripts/check_anglicization.py`: 47 radicali × inflessioni **enumerate**
+    `{'', e, es, ed, ing, er, ers, ation, ations}`, su `sections`+`appendices`+`frontmatter`
+    (titoli, caption, celle, `\multicolumn`, indice per transitività); **32 falsi amici
+    dichiarati** sottratti prima del conteggio e **stampati**; `--selftest` (British→FLAGGED,
+    americano/falsi amici→no, blocco generato + citazione→EXEMPT). **Conteggio finale
+    stampato: 0** fuori dalle esenzioni. Corretti i due residui (`Modelling`→`Modeling`,
+    `stabiliser`→`stabilizer`). **Falso amico scoperto eseguendo il check e dichiarato:**
+    `cancellation` (universale, doppia -l- nella forma `-ation` anche in americano) — aggiunto
+    ai falsi amici, non special-cased. `realise` verificato **assente**.
+  - **Fase 1b — regressione della toolchain, scoperta e riparata.** `verify_model.py` era
+    rimasto **britannico** (`target utilisation`, `normalisation anchor/point once`, scritte al
+    b26) mentre il 27-quater aveva anglicizzato `tab:params` all'americano: sul tip `007d028`
+    dava **15 MATCH / 4 NOT_IN_TEX**, non i «19» del record del 27-quater (**claim stale** —
+    l'anglicizzazione aveva rotto il match in silenzio, quarta occorrenza del «documento che
+    drifta», qui la toolchain). Allineate le 4 regex all'americano ⇒ **19 MATCH** ripristinato.
+    Nessun `src/`, nessun numero cambiato; `results/audit_b26_params.csv` rigenerato.
+  - **Fase 2 — frazioni derivate nel registro (`fraction` mode), 51 → 57 claim.** +6 claim:
+    5 su `ces_b16_turning_points.csv` (`0.480` contesto marginalizzato, `0.771`, `0.945`,
+    `0.887`, `88.7`) + `0.094` ordinario su `ces_b14_summary` (colonna chord della riga
+    primary di `tab:repaired`). **`0.771` cambia CATEGORIA** (da falso positivo dichiarato
+    dello sweep a numero verificato cella per cella: `curvature_resolved`/`viable` =
+    1230/1596): la nota §5 su `0.771` è aggiornata di conseguenza (l'abbinamento dello sweep a
+    `ces_b07` resta coincidenza). Le **due occorrenze di `0.480`** puntano ciascuna al **proprio
+    artifact** (l.24→`ces_b16.viable`, `context: 'Fraction viable'`; l.63→`ces_b14.frac_viable_4rho`,
+    invariato). Nessun `AMBIGUOUS` nuovo.
+  - **DEVIAZIONE DICHIARATA (aritmetica): +6, non il «~59» del brief (+8).** (1) **`0.299` non
+    registrato**: `anchored_left_of_turn` è NaN sui 1058 punti viable non risolti, quindi
+    `fraction` (media, skipna) dà 477/538 = 0.887 non 477/1596 = 0.299 (⇒ MISMATCH); e il
+    «0.299» stampato (`09_sensitivity:295`) è la cella chord di `tab:widesigma` (bin σ
+    0.649–0.823, n=201), quantità estranea (aggancio in stile `667003b`). (2) **`0.026` già
+    registrato** (`repaired_primary_P_wl_OLS`, b19): dei due nominati in §2.2 solo `0.094` era
+    scoperto. **Zero righe di `paper/` toccate in Fase 2** (il registro legge; le uniche
+    modifiche a `paper/` del brief sono i due fix di Fase 1).
+  - **Detector + CI:** `check_anglicization` **0 FLAGGED** + `--selftest`; `pytest` **569**;
+    `verify_paper` **57 claim, 0 FAIL** (1 AMBIGUOUS + 1 SKIP, 0 CLAIM NOT FOUND) + `--selftest`
+    (incl. frac); `coherence` 0 DIVERGENT + `DOCUMENT UNTRACKED` + `--selftest`; `verify_model`
+    **19** + `--selftest`; blocchi generati byte-identici; **611 token**; enfasi 0/0/0; liste
+    0/0; 0 forme britanniche. `sweep` rigenerato dopo l'ultimo commit del paper (b22-bis;
+    **byte-identico**, sha1 `bdfdefd3` invariato). **CI: in attesa di push** (stato, non esito;
+    il paper cambia solo due parole su righe esistenti, nessun token/riga spostati — l'unico
+    banco di prova resta la build su `b27-verify`; quattro contatori e verifica green-vs-tip da
+    riportare qui appena verde). **STOP: nessun merge, nessun push su `main`.**
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 

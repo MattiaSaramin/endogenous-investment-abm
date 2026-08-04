@@ -224,3 +224,94 @@ Figure 4,8) sono **artefatti di `pdftotext`**: tutte esistono e sono richiamate.
 0 CLAIM NOT FOUND) + `--selftest` (incl. [4]) PASS; `coherence` 0 DIVERGENT +
 `DOCUMENT UNTRACKED` + `--selftest`; `verify_model` 19 + `--selftest`; blocchi generati
 byte-identici; **611 token**; enfasi 0/0/0/0; liste 0/0; 0 forme britanniche.
+
+---
+
+## 27-quinquies — anglicizzazione sui RADICALI, e le frazioni derivate nel registro
+
+Due voci. Branch `b27-verify`; nessun `src/`; 569 test invariati.
+
+### Fase 1 — il check dell'anglicizzazione, rifatto per RADICALE
+
+**Perché il 27-quater aveva dichiarato «0 forme britanniche» con due residue.** Il
+27-quater costruiva la lista di sostituzioni dalle **inflessioni già osservate** e poi
+verificava **quella lista**: un nome d'agente (`stabiliser`, `-iser`) e una forma
+maiuscola dentro `\multicolumn` (`Modelling`) non erano nella lista osservata, quindi il
+check finale ha testato il proprio input, non la proprietà. È l'invariante §6 (un check
+che riporta successo senza ispezionare la cosa è peggio di nessun check).
+
+**Il nuovo detector inverte questo.** `scripts/check_anglicization.py` cerca **47 radicali
+britannici** (case-insensitive) seguiti da un insieme di inflessioni **enumerato
+esplicitamente** `{'', e, es, ed, ing, er, ers, ation, ations}`, su
+`paper/sections` + `paper/appendices` + `frontmatter` (titoli, caption, celle,
+`\multicolumn`; l'indice è generato dai titoli, quindi coperto per transitività). Una
+**lista di falsi amici dichiarata** (32 token) è sottratta **prima** del conteggio e
+**stampata** nell'output, così si vede cosa è escluso e perché. È un detector ⇒
+`--selftest` che inietta forme britanniche (devono essere FLAGGED), americane/falsi amici
+(non FLAGGED), un blocco generato e una citazione (EXEMPT). **Conteggio finale stampato
+dallo script: 0** forme britanniche fuori dalle esenzioni.
+
+**I due residui, corretti** (unica modifica a `paper/` del brief): `Modelling` →
+`Modeling` (`04_calibration:69`), `stabiliser` → `stabilizer` (`12_conclusion:40`).
+
+**Falso amico scoperto ESEGUENDO il check — dichiarato, non special-cased.**
+`cancellation` (`a_validation:95`, «catastrophic cancellation», termine di analisi
+numerica) è **identico nelle due varianti** (l'americano raddoppia la -l- nella forma
+`-ation`, *cancellation* non *cancelation*), ma il radicale `cancell` + `ation` lo prende.
+La lista enumerata del brief non lo conteneva: **aggiunto** `cancellation`/`cancellations`
+ai falsi amici, con la ragione registrata nel sorgente. Verificati non britannici anche
+`analyses` ×3 (nome plurale, universale) e `hypothesis` ×5 (nome, non il verbo). `realise`
+**verificato assente** (solo l'americano `realized` e gli universali `realism`/`realistic`),
+quindi `realis` resta fuori dai radicali come nel brief.
+
+**Regressione scoperta: `verify_model.py` era rimasto britannico mentre il paper è passato
+all'americano.** Il record del 27-quater dichiarava «`verify_model` 19», ma sul tip
+`007d028` il detector dava **15 MATCH / 4 NOT_IN_TEX**: le sue regex di contesto usavano
+`target utilisation` e `normalisation anchor`/`normalisation point once` (britannico,
+scritte al brief 26, `c69b578`), mentre il 27-quater (`0a2f4aa`) aveva anglicizzato
+`tab:params` a `utilization`/`normalization`. La «19 MATCH» del record era **stale** —
+l'anglicizzazione aveva rotto il match in silenzio. Allineate le 4 regex all'americano
+(più il commento `modelling`→`modeling`): **19 MATCH ripristinato**. Nessun `src/`, nessun
+numero cambiato. È lo stesso difetto «documento misto» che il 27-quater aveva trovato nel
+PDF, un giro più in là: la toolchain era rimasta a metà anglicizzazione.
+
+### Fase 2 — le frazioni derivate nel registro (`fraction` mode reso utile)
+
+**+6 claim registrati** (51 → **57**), tutti su `ces_b16_turning_points.csv` in `fraction`
+mode (0.480 contesto marginalizzato, 0.771, 0.945, 0.887, 88.7) più un claim ordinario su
+`ces_b14_summary` (0.094, colonna chord della riga primary di `tab:repaired`). Ogni numero
+è ora **verificato cella per cella** da un detector. In particolare **0.771** passa da
+«falso positivo dichiarato dello sweep» a «verificato da `marginal_curvature_resolved`»
+(media di `curvature_resolved` sui `viable` = 1230/1596): **cambio di categoria, non di
+copertura** — nota `0.771` aggiornata in `METHODOLOGY.md` §5.
+
+**Le due occorrenze di `0.480`, ciascuna contro il PROPRIO artifact** (brief 2.3(a)): la
+riga 24 (`Fraction viable $= 0.480$`, contesto marginalizzato) → `ces_b16` colonna
+`viable` (1596/3328), con `context: 'Fraction viable'`; la riga 63 (riga di `tab:repaired`)
+resta `repaired_primary_frac_viable` → `ces_b14` `frac_viable_4rho`, `context: '&'`. Nessun
+`AMBIGUOUS` nuovo (l'unico resta `sobol_sigma_ST_viable`, per costruzione).
+
+**Deviazione dal «~59» del brief, dichiarata con l'aritmetica.** Il brief prevedeva +8; ne
+sono entrati **+6**. Due voci non hanno retto la verifica contro la CSV:
+
+1. **`0.299` NON registrato.** Il brief lo dava come `anchored_left_of_turn | viable` =
+   477/1596 = 0.2989. Ma (i) `anchored_left_of_turn` è **NaN** sui 1058 punti viable dove
+   nessun turn si risolve (definito solo sui 538 risolti), quindi `fraction` (= media,
+   skipna) dà 477/538 = **0.887**, non 0.299 ⇒ **MISMATCH**; e (ii) il «0.299» stampato
+   nel paper (`09_sensitivity:295`) è la cella **chord di `tab:widesigma`** per il bin
+   σ 0.649–0.823 (n=201), una quantità **estranea** ⇒ un claim 0.299 si aggancerebbe al
+   referente sbagliato (mossa in stile `667003b`). Doppiamente squalificato.
+2. **`0.026` NON è nuovo:** era già registrato come `repaired_primary_P_wl_OLS` (dal
+   b19). Il brief §2.2 nominava «0.026 e 0.094» come ordinari; solo **0.094** era scoperto.
+
+**Zero righe di `paper/` toccate in Fase 2** (il registro legge). Le uniche modifiche a
+`paper/` del brief sono i due fix di Fase 1.
+
+### Toolchain (b27-quinquies)
+
+`check_anglicization.py` **0 FLAGGED** + `--selftest` PASS; `pytest` **569**; `verify_paper`
+**57 claim, 0 FAIL** (1 AMBIGUOUS + 1 SKIP, 0 CLAIM NOT FOUND) + `--selftest` (incl. frac)
+PASS; `coherence` 0 DIVERGENT + `DOCUMENT UNTRACKED` + `--selftest`; `verify_model` **19** +
+`--selftest`; blocchi generati byte-identici; **611 token**; enfasi 0/0/0; liste 0/0;
+0 forme britanniche. `sweep_rounding.py` rigenerato dopo l'ultimo commit del paper (b22-bis;
+**byte-identico**, sha1 `bdfdefd3` invariato — i due fix non muovono né token né righe).
