@@ -1622,8 +1622,10 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     spostati — i quattro contatori restano quelli della run verde precedente (#15, `007d028`).
     **green-vs-tip:** `068487e` porta paper e registro al loro stato finale ed è la SHA della run
     verde; l'unico commit successivo (questo record) tocca solo `METHODOLOGY.md`/`docs/`, **non
-    `paper/`**, quindi la build resta byte-identica (verificabile col diff). **STOP: nessun merge,
-    nessun push su `main`.**
+    `paper/`**. Il workflow `paper.yml` è **path-filtered a `paper/**`**, quindi un commit doc-only
+    non fa partire una build (nessuna run sulla tip `8d9ba24` — atteso, non un fallimento): l'ultima
+    build resta quella di `068487e`, e la build non può differire perché `paper/` non cambia
+    (verificabile col diff). **STOP: nessun merge, nessun push su `main`.**
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
