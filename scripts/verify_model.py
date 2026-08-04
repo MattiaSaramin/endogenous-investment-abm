@@ -201,20 +201,24 @@ REGISTRY: list[dict] = [
      "tex": PARAMS_TEX, "context": r"investment floor"},
     {"symbol": "u-bar (target util)", "code": ("signature", "target_utilization"),
      "kind": "exact", "value": 0.90, "decimals": 2, "needle": "0.90",
-     "tex": PARAMS_TEX, "context": r"target utilisation"},
-    # --- modelling choices, measured once then frozen ---------------------
+     "tex": PARAMS_TEX, "context": r"target utilization"},
+    # --- modeling choices, measured once then frozen ----------------------
+    # brief 27-quinquies: these context regexes matched the paper's British
+    # spelling; brief 27-quater anglicized tab:params to American (utilization,
+    # normalization) but left these patterns British, so they silently went
+    # NOT_IN_TEX (4 FAIL).  Aligned to American to finish the anglicization.
     {"symbol": "K0", "code": ("signature", "K0"), "kind": "exact",
      "value": M.ANCHOR_K0, "decimals": 2, "needle": "41.87",
-     "tex": PARAMS_TEX, "context": r"normalisation anchor"},
+     "tex": PARAMS_TEX, "context": r"normalization anchor"},
     {"symbol": "L0", "code": ("signature", "L0"), "kind": "exact",
      "value": M.ANCHOR_L0, "decimals": 3, "needle": "7.395",
-     "tex": PARAMS_TEX, "context": r"normalisation anchor"},
+     "tex": PARAMS_TEX, "context": r"normalization anchor"},
     {"symbol": "U_REF", "code": ("module", "U_REF"), "kind": "exact",
      "value": M.U_REF, "decimals": 5, "needle": "0.26047",
      "tex": PARAMS_TEX, "context": r"REF"},
     {"symbol": "w-bar", "code": ("signature", "wage_rate"), "kind": "exact",
      "value": 0.9, "decimals": 1, "needle": "0.9",
-     "tex": PARAMS_TEX, "context": r"normalisation point once"},
+     "tex": PARAMS_TEX, "context": r"normalization point once"},
     {"symbol": "K_init", "code": ("signature", "initial_capital"), "kind": "exact",
      "value": 40.0, "decimals": 1, "needle": "40.0",
      "tex": PARAMS_TEX, "context": r"selects the basin"},
