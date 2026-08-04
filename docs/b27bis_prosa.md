@@ -121,3 +121,50 @@ Nessuna riformulazione necessaria: la prosa del paper porta il significato nelle
 `\textbf{0.718}`→`0.718` ecc. **non** ha scollegato alcun `context`); `make_tab_sobol`/
 `make_tab_prices` byte-identici; token decimali **611**; `coherence` 0 DIVERGENT;
 `verify_model` 19 MATCH.
+
+---
+
+## 27-ter — incisi ambigui (apposizioni con lista interna → parentesi)
+
+Il de-dash del b27 aveva convertito em-dash in virgole anche dove l'em-dash **delimitava
+un'apposizione**; quando l'apposizione contiene a sua volta una lista con virgole, il
+confine con la principale sparisce. Riparazione: **parentesi tonde** (la regola «via i
+`---`» resta; le parentesi assolvono la funzione delimitante). Nessun em-dash reintrodotto,
+nessuna proposizione cambiata, **611 token invariati**, `verify_paper` 0 CLAIM NOT FOUND.
+
+### Siti confermati (§2.2) — RIPARATI
+
+| file:riga | prima | dopo |
+|---|---|---|
+| `01_introduction` (3° contributo) | «hypotheses aimed at it**,** slower demand expectations, the unemployment benefit, and that benefit as a cushion against firm heterogeneity**,** are each falsified» | «hypotheses aimed at it **(**slower demand expectations, the unemployment benefit, and that benefit as a cushion against firm heterogeneity**)** are each falsified» |
+| `01_introduction` (1° contributo) | «The anchored retention rate**,** derived from the investment-rate anchor in \cref{...}, not assumed**,** lies to the left» | «The anchored retention rate **(**derived from the investment-rate anchor in \cref{...}, not assumed**)** lies to the left» |
+| `02_literature` | «household rationality**,** four graded levels, from zero-intelligence to semi-rational**,** and the symmetry of the interaction» | «household rationality **(**four graded levels, from zero-intelligence to semi-rational**)** and the symmetry of the interaction» |
+
+### Candidati residui (§2.3) — letti uno per uno
+
+| file:riga | verdetto | ragione |
+|---|---|---|
+| `07_stress` (Pigou) | **RIPARATO** | «on real balances **(**lower prices raise real wealth, which raises demand**)** and it is stabilising» — apposizione con struttura interna, confine perso |
+| `07_stress` (corner) | **RIPARATO** | «corner of the space **(**constant markup and productivity, no price stickiness**),** so it is an upper bound» — lista interna |
+| `07_stress` (spread) | **RIPARATO** | «changing nothing else **(**no selection, no demand reallocation, no entry or exit**).**» — lista interna |
+| `10_discussion` (hierarchy) | **RIPARATO** | apposizioni annidate: «a fragile headline **(**$\sigstar$ as a number**)** resting on a durable one **(**the anchored margin of the U-shape**),** rather than» |
+| `a_validation` (regime indicators) | **RIPARATO** | «a check on regime indicators **(**viability, which constraint binds, the sign of every resolvable metric**)** at tolerance» — lista interna |
+| `a_validation` (fitted quantities) | **RIPARATO** | «differenced or fitted quantities **(**a chord, a slope, a curvature**)** because» — lista interna |
+| `03_model:138` | **LASCIATO** | «the tests, run only at the default, stayed green» — apposizione pulita, **nessuna lista interna**, confine chiaro |
+| `09_sensitivity:301` | **LASCIATO** | «under both estimators, the same direction as \cref{sec:frontier}, which places…» — apposizione **corta** + relativa su `sec:frontier`; nessuna lista interna |
+| `12_conclusion:10` | **LASCIATO** | «in which investment is endogenous, capital accumulates, labour is hired endogenously, and the wage responds…» — **lista legittima** di feature del modello, non un inciso |
+| `12_conclusion:11` | **LASCIATO** | «and in which, consequently, the Kaleckian question…» — avverbio parentetico «consequently», virgole corrette |
+
+**9 RIPARATI, 4 LASCIATI** (3 confermati + 6/10 residui). L'ordine di grandezza è dieci,
+non quaranta — come previsto dal brief.
+
+### Classi di falso positivo escluse **meccanicamente** (dallo screen dei 42 candidati)
+
+- **contenuto matematico**: `$\min\{\,D_i,`, `$(K_0, L_0, \pi_0)$`, `\Pi_{t-1}\,\phi_t`, `$\,\to\,U\,\to\,$`;
+- **chiavi di citazione**: `\citep{KlumpSaam2008,Klump2012}`;
+- **separatore migliaia**: `2{,}419`, `2{,}000`;
+- **`b_notation.tex`** (tabella di simboli): gli elenchi con virgola sono la sua forma — **fuori scope**;
+- **liste di tre legittime** (non incisi): es. `12_conclusion:10`.
+
+Regola (punto cieco #1, b19): **la prossimità NON è attribuzione**; lo screen propone, il
+giudizio è umano e per sito.

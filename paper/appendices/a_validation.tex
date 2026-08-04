@@ -85,13 +85,13 @@ fails by the day carries no information about what changed in the model.
 
 The replacement has two limbs that cannot compensate for each other: a declared
 tolerance on levels (8 ULP with an absolute floor, roughly four times
-the measured envelope), and a check on regime indicators, viability,
-which constraint binds, the sign of every resolvable metric, at tolerance
+the measured envelope), and a check on regime indicators (viability,
+which constraint binds, the sign of every resolvable metric) at tolerance
 exactly zero, since that is where drift would become scientific rather than
 numerical. Two limits are declared in the source. A pure ULP tolerance is
 unusable near zero, a metric legitimately resting at zero registering thousands
 of ULP on a gap of $10^{-16}$; hence the absolute floor. And it must not be
-applied to differenced or fitted quantities, a chord, a slope, a curvature, 
+applied to differenced or fitted quantities (a chord, a slope, a curvature)
 because catastrophic cancellation makes their relative error arbitrary even
 from stable inputs: the sensitivity analysis's slope deviates by 3410 ULP while
 its own inputs deviate by 4. Those are checked by sign instead.
