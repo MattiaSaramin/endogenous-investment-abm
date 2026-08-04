@@ -275,6 +275,21 @@
     - {file: METHODOLOGY.md, required: true}
     - {file: notebooks/01_Endogenous_Investment.ipynb, required: true}
 
+- claim_id: repaired_primary_P_wl_chord
+  value: 0.094
+  decimals: 3
+  # brief 27-quinquies 2.2: the primary-row CHORD cell of tab:repaired, an
+  # ORDINARY single-cell lookup (no fraction mode) on the precomputed ces_b14
+  # column.  Sits beside 0.480 (frac_viable_4rho) and 0.026 (OLS), both already
+  # registered.  '&' pins l.63; 0.094 also occurs in prose (l.69) and as a
+  # substring of 0.0940 (l.262), neither of which carries '&'.
+  context: '&'
+  artifact: results/ces_b14_summary.csv
+  filter: {analysis: "primary (empirical sigma 0.40-0.60)"}
+  column: P_wage_led_chord_given_viable
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
 - claim_id: repaired_chord_only_P_wl
   value: 0.095
   decimals: 3
@@ -618,5 +633,81 @@
   artifact: results/ces_b16_turning_points.csv
   filter: {viable: 1.0}
   fraction: {column: rho_star_resolved}
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+# ---------------------------------------------------------------------------
+# The rest of tab:marginalturn's derived fractions (brief 27-quinquies 2.1),
+# all over ces_b16_turning_points.csv via the `fraction` mode (scale*mean of a
+# per-row 0/1 column).  Each was previously a declared blind-spot-#1 derived
+# number; registering it moves the number from "asserted, protected by a
+# never-correct note" to "verified cell-by-cell by a detector" -- a change of
+# CATEGORY, not of coverage (brief 2.4).  In particular 0.771 is the number the
+# b19 note kept as a sweep false positive; the METHODOLOGY note is updated to
+# say the sweep's ces_b07 pairing stays a coincidence but the number is no
+# longer merely asserted.
+#
+# NOTE (brief 2.3(a)): the brief's 2.1 table also lists 0.299 as
+# `anchored_left_of_turn | viable` = 477/1596.  It is NOT registered.  Two
+# independent reasons: (i) anchored_left_of_turn is NaN on the 1058 viable
+# points where no turn resolves, so `fraction` (= mean, skipna) yields 477/538
+# = 0.887, not 477/1596 = 0.299 -- the claim would MISMATCH; and (ii) the
+# "0.299" actually printed in 09_sensitivity.tex (l.295) is tab:widesigma's
+# chord cell for the sigma-bin 0.649--0.823 (n=201), an unrelated quantity, so a
+# 0.299 claim would bind to the wrong referent (a 667003b-style misattribution).
+# ---------------------------------------------------------------------------
+- claim_id: marginal_frac_viable
+  value: 0.480
+  decimals: 3
+  # brief 2.3(a): 0.480 occurs TWICE in 09_sensitivity.tex against DIFFERENT
+  # vintages.  THIS is the sec:whatfails remark ("Fraction viable $= 0.480$",
+  # l.24), the MARGINALIZED context -> ces_b16 (viable over all 3328 points).
+  # The tab:repaired l.63 twin is repaired_primary_frac_viable (ces_b14,
+  # frac_viable_4rho, context '&').  Each is pinned to its OWN artifact and line.
+  context: 'Fraction viable'
+  artifact: results/ces_b16_turning_points.csv
+  fraction: {column: viable}
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: marginal_curvature_resolved
+  value: 0.771
+  decimals: 3
+  artifact: results/ces_b16_turning_points.csv
+  filter: {viable: 1.0}
+  fraction: {column: curvature_resolved}   # 1230/1596 = 0.7707 -> 0.771 (l.204)
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: marginal_convex
+  value: 0.945
+  decimals: 3
+  artifact: results/ces_b16_turning_points.csv
+  filter: {viable: 1.0}
+  fraction: {column: convex}   # 1509/1596 = 0.9455 -> 0.945 (l.203)
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: marginal_anchored_left_resolved
+  value: 0.887
+  decimals: 3
+  # 477/538 = 0.8866 -> 0.887 (l.211).  Filter to the resolved points because
+  # anchored_left_of_turn is defined (non-NaN) only there; over that set the
+  # `fraction` mean is exactly this count.
+  artifact: results/ces_b16_turning_points.csv
+  filter: {viable: 1.0, rho_star_resolved: 1.0}
+  fraction: {column: anchored_left_of_turn}
+  appears_in:
+    - {file: paper/sections/09_sensitivity.tex, required: true}
+
+- claim_id: marginal_anchored_left_pct
+  value: 88.7
+  decimals: 1
+  # Same quantity as marginal_anchored_left_resolved, printed as a percentage
+  # in prose ("in $88.7\%$ of those points", l.224).  brief 2.1: register the
+  # two representations as two claims (here scale=100, decimals=1).
+  artifact: results/ces_b16_turning_points.csv
+  filter: {viable: 1.0, rho_star_resolved: 1.0}
+  fraction: {column: anchored_left_of_turn, scale: 100}
   appears_in:
     - {file: paper/sections/09_sensitivity.tex, required: true}
