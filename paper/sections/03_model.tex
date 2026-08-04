@@ -109,6 +109,14 @@ against realized output: with $L$ chosen to serve expected demand, $\Ystar$
 would otherwise track $Y$ by construction and the accelerator would receive a
 dead signal.
 
+The utilization entering \cref{eq:accelerator} is itself a one-step adaptive
+expectation, $u^e_t = u^e_{t-1} + \lambda_u\,(u_{t-1} - u^e_{t-1})$, and
+\cref{eq:accelerator} is written for its default $\lambda_u = 1$, at which
+$u^e_t = u_{t-1}$ exactly. Every result outside \cref{sec:invexpectations} uses
+that default; \cref{sec:invexpectations} sweeps $\lambda_u$ to test whether
+smoothing the signal changes anything, generalizing \cref{eq:accelerator}
+rather than replacing it.
+
 \subsection{Households, government and stock-flow consistency}
 
 Households consume out of income and wealth, subject to a liquidity
