@@ -321,7 +321,15 @@ underlie \cref{tab:sobol,tab:delta}.
 \caption{Screening and decomposition. Morris (left) screens seventeen
 parameters, the sixteen defensible parameters plus \texttt{max\_tax}, which
 is screened here only, while the Sobol' decomposition (right) is over the
-sixteen-parameter defensible space. Both panels use the chord estimator
+sixteen-parameter defensible space. In the Morris viability panel eleven
+parameters share $\mu^{\ast}=0$---no measurable effect on viability---and are
+drawn as one labelled cluster rather than eleven overlapping points:
+\texttt{beta}, \texttt{c1}, \texttt{capitalist\_mpc}, \texttt{eta},
+\texttt{expectation\_gain}, \texttt{investment\_floor}, \texttt{max\_tax},
+\texttt{pct\_capitalists}, \texttt{target\_utilization}, \texttt{u\_min},
+\texttt{wage\_floor}. Parameters sharing a coordinate are labelled jointly, and
+singletons whose $\mu^{\ast}$ is at or below $5\%$ of the panel maximum are left
+unlabelled. Both panels use the chord estimator
 (\texttt{ces\_b13}); \cref{fig:sa-b14} is the OLS-repaired counterpart
 (\texttt{ces\_b14}).}
 \label{fig:sa}
