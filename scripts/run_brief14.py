@@ -609,7 +609,7 @@ def write_summary(rows):
     return summary
 
 
-def make_figures(tag="sobol"):
+def make_figures(tag="sobol", for_paper=False):
     """One figure, THREE panels, from ``ces_b14_{tag}_indices.csv``.
 
     Deliberately NOT a copy of ``run_brief13.make_figures``.  That one filters
@@ -622,6 +622,13 @@ def make_figures(tag="sobol"):
     with bootstrap CIs; (3) ``slope|viable`` under RBD-FAST, **S1 only** -- the
     estimator defines no total index, so ``ST``/``ST_conf`` are empty in the CSV
     and are read as NaN and the series is OMITTED, not plotted at zero.
+
+    ``for_paper`` (brief 30): the lab figure (False) is UNCHANGED and stays pixel-identical
+    to the committed PNG - three panels side by side, which at ``\\linewidth`` gave each
+    long label (``benefit_replacement_rate``) ~2.2 in and pressed it onto the bars.  The
+    paper figure (True) STACKS the three panels vertically (3x1), so each panel spans the
+    full 0.82\\textwidth and the fonts land ~7.6 pt on the page; it also drops the lab
+    suptitle and lifts the 8 pt tick/legend fonts to 9.
     """
     import shutil
     import matplotlib
@@ -643,9 +650,15 @@ def make_figures(tag="sobol"):
         ("viable", "saltelli", True),
         ("slope|viable", "rbd_fast", False),  # S1 only: no total index for RBD-FAST
     ]
-    fig, axes = plt.subplots(1, len(panels), figsize=(5.7 * len(panels), 5.0),
-                             squeeze=False)
-    for ax, (qoi, est, has_total) in zip(axes[0], panels):
+    tick_fs = 9 if for_paper else 8
+    if for_paper:
+        # 3x1 vertical: each panel gets the full width, so the long parameter labels no
+        # longer collide with the bars (brief 30 §3).
+        fig, axes = plt.subplots(len(panels), 1, figsize=(6.6, 8.2), squeeze=False)
+    else:
+        fig, axes = plt.subplots(1, len(panels), figsize=(5.7 * len(panels), 5.0),
+                                 squeeze=False)
+    for ax, (qoi, est, has_total) in zip(axes.flat, panels):
         blk = idx[(idx["qoi"] == qoi) & (idx["estimator"] == est)]
         blk = blk.sort_values("ST" if has_total else "S1")
         y = np.arange(len(blk))
@@ -662,14 +675,18 @@ def make_figures(tag="sobol"):
                          "— no total index is defined for this estimator",
                          fontsize=9)
         ax.set_yticks(y)
-        ax.set_yticklabels(blk["parameter"], fontsize=8)
+        ax.set_yticklabels(blk["parameter"], fontsize=tick_fs)
         ax.axvline(0.0, color="k", lw=0.8)
         ax.set_xlabel("Sobol index")
-        ax.legend(fontsize=8)
-    fig.suptitle("OLS-repaired QoI (ces_b14): survivor set differs from b13 "
-                 "(target_utilization in, benefit_replacement_rate out)",
-                 fontsize=11)
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
+        ax.legend(fontsize=tick_fs)
+    if not for_paper:
+        fig.suptitle("OLS-repaired QoI (ces_b14): survivor set differs from b13 "
+                     "(target_utilization in, benefit_replacement_rate out)",
+                     fontsize=11)
+    if for_paper:
+        fig.tight_layout()
+    else:
+        fig.tight_layout(rect=(0, 0, 1, 0.95))
 
     p = os.path.join(RESULTS, f"ces_b14_{tag}_indices.png")
     fig.savefig(p, dpi=140)
@@ -705,7 +722,7 @@ def main():
     # of "all" on purpose - "all" re-runs the sweeps, and this brief re-runs
     # nothing (brief 18 Task 2).
     if args.phase == "figures":
-        make_figures("sobol")
+        make_figures("sobol", for_paper=True)
         return 0
 
     if args.phase in ("bridge", "all"):

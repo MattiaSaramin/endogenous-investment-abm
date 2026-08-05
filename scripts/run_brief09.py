@@ -471,13 +471,22 @@ def _print_headline(dose, star, cmap, trace):
               f"tax={tail['Tax_Rate'].mean():.3f}  frac_at_cap={tail['Tax_At_Cap'].mean():.3f}")
 
 
-def _plot_dose_response(dose, path):
-    """U, Y, K vs rr with inter-seed bands, one line per scenario - the E1 headline figure."""
+def _plot_dose_response(dose, path, for_paper=False):
+    """U, Y, K vs rr with inter-seed bands, one line per scenario - the E1 headline figure.
+
+    ``for_paper`` (brief 30): the lab figure (False) is UNCHANGED and stays pixel-identical
+    to the committed PNG; the paper figure (True) is drawn at a figsize close to its printed
+    width (\\textwidth = 6.14 in) so the fonts land >= 7.5 pt on the page, drops the lab
+    suptitle (the "E1"/brief-provenance line duplicates the LaTeX caption and eats height),
+    and lifts the sub-9 pt legend to 9.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
+    figsize = (7.4, 2.9) if for_paper else (14, 4.5)
+    legend_fs = 9 if for_paper else 8
+    fig, axes = plt.subplots(1, 3, figsize=figsize)
     for (metric, ax, title) in (("Unemployment_Rate", axes[0], "Unemployment U"),
                                 ("Output", axes[1], "Output Y"),
                                 ("Total_Capital", axes[2], "Capital K")):
@@ -488,9 +497,10 @@ def _plot_dose_response(dose, path):
                             alpha=0.15, color=line.get_color())
         ax.set_xlabel("replacement rate  rr")
         ax.set_title(title, weight="bold")
-        ax.legend(fontsize=8)
-    fig.suptitle("E1 fiscal dose-response (crowding-in in a demand-constrained regime)",
-                 weight="bold")
+        ax.legend(fontsize=legend_fs)
+    if not for_paper:
+        fig.suptitle("E1 fiscal dose-response (crowding-in in a demand-constrained regime)",
+                     weight="bold")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
@@ -521,7 +531,7 @@ def _plot_sigma_star(star, path):
     return path
 
 
-def _plot_collapse_map(cmap, path):
+def _plot_collapse_map(cmap, path, for_paper=False):
     """Small-multiples heatmap of frac_seeds_U1 over (sigma, rho), one panel per (eta, rr).
 
     CATEGORICAL axes (brief 29): one cell per SIMULATED node, all cells equal width, ticks
@@ -533,6 +543,12 @@ def _plot_collapse_map(cmap, path):
     the axis is a node index, the tick labels carry the actual node values, every cell is the
     same size, and the caption of fig:government declares the non-uniform grid.  vmin/vmax,
     the magma cmap and the shared colorbar are unchanged.
+
+    ``for_paper`` (brief 30): the lab figure (False) is UNCHANGED and stays pixel-identical
+    to the committed PNG; the paper figure (True) is drawn near its printed width
+    (0.85\\textwidth) so the tick labels land ~7.6 pt on the page, lifts the 7 pt tick
+    fonts to 9, and drops the lab suptitle (the "E3"/brief-provenance line duplicates the
+    LaTeX caption).
     """
     import matplotlib
     matplotlib.use("Agg")
@@ -542,9 +558,11 @@ def _plot_collapse_map(cmap, path):
     rrs = sorted(cmap["rr"].unique())
     sigmas = sorted(cmap["sigma"].unique())   # 11 measured nodes, non-uniform spacing
     rhos = sorted(cmap["rho"].unique())        # 7 measured nodes
+    tick_fs = 9 if for_paper else 7
+    figsize = (6.2, 5.8) if for_paper else (3.2 * len(rrs), 3.0 * len(etas))
     # constrained_layout keeps the rotated rho labels of the top row clear of the bottom
     # row's titles - the value-axis version had horizontal labels and did not need it.
-    fig, axes = plt.subplots(len(etas), len(rrs), figsize=(3.2 * len(rrs), 3.0 * len(etas)),
+    fig, axes = plt.subplots(len(etas), len(rrs), figsize=figsize,
                              squeeze=False, constrained_layout=True)
     for i, eta in enumerate(etas):
         for j, rr in enumerate(rrs):
@@ -558,18 +576,19 @@ def _plot_collapse_map(cmap, path):
                            aspect="auto", origin="lower", interpolation="nearest")
             ax.set_xticks(range(len(rhos)))
             # rho labels rotated 45 deg to fit at print width without dropping any node.
-            ax.set_xticklabels([f"{r:.2f}" for r in rhos], rotation=45, ha="right", fontsize=7)
+            ax.set_xticklabels([f"{r:.2f}" for r in rhos], rotation=45, ha="right", fontsize=tick_fs)
             # All eleven sigma nodes are kept as ticks on EVERY panel: the sigma=0.05 and
             # sigma=0.30 rows carry the low-sigma collapse finding, so they are never decimated.
             ax.set_yticks(range(len(sigmas)))
-            ax.set_yticklabels([f"{s:.2f}" for s in sigmas], fontsize=7)
+            ax.set_yticklabels([f"{s:.2f}" for s in sigmas], fontsize=tick_fs)
             ax.set_title(rf"$\eta={eta:g}$, $rr={rr:g}$", fontsize=9)
             if j == 0:
                 ax.set_ylabel(r"$\sigma$")
             if i == len(etas) - 1:
                 ax.set_xlabel(r"$\rho$")
     fig.colorbar(im, ax=axes, label="frac of seeds fully collapsed (U=1)", shrink=0.8)
-    fig.suptitle("E3 collapse map (c0 = 2.0): does the demand floor shrink it?", weight="bold")
+    if not for_paper:
+        fig.suptitle("E3 collapse map (c0 = 2.0): does the demand floor shrink it?", weight="bold")
     fig.savefig(path, dpi=150)
     plt.close(fig)
     return path
@@ -651,9 +670,13 @@ def figures(out):
                 return 1
             print(f"  {csv_name} not found - skipping {png_name} (declared)")
             continue
-        p = plotter(pd.read_csv(path), os.path.join(out, png_name))
+        # The paper figures are drawn with for_paper=True (print-scale figsize, no lab
+        # suptitle, lifted fonts) and synced; the lab-only ones (sigma_star_rr, trace) keep
+        # their default rendering and are not copied.
+        kw = {"for_paper": True} if in_paper else {}
+        p = plotter(pd.read_csv(path), os.path.join(out, png_name), **kw)
         print(f"  wrote {os.path.basename(p)}  (from {csv_name}, no simulation)")
-        if in_paper:               # only the two figures that appear in the paper are synced
+        if in_paper:
             _copy_to_paper(p)
     return 0
 

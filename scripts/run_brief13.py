@@ -722,8 +722,17 @@ def _copy_to_paper(png_path):
     return dst
 
 
-def make_figures(tag="sobol"):
-    """Three figures: Morris mu*-sigma, S1/ST bars with CI, viability vs the top driver."""
+def make_figures(tag="sobol", for_paper=False):
+    """Three figures: Morris mu*-sigma, S1/ST bars with CI, viability vs the top driver.
+
+    ``for_paper`` (brief 30) applies ONLY to the two figures that appear in the paper - the
+    Morris screening (fig:sa left) and the Sobol' indices (fig:sa right).  The by-products
+    figure is not in the paper and is drawn unchanged either way, so it stays pixel-identical
+    to its committed PNG.  With ``for_paper=True`` the two paper figures are drawn near their
+    printed width (\\textwidth) so the fonts land >= 7.5 pt on the page, the sub-9 pt Morris
+    annotations / Sobol' tick and legend fonts are lifted to 9, and the lab "Level 1/2"
+    suptitles are dropped (they duplicate the caption).  ``for_paper=False`` is UNCHANGED.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -732,11 +741,16 @@ def make_figures(tag="sobol"):
     mpath = os.path.join(RESULTS, "ces_b13_morris.csv")
     if os.path.exists(mpath):
         m = pd.read_csv(mpath)
-        fig, axes = plt.subplots(1, m["qoi"].nunique(), figsize=(11, 5.2), squeeze=False)
+        # (7.6, 3.8) rather than the brief's starting (7.4, 3.6): at 3.6 x 7.4 the 9 pt
+        # annotations overlapped in two pairs ((wealth_effect, c0), (beta, eta)); widening
+        # to 7.6 in (still <= the 7.7 in full-width legibility cap, r = 6.14/7.6 = 0.81)
+        # clears both.  Resolved by figsize, NOT by dropping the font below 8 (brief 30 §2).
+        figsize = (7.6, 3.8) if for_paper else (11, 5.2)
+        fig, axes = plt.subplots(1, m["qoi"].nunique(), figsize=figsize, squeeze=False)
         panel_anns = []
         for ax, (q, blk) in zip(axes[0], m.groupby("qoi")):
             ax.scatter(blk["mu_star"], blk["sigma"], s=26)
-            drawn, anns = _annotate_morris_panel(ax, blk)
+            drawn, anns = _annotate_morris_panel(ax, blk, fontsize=(9 if for_paper else 7.5))
             panel_anns += [(ax, a) for a in anns]
             ax.set_xlabel(r"$\mu^*$ (influence)")
             ax.set_ylabel(r"$\sigma$ (non-linearity / interaction)")
@@ -749,7 +763,8 @@ def make_figures(tag="sobol"):
                 msg += (f"; cluster of {len(c['names'])} at mu*={c['mu_star']:.3g}: "
                         f"{', '.join(c['names'])}")
             print(msg)
-        fig.suptitle("Level 1: which parameters matter at all", fontsize=11)
+        if not for_paper:
+            fig.suptitle("Level 1: which parameters matter at all", fontsize=11)
         fig.tight_layout()
         # tight_layout fixes the axes boxes; only now are rendered bboxes meaningful, so the
         # spill correction runs here, after layout and before saving.
@@ -763,7 +778,9 @@ def make_figures(tag="sobol"):
         idx = pd.read_csv(ipath)
         sal = idx[idx["estimator"] == "saltelli"]
         qs = sorted(sal["qoi"].unique())
-        fig, axes = plt.subplots(1, len(qs), figsize=(5.6 * len(qs), 4.8), squeeze=False)
+        tick_fs = 9 if for_paper else 8
+        figsize = (7.4, 4.2) if for_paper else (5.6 * len(qs), 4.8)
+        fig, axes = plt.subplots(1, len(qs), figsize=figsize, squeeze=False)
         for ax, q in zip(axes[0], qs):
             blk = sal[sal["qoi"] == q].sort_values("ST")
             y = np.arange(len(blk))
@@ -771,12 +788,13 @@ def make_figures(tag="sobol"):
                     label="S1 (first order)", capsize=2)
             ax.barh(y + 0.2, blk["ST"], height=0.38, xerr=blk["ST_conf"],
                     label="ST (total)", capsize=2)
-            ax.set_yticks(y); ax.set_yticklabels(blk["parameter"], fontsize=8)
+            ax.set_yticks(y); ax.set_yticklabels(blk["parameter"], fontsize=tick_fs)
             ax.axvline(0.0, color="k", lw=0.8)
             ax.set_xlabel("Sobol index"); ax.set_title(q, fontsize=10)
-            ax.legend(fontsize=8)
-        fig.suptitle("Level 2: ST >> S1 means interactions dominate "
-                     "(bars: bootstrap CI)", fontsize=11)
+            ax.legend(fontsize=tick_fs)
+        if not for_paper:
+            fig.suptitle("Level 2: ST >> S1 means interactions dominate "
+                         "(bars: bootstrap CI)", fontsize=11)
         fig.tight_layout()
         p = os.path.join(RESULTS, f"ces_b13_{tag}_indices.png")
         fig.savefig(p, dpi=140); plt.close(fig); made.append(p)
@@ -840,9 +858,11 @@ def main():
     summaries = []
 
     if args.phase == "report":
-        # Analysis only: reads the committed artifacts, runs no simulation.
+        # Analysis only: reads the committed artifacts, runs no simulation.  The two paper
+        # figures (fig:sa) are drawn at paper scale (brief 30); the by-products figure is
+        # not in the paper and is drawn unchanged.
         analyse_byproducts("sobol")
-        make_figures("sobol")
+        make_figures("sobol", for_paper=True)
         return 0
 
     if args.phase in ("pilot", "all"):

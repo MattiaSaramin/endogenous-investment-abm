@@ -1243,14 +1243,32 @@ def compare_artifacts(mine, ref, ulp_tol=BYTE_CHECK_ULP, atol=BYTE_CHECK_ATOL,
     }
 
 
-def plot_sign_frontier(grid, deriv, path="ces_sign_frontier.png"):
-    """Heatmap of ``dY/drho`` over (sigma, rho) with the zero contour drawn."""
+def plot_sign_frontier(grid, deriv, path="ces_sign_frontier.png", for_paper=False):
+    """Heatmap of ``dY/drho`` over (sigma, rho) with the zero contour drawn.
+
+    ``grid`` is accepted for call-site symmetry but unused: the figure is a function of
+    ``deriv`` alone, so it is reconstructable from ``results/ces_derivatives.csv`` with no
+    simulation (that is what ``scripts/make_fig_sign_frontier.py`` does).
+
+    ``for_paper`` (brief 30 §2.1): the lab figure (False) is UNCHANGED.  The paper figure
+    (True) is drawn near its printed width (\\textwidth) so the fonts land ~8 pt on the
+    page, and it fixes the SAME defect brief 29 fixed on the b09 collapse map, on a figure
+    b29 did not touch: the sigma grid is NON-UNIFORM (0.05, 0.20, 0.30, ..., 1.25, 1.50)
+    and the default ticks fell on sigma/rho the grid never simulated.  Unlike the collapse
+    map, the axes stay METRIC - the zero contour's position BETWEEN nodes is the figure's
+    content (it is the sign frontier) and would be meaningless in index space - and instead
+    the ticks are set only on the measured nodes and a marker is drawn on every measured
+    cell, so the reader sees where there are data (31 of 40 cells) and where there are not
+    (9 non-viable, blank).  The lab legend font (7) is lifted to 9.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     pivot = deriv.pivot(index="sigma", columns="rho", values="dY_drho")
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(13, 5))
+    figsize = (7.4, 3.4) if for_paper else (13, 5)
+    legend_fs = 9 if for_paper else 7
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=figsize)
 
     vmax = float(np.nanmax(np.abs(pivot.to_numpy())))
     im = ax.pcolormesh(
@@ -1264,7 +1282,23 @@ def plot_sign_frontier(grid, deriv, path="ces_sign_frontier.png"):
     ax.axhline(1.0, ls="--", lw=1, color="grey")
     ax.set_xlabel("retention ratio rho")
     ax.set_ylabel("elasticity of substitution sigma")
-    ax.set_title("Sign of dY/drho  (blue = wage-led, red = profit-led)", weight="bold")
+    # At the narrower paper figsize the long lab title overflows the left figure edge; the
+    # blue=wage-led / red=profit-led key is explanatory and moves to the LaTeX caption.
+    ax.set_title("Sign of dY/drho" if for_paper else
+                 "Sign of dY/drho  (blue = wage-led, red = profit-led)", weight="bold")
+
+    if for_paper:
+        # Ticks only on the measured, non-uniform nodes; a dot on every measured cell.
+        sigmas = sorted(deriv["sigma"].unique())
+        rhos = sorted(deriv["rho"].unique())
+        ax.set_yticks(sigmas)
+        ax.set_yticklabels([f"{s:.2f}" for s in sigmas])
+        ax.set_xticks(rhos)
+        ax.set_xticklabels([f"{r:.2f}" for r in rhos])
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()   # markers must not move the frame
+        ax.plot(deriv["rho"], deriv["sigma"], "k.", ms=2, zorder=3)
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
 
     for sigma, b in deriv.groupby("sigma"):
         b = b.sort_values("rho")
@@ -1272,7 +1306,7 @@ def plot_sign_frontier(grid, deriv, path="ces_sign_frontier.png"):
     ax2.set_xlabel("retention ratio rho")
     ax2.set_ylabel("steady-state output Y")
     ax2.set_title("Output vs retention, by sigma", weight="bold")
-    ax2.legend(fontsize=7, ncol=2)
+    ax2.legend(fontsize=legend_fs, ncol=2)
 
     fig.tight_layout()
     fig.savefig(path, dpi=150)

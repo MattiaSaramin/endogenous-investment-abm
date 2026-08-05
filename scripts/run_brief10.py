@@ -398,16 +398,31 @@ def print_headline(summary, thr, trace):
               f"Y={r['Output']:7.2f}  dead={r['Dead_Firms']:.0f}")
 
 
-def plot_aggregates(summary, path):
-    """U, Y, K, Dead_Firms vs spread with inter-seed bands, one line per scenario."""
+def plot_aggregates(summary, path, for_paper=False):
+    """U, Y, K, Dead_Firms vs spread with inter-seed bands, one line per scenario.
+
+    ``for_paper`` (brief 30): the lab figure (False) is UNCHANGED and stays pixel-identical
+    to the committed PNG - a 1x4 strip that printed ~1.7 pt at 0.49\\textwidth.  The paper
+    figure (True) re-lays the four panels as a 2x2 block at a figsize close to its printed
+    width (\\textwidth), which is what lifts the fonts to ~8 pt on the page; it also drops
+    the lab suptitle (its brief provenance duplicates the caption) and lifts the legend to
+    9 pt.  The panels, data and titles are identical - only the grid shape, size, suptitle
+    and legend size change.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     panels = [("Unemployment_Rate", "Unemployment U"), ("Output", "Output Y"),
               ("Total_Capital", "Capital K"), ("Dead_Firms", "Dead firms (K < 0.5)")]
-    fig, axes = plt.subplots(1, 4, figsize=(18, 4.3))
-    for (metric, title), ax in zip(panels, axes):
+    legend_fs = 9 if for_paper else 8
+    if for_paper:
+        fig, axes = plt.subplots(2, 2, figsize=(7.4, 5.6))
+        ax_iter = axes.flat
+    else:
+        fig, axes = plt.subplots(1, 4, figsize=(18, 4.3))
+        ax_iter = axes
+    for (metric, title), ax in zip(panels, ax_iter):
         for name, block in summary.groupby("scenario"):
             b = block.sort_values("spread")
             line, = ax.plot(b["spread"], b[metric], marker="o", label=name)
@@ -415,23 +430,33 @@ def plot_aggregates(summary, path):
                             alpha=0.15, color=line.get_color())
         ax.set_xlabel("productivity spread")
         ax.set_title(title, weight="bold")
-        ax.legend(fontsize=8)
-    fig.suptitle("Brief 10 - firm-heterogeneity viability probe: aggregates vs dispersion "
-                 "(no reallocation channel)", weight="bold")
+        ax.legend(fontsize=legend_fs)
+    if not for_paper:
+        fig.suptitle("Brief 10 - firm-heterogeneity viability probe: aggregates vs dispersion "
+                     "(no reallocation channel)", weight="bold")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
     return path
 
 
-def plot_domino(trace, path, spec=TRACE):
-    """The domino: the weak firm's capital goes first, then the strong firm's, then U."""
+def plot_domino(trace, path, spec=TRACE, for_paper=False):
+    """The domino: the weak firm's capital goes first, then the strong firm's, then U.
+
+    ``for_paper`` (brief 30): the lab figure (False) is UNCHANGED and stays pixel-identical
+    to the committed PNG; the paper figure (True) is drawn near its printed width
+    (\\textwidth) so the fonts land ~8 pt, lifts the two 8 pt legends to 9, and drops the
+    lab suptitle.  The suptitle carried the scenario/spread/seed provenance
+    (S2_headline, spread=0.20, seed=0); those are NOT lost - they move to the LaTeX caption
+    of fig:heterogeneity-domino, where they are citable.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
+    legend_fs = 9 if for_paper else 8
     b = trace[trace["seed"] == spec["figure_seed"]].sort_values("step")
-    fig, (axk, axu) = plt.subplots(1, 2, figsize=(13, 4.6))
+    fig, (axk, axu) = plt.subplots(1, 2, figsize=((7.4, 3.4) if for_paper else (13, 4.6)))
 
     axk.plot(b["step"], b["K_lowA"], label=f"weakest firm (A={b['A_low'].iloc[0]:.2f})")
     axk.plot(b["step"], b["K_highA"], label=f"strongest firm (A={b['A_high'].iloc[0]:.2f})")
@@ -440,7 +465,7 @@ def plot_domino(trace, path, spec=TRACE):
     axk.set_xlabel("step")
     axk.set_ylabel("capital K")
     axk.set_title("The weak firm decapitalises first", weight="bold")
-    axk.legend(fontsize=8)
+    axk.legend(fontsize=legend_fs)
 
     axu.plot(b["step"], b["Unemployment_Rate"], color="crimson", label="unemployment U")
     axu.set_xlabel("step")
@@ -448,13 +473,17 @@ def plot_domino(trace, path, spec=TRACE):
     ax2 = axu.twinx()
     ax2.plot(b["step"], b["Dead_Firms"], color="steelblue", label="dead firms")
     ax2.set_ylabel("dead firms (K < 0.5)")
-    axu.set_title("...then the cascade: demand externality + destroyed demand share",
+    # The long lab title overruns the narrow paper subplot and collides with the left
+    # title; the "demand externality + destroyed demand share" detail moves to the caption.
+    axu.set_title("...then the cascade" if for_paper else
+                  "...then the cascade: demand externality + destroyed demand share",
                   weight="bold")
     lines = axu.get_lines() + ax2.get_lines()
-    axu.legend(lines, [l.get_label() for l in lines], fontsize=8, loc="center right")
+    axu.legend(lines, [l.get_label() for l in lines], fontsize=legend_fs, loc="center right")
 
-    fig.suptitle(f"Brief 10 domino ({spec['scenario']}, spread={spec['spread']}, "
-                 f"seed={spec['figure_seed']})", weight="bold")
+    if not for_paper:
+        fig.suptitle(f"Brief 10 domino ({spec['scenario']}, spread={spec['spread']}, "
+                     f"seed={spec['figure_seed']})", weight="bold")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
@@ -517,7 +546,7 @@ def figures(out):
                 return 1
             print(f"  {csv_name} not found - skipping {png_name} (declared)")
             continue
-        p = plotter(pd.read_csv(path), os.path.join(out, png_name))
+        p = plotter(pd.read_csv(path), os.path.join(out, png_name), for_paper=True)
         print(f"  wrote {os.path.basename(p)}  (from {csv_name}, no simulation)")
         _copy_to_paper(p)          # both brief-10 figures enter the paper
     return 0
