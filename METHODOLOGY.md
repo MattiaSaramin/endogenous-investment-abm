@@ -1750,6 +1750,63 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     un fallimento). `scripts/run_brief17.py` **non toccato** (diff vuoto). Commit locale,
     **STOP pre-push su `main`**.
 
+- **Brief 29 — leggibilità di due figure (solo PRESENTAZIONE; nessun `src/`, nessun run
+  del modello, nessun numero mosso; 569 test invariati). Commit locali su `main`, STOP
+  pre-push.** Due PNG erano illeggibili **alla dimensione di stampa** (entrambi in una
+  `subfigure` a ~8 cm): `ces_b09_collapse_map` e `ces_b13_morris_mu_sigma`. Il fix vive nel
+  **generatore committato**, mai ritoccando il PNG; entrambi si rigenerano **dai CSV già
+  committati**.
+  - **Vincolo bloccante sanato per primo (Task 0).** `run_brief09.py` non aveva un percorso
+    di sola figura: ogni `--phase` rifà la griglia, e il drift d'ambiente («pin a 8 ULP», §6)
+    muoverebbe le ultime cifre dei CSV. Aggiunta **`--phase figures`**: legge
+    `results/ces_b09_*.csv`, chiama **solo** le `_plot_*`, **non scrive alcun `.csv`**, ed
+    esce **≠0** se manca la collapse map (CSV richiesto). Prima l'infrastruttura, poi
+    l'estetica (commit separati, come `31b8bff` del b21). `run_brief13.py` aveva già
+    `--phase report` (sola analisi + figure), usato tale e quale.
+  - **Figura A — `ces_b09_collapse_map` ad assi CATEGORIALI.** Era `pcolormesh(shading=
+    nearest)` su asse-valore con griglia σ **non uniforme** (0.05, 0.30, 0.40, …, 1.25, 1.50):
+    i bordi cella cadevano sui punti medi fra nodi disuguali e i tick di default (0.00, 0.25,
+    0.75) **su σ mai simulati** — stessa famiglia della «perdita di informazione» del b22 su
+    `tab:wagecurve`. Ora `imshow` su indici interi: una cella per nodo, tutte uguali, tick
+    **solo** sui nodi (11 σ × 7 ρ, ρ ruotati 45°, σ **non decimati** — le righe 0.05 e 0.30
+    portano il reperto del collasso a basso σ). `vmin/vmax`, cmap `magma`, colorbar condivisa:
+    invariati. `constrained_layout` per non far collidere le etichette ruotate coi titoli
+    della riga sotto.
+  - **Figura B — `ces_b13_morris_mu_sigma`: raggruppamento + anti-overlap.** SALib mette ogni
+    parametro senza effetto a **(μ\*, σ)=(0,0)** e può far **coincidere** due parametri reali:
+    nessun offset per-punto li separa. Ora **una etichetta per gruppo** (chiave
+    `(round(μ\*,6), round(σ,6))`): nomi uniti per i gruppi piccoli, **CONTEGGIO** per il
+    cluster (letto a runtime — **11 parametri a μ\*=0** su `viable`; nomi in caption di
+    `fig:sa`). Anti-overlap **deterministico, senza dipendenze nuove** (`adjustText` **non**
+    aggiunto): ordine per μ\* decrescente, alternanza su/giù + destra/sinistra per i gruppi
+    entro il 6% del range su **entrambi** gli assi, ancoraggio a destra al bordo. Etichettati:
+    **`slope_raw` 8, `viable` 5**.
+    - **Soglia di etichettatura MANTENUTA per i singoletti e DICHIARATA in caption** (μ\* >
+      5% del massimo del pannello). **Scelto «dichiarare» sull'«togliere» con motivo misurato:**
+      `slope_raw` ha punti **tutti distinti**, quindi il raggruppamento **non lo dirada** —
+      togliere la soglia vi rimetterebbe i 9 singoletti near-origin, ri-ingolfando l'angolo.
+      Nel `viable` la soglia non sopprime il cluster (è multi-membro, sempre etichettato).
+  - **Caption toccate IN BLOCCO** (un solo commit, prosa riletta — invariante b22-ter):
+    `fig:government` (08_fiscal) dichiara assi categoriali / una cella per nodo / griglia σ non
+    uniforme; `fig:sa` (09_sensitivity) elenca gli 11 nomi del cluster e dichiara la soglia.
+    Nota scoping: gli **11 a μ\*=0 su viability** sono un insieme **diverso** dagli **11
+    survivor Sobol** di §11 (stesso numero, referente diverso) — dichiarato in caption.
+  - **Invarianti verificati.** `git status --porcelain results/*.csv` (b09/b13) **vuoto** dopo
+    `--phase figures` e `--phase report` (i CSV `byproducts`/`kalecki` riscritti da `report`
+    tornano **byte-identici**); **solo 2 PNG** si muovono (le altre figure b09/b13 rigenerate
+    byte-identiche); `audit_b26_params.csv` risultava **già modificato prima del brief** (non
+    toccato). `pytest` **569**; `verify_paper` **0 FAIL** (60 claim, 1 AMBIGUOUS preesistente a
+    riga 99, non mia); `coherence` **0 DIVERGENT** (+ `DOCUMENT UNTRACKED` noto di
+    `RESULTS.md`); `check_phrasings` **0**. **Nessuna dipendenza nuova.**
+  - **Limite MISURATO, dichiarato (non aggirato).** La collapse map a 8 cm: gli 11 tick σ sono
+    **leggibili** (proof temporaneo non committato). Il Morris a 8 cm: le etichette restano
+    **piccole** al vero rapporto di stampa — è la figura 11:5.2 compressa in mezza colonna, una
+    proprietà del **layout** (non toccabile senza restrutturare il paper, fuori scope), **non**
+    dell'annotazione; l'**overlap è risolto** e ogni etichetta è a sé, leggibile a zoom modesto.
+    La CI del paper (0 error LaTeX / overfull / undefined) **non è verificabile in locale**
+    (nessun motore, build solo in CI, §3): da confermare sul PDF di CI dopo l'eventuale push.
+  - **STOP pre-push su `main`**: nessun push senza conferma esplicita di Mattia.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
