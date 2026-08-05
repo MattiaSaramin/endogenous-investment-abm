@@ -608,6 +608,22 @@ def _write(df, out, name):
     return df
 
 
+def _copy_to_paper(png_path):
+    """Sync a paper figure from ``results/`` to ``paper/figures/`` (brief 30 §1.2).
+
+    Uniforms this driver to :mod:`run_brief14`'s behaviour: a tracked snapshot must follow
+    its source (the b22-bis invariant).  Before brief 30 the b09/b10/b13 drivers left
+    ``paper/figures/`` to be synced by hand, which is why brief 29 needed a separate
+    ``8affccc`` sync commit.
+    """
+    import shutil
+    dst = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "paper", "figures",
+                                       os.path.basename(png_path)))
+    shutil.copyfile(png_path, dst)
+    print(f"  copied to {dst}")
+    return dst
+
+
 def figures(out):
     """Redraw the brief-09 figures FROM THE COMMITTED CSVs, running no simulation.
 
@@ -620,14 +636,14 @@ def figures(out):
     present so the figure set stays consistent, and skipped (declared) otherwise.
     """
     plan = [
-        # csv name,                     png name,                    plotter,             required
-        ("ces_b09_collapse_map.csv",    "ces_b09_collapse_map.png",  _plot_collapse_map,  True),
-        ("ces_b09_dose_response.csv",   "ces_b09_dose_response.png", _plot_dose_response, False),
-        ("ces_b09_sigma_star.csv",      "ces_b09_sigma_star_rr.png", _plot_sigma_star,    False),
-        ("ces_b09_trace.csv",           "ces_b09_trace.png",         _plot_trace,         False),
+        # csv name,                     png name,                    plotter,             required, in_paper
+        ("ces_b09_collapse_map.csv",    "ces_b09_collapse_map.png",  _plot_collapse_map,  True,  True),
+        ("ces_b09_dose_response.csv",   "ces_b09_dose_response.png", _plot_dose_response, False, True),
+        ("ces_b09_sigma_star.csv",      "ces_b09_sigma_star_rr.png", _plot_sigma_star,    False, False),
+        ("ces_b09_trace.csv",           "ces_b09_trace.png",         _plot_trace,         False, False),
     ]
     print(f"Phase figures - redraw from committed CSVs in {out} (no simulation, no CSV written):")
-    for csv_name, png_name, plotter, required in plan:
+    for csv_name, png_name, plotter, required, in_paper in plan:
         path = os.path.join(out, csv_name)
         if not os.path.exists(path):
             if required:
@@ -637,6 +653,8 @@ def figures(out):
             continue
         p = plotter(pd.read_csv(path), os.path.join(out, png_name))
         print(f"  wrote {os.path.basename(p)}  (from {csv_name}, no simulation)")
+        if in_paper:               # only the two figures that appear in the paper are synced
+            _copy_to_paper(p)
     return 0
 
 

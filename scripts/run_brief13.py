@@ -706,6 +706,22 @@ def _fit_morris_labels(fig, panel_anns, tol=0.5):
     return corrected, outside, overlaps
 
 
+def _copy_to_paper(png_path):
+    """Sync a paper figure from ``results/`` to ``paper/figures/`` (brief 30 §1.2).
+
+    Uniforms this driver to :mod:`run_brief14`'s behaviour: a tracked snapshot must follow
+    its source (the b22-bis invariant).  Only the two figures that appear in the paper -
+    the Morris screening and the Sobol' indices - are synced; ``ces_b13_sobol_byproducts``
+    is drawn here but not included in the paper, so it is not copied.
+    """
+    import shutil
+    dst = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "paper", "figures",
+                                       os.path.basename(png_path)))
+    shutil.copyfile(png_path, dst)
+    print(f"  copied to {dst}")
+    return dst
+
+
 def make_figures(tag="sobol"):
     """Three figures: Morris mu*-sigma, S1/ST bars with CI, viability vs the top driver."""
     import matplotlib
@@ -740,6 +756,7 @@ def make_figures(tag="sobol"):
         _fit_morris_labels(fig, panel_anns)
         p = os.path.join(RESULTS, "ces_b13_morris_mu_sigma.png")
         fig.savefig(p, dpi=140); plt.close(fig); made.append(p)
+        _copy_to_paper(p)          # fig:sa (left panel) in the paper
 
     ipath = os.path.join(RESULTS, f"ces_b13_{tag}_indices.csv")
     if os.path.exists(ipath):
@@ -763,6 +780,7 @@ def make_figures(tag="sobol"):
         fig.tight_layout()
         p = os.path.join(RESULTS, f"ces_b13_{tag}_indices.png")
         fig.savefig(p, dpi=140); plt.close(fig); made.append(p)
+        _copy_to_paper(p)          # fig:sa (right panel) in the paper
 
     bpath = os.path.join(RESULTS, f"ces_b13_{tag}_byproducts.csv")
     if os.path.exists(bpath):

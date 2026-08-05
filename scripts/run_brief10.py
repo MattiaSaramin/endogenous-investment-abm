@@ -472,9 +472,63 @@ def _write(df, out, name):
     return df
 
 
+def _copy_to_paper(png_path):
+    """Sync a paper figure from ``results/`` to ``paper/figures/`` (brief 30 §1.2).
+
+    Uniforms this driver to :mod:`run_brief14`'s behaviour: a tracked snapshot must follow
+    its source (the b22-bis invariant).  Before brief 30 only ``run_brief14`` and
+    ``make_fig_model`` copied; ``run_brief09``/``run_brief10``/``run_brief13`` left
+    ``paper/figures/`` to be synced by hand, which is exactly why brief 29 needed a
+    separate ``8affccc`` sync commit.
+    """
+    import shutil
+    dst = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "paper", "figures",
+                                       os.path.basename(png_path)))
+    shutil.copyfile(png_path, dst)
+    print(f"  copied to {dst}")
+    return dst
+
+
+def figures(out):
+    """Redraw the brief-10 figures FROM THE COMMITTED CSVs, running no simulation.
+
+    Modelled on :func:`run_brief09.figures` (brief 30 Task 0).  :func:`main` is monolithic
+    - it reruns ``run_panel``/``summarize``/``thresholds``/``run_trace``/``byte_check`` and
+    rewrites five CSVs before it draws - so rerunning it to refresh a figure would move the
+    last digits of those CSVs through the documented ULP environment drift.  This path
+    exists so the figures can be regenerated with the model results held fixed: it reads
+    ``results/ces_b10_*.csv``, calls only the plotters, writes NO ``.csv``, and syncs each
+    paper figure to ``paper/figures/``.  Both figures are REQUIRED - a missing CSV is a
+    hard error (nonzero exit) so a stale checkout cannot silently produce a half-drawn
+    figure.  ``plot_domino`` filters on ``TRACE["figure_seed"]`` via its default ``spec``,
+    exactly as ``main`` does.
+    """
+    plan = [
+        # csv name,              png name,                        plotter,          required
+        ("ces_b10_summary.csv",  "ces_b10_aggregates_spread.png", plot_aggregates,  True),
+        ("ces_b10_trace.csv",    "ces_b10_domino_trace.png",      plot_domino,      True),
+    ]
+    print(f"Phase figures - redraw from committed CSVs in {out} (no simulation, no CSV written):")
+    for csv_name, png_name, plotter, required in plan:
+        path = os.path.join(out, csv_name)
+        if not os.path.exists(path):
+            if required:
+                print(f"  ERROR: {csv_name} not found in {out} - cannot draw {png_name}.")
+                return 1
+            print(f"  {csv_name} not found - skipping {png_name} (declared)")
+            continue
+        p = plotter(pd.read_csv(path), os.path.join(out, png_name))
+        print(f"  wrote {os.path.basename(p)}  (from {csv_name}, no simulation)")
+        _copy_to_paper(p)          # both brief-10 figures enter the paper
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default="results", help="output directory (default: results)")
+    ap.add_argument("--phase", choices=["figures", "all"], default="all",
+                    help="'figures' redraws from committed CSVs (no simulation); "
+                         "'all' reruns the whole probe (default)")
     ap.add_argument("--workers", type=int, default=None,
                     help="process-pool size (default: all cores; 1 = serial)")
     ap.add_argument("--smoke", action="store_true",
@@ -485,6 +539,10 @@ def main():
     if args.smoke:
         out = os.path.join(out, "smoke")
     os.makedirs(out, exist_ok=True)
+
+    if args.phase == "figures":
+        # Presentation-only path: redraw from the committed CSVs, never simulate (brief 30).
+        sys.exit(figures(out))
 
     spreads, seeds, steps = SPREADS, PANEL_SEEDS, STEPS
     if args.smoke:
