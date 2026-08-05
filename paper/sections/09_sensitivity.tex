@@ -305,44 +305,42 @@ the estimator. Note also that the probability never crosses $0.5$ at any
 $\sigma$ tested, topping out at $0.363$: there is no threshold in the
 marginalized space at which wage-led outcomes become the majority.
 
-\Cref{fig:sa} shows the screening step and the variance decomposition that
-underlie \cref{tab:sobol,tab:delta}.
+\Cref{fig:sa} shows the screening step and \cref{fig:sa-sobol} the variance
+decomposition that underlie \cref{tab:sobol,tab:delta}.
 
 \begin{figure}[htbp]
 \centering
-\begin{subfigure}{0.48\textwidth}
-  \includegraphics[width=\linewidth]{ces_b13_morris_mu_sigma.png}
-  \caption{Morris screening.}
-\end{subfigure}\hfill
-\begin{subfigure}{0.48\textwidth}
-  \includegraphics[width=\linewidth]{ces_b13_sobol_indices.png}
-  \caption{Sobol' indices with bootstrap CIs.}
-\end{subfigure}
-\caption{Screening and decomposition. Morris (left) screens seventeen
-parameters, the sixteen defensible parameters plus \texttt{max\_tax}, which
-is screened here only, while the Sobol' decomposition (right) is over the
-sixteen-parameter defensible space. In the Morris viability panel eleven
-parameters share $\mu^{\ast}=0$---no measurable effect on viability---and are
-drawn as one labelled cluster rather than eleven overlapping points:
-\texttt{beta}, \texttt{c1}, \texttt{capitalist\_mpc}, \texttt{eta},
+\includegraphics[width=\textwidth]{ces_b13_morris_mu_sigma.png}
+\caption{Morris screening of seventeen parameters---the sixteen defensible
+parameters plus \texttt{max\_tax}, which is screened here only. In the viability
+panel eleven parameters share $\mu^{\ast}=0$---no measurable effect on
+viability---and are drawn as one labelled cluster rather than eleven overlapping
+points: \texttt{beta}, \texttt{c1}, \texttt{capitalist\_mpc}, \texttt{eta},
 \texttt{expectation\_gain}, \texttt{investment\_floor}, \texttt{max\_tax},
 \texttt{pct\_capitalists}, \texttt{target\_utilization}, \texttt{u\_min},
 \texttt{wage\_floor}. Parameters sharing a coordinate are labelled jointly, and
 singletons whose $\mu^{\ast}$ is at or below $5\%$ of the panel maximum are left
-unlabelled. Both panels use the chord estimator
-(\texttt{ces\_b13}); \cref{fig:sa-b14} is the OLS-repaired counterpart
-(\texttt{ces\_b14}).}
+unlabelled. The chord estimator (\texttt{ces\_b13}).}
 \label{fig:sa}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{ces_b14_sobol_indices.png}
+\includegraphics[width=\textwidth]{ces_b13_sobol_indices.png}
+\caption{Sobol' indices with bootstrap confidence intervals, over the
+sixteen-parameter defensible space, on the chord estimator (\texttt{ces\_b13});
+\cref{fig:sa-b14} is the OLS-repaired counterpart (\texttt{ces\_b14}).}
+\label{fig:sa-sobol}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.82\textwidth]{ces_b14_sobol_indices.png}
 \caption{The same decomposition on the OLS-repaired QoI (\texttt{ces\_b14}),
-the counterpart of \cref{fig:sa}'s chord-based right panel. On the slope the
+the counterpart of the chord-based \cref{fig:sa-sobol}. On the slope the
 total indices barely move from the chord values reported in \cref{sec:governs}:
 $\delta$ reads $0.900$, $\pi_0$ reads $0.561$, and $\sigma$ reads $0.021$; on
-viability $\delta$ reads $0.916$. The survivor set differs from \cref{fig:sa}
+viability $\delta$ reads $0.916$. The survivor set differs from \cref{fig:sa-sobol}
 (\texttt{target\_utilization} enters, \texttt{benefit\_replacement\_rate}
 leaves), so the vertical axis is not identical. The third panel is the
 conditional quantity $\text{slope}\mid\text{viable}$ under RBD-FAST, which
