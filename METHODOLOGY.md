@@ -291,6 +291,15 @@ commit a sé). Regola operativa: **il conteggio dei test si allinea a mano da `p
 ogni push**, perché nessun detector lo farà. Distinto dal punto cieco #2 (lì la sorgente CSV esiste
 ma non è fra gli artifact inclusi; qui una sorgente CSV **non esiste per natura**).
 
+**Corollario operativo (brief 30-bis): ogni brief che modifica un `.tex` rigenera
+`results/paper_rounding_sweep.csv` nello stesso commit-range**, alla pari di `verify_paper.py` e
+`coherence.py`. Lo snapshot è derivato da `paper/sections/*.tex` + `paper/appendices/*.tex`; un
+brief che tocca le caption o la prosa e non lo rigenera lo lascia **stale** (misurato due volte:
+b28 dopo il blocco Voce A, e di nuovo il b30, il cui §4 non lo elencava). È corrispondenza
+artifact↔sorgente (b22-bis), non correttezza del paper: `verify_paper`/`coherence` restano verdi
+anche con lo snapshot stale. Aggiunto qui alla lista di verifica standard così il prossimo brief
+non deve ricordarselo.
+
 ---
 
 ## 6. Decisione architetturale: sequenziare il mercato del lavoro (ESEGUITA)
@@ -1898,7 +1907,55 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     **Nessuna dipendenza nuova** (niente `adjustText`). Tabella `r` ricalcolata a posteriori sui
     PNG effettivi (r ∈ [0.76, 0.84], font 9 pt → 6.9–7.6 pt su pagina). Leggibilità confermata su
     **proof a dimensione di stampa** (non committati); CI del paper (0 error LaTeX / overfull /
-    undefined) da confermare sul PDF di CI dopo l'eventuale push.
+    undefined) da confermare sul PDF di CI dopo l'eventuale push (ma vedi la nota Overleaf del
+    brief 30-bis qui sotto).
+
+- **Brief 30-bis — snapshot dello sweep + attribuzione del sign frontier (chiuso PRIMA del push
+  del b30; i 7 commit del b30 `f8df9b7`…`9186643` INTATTI, nessun amend, due commit aggiuntivi).**
+  - **Voce A — `results/paper_rounding_sweep.csv` era STALE (seconda volta per la stessa ragione).**
+    Le caption del b30 hanno toccato quattro `.tex` (`06_shape`, `07_stress`, `08_fiscal`,
+    `09_sensitivity`) aggiungendo token decimali (la sola caption di `fig:frontier` ne introduce
+    sette). Lo snapshot, **tracciato** e derivato da `sweep_rounding.py`, era fermo a `9f784c8`
+    (b28). Rigenerato (`python scripts/sweep_rounding.py`, script invariato): **righe
+    108937 → 112009 (+3072); tuple distinte `(file,riga,token)` 632 → 643 (+11, TUTTE AMBIGUOUS;
+    SINGLE 72 invariato, NO ARTIFACT 44 invariato); firme non ambigue 3 → 3, LE STESSE** — i due
+    falsi positivi noti (`59.4`×2 → `ces_sigma_rho_grid`, punto cieco #2; `0.771`=1230/1596 →
+    `ces_b07_sigma_star_by_rho`, punto cieco #1 — **DA NON CORREGGERE**). `PROBE VERDICT: BOTH
+    PASS`. Il **delta** (+3072 righe, +11 AMBIGUOUS, 0 SINGLE, 0 NO ARTIFACT, **0 firme nuove**)
+    coincide con l'attesa pre-registrata del brief 30-bis; i **valori assoluti** sono +1 (632/643
+    vs 631/642) — differenza di **convenzione di conteggio**, identica in pre e post (stesso file
+    pre-b30 committato), non legata alle caption. **Il difetto è di DISEGNO del brief 30** (il suo
+    §4 elencava `verify_paper`/`coherence` e **non** `sweep_rounding`), non della sua esecuzione —
+    come la lacuna §5 del b17. Lo snapshot **resta tracciato** (si sceglie di rigenerare, non di
+    smettere di tracciare come `RESULTS.md`): è l'artifact di un detector committato **con
+    self-test** (le due sonde §1.4, entrambe PASS), il termine di paragone che ha reso misurabili
+    i +11 token.
+    - **Riconciliazione 657 vs CSV — l'ipotesi del brief NON regge, causa dichiarata.** Il sommario
+      stampa **657** token-*occorrenze* (72/539/46); le tuple distinte sono **643** (72/527/44).
+      L'ipotesi del brief 30-bis («i token senza coppia token×artifact non producono righe») è
+      **falsa**: i 46 `NO ARTIFACT CANDIDATE` **hanno 46 righe** nel CSV (artifact vuoto; es.
+      `a_validation.tex:48` token `400.00`). La causa vera del gap 657→643 è la **duplicazione
+      sulla STESSA riga** (14 occorrenze: 12 AMBIGUOUS + 2 NO ARTIFACT collassano su una tupla
+      distinta; SINGLE nessuna). Il CSV è **completo** — ogni occorrenza è una riga — quindi
+      **non è un quarto punto cieco**: nessuna perdita di dato, solo una differenza di base di
+      conteggio (occorrenze vs tuple distinte), con causa comune, da non mettere in fila coi tre
+      punti ciechi di §5.
+  - **Voce B — attribuzione del sign frontier: da inferenza a MISURA.** Il report del b30
+    dichiarava «drift di matplotlib, il PNG predates this matplotlib» come **inferenza**, lasciando
+    aperta l'ipotesi alternativa (dati diversi, non rendering — la classe d'errore del b17). Ora è
+    misurata dalle date git: `results/ces_derivatives.csv` fermo a **`088eefd` (2026-07-18)**,
+    `paper/figures/ces_sign_frontier.png` **aggiunto** a **`ea2d0da` (2026-07-20)**, due giorni
+    dopo; `088eefd` è **antenato** di `ea2d0da` e il CSV **non si è più mosso** da allora (nessun
+    commit lo tocca fino a HEAD). **Dati identici ⇒ la divergenza (~30% pixel) è di RENDERING, non
+    di dati.** La conclusione del b30 era giusta; adesso ha un referente (b17: un claim si dichiara
+    solo dopo averne identificato il referente).
+  - **CI — Overleaf verifica la COMPILAZIONE, non i quattro contatori.** Mattia ha compilato il
+    paper su Overleaf: **compila e impagina bene con le sei figure** (chiuso il rischio grosso: un
+    float da 15.9 cm non piazzabile, un `\cref` rotto). Ma «0 overfull / underfull / error LaTeX /
+    reference undefined» sono **derivati dallo script diagnostico della CI** (§3), non da
+    un'ispezione visiva, e Overleaf non li emette in quella forma. **Compilazione verificata su
+    Overleaf (referente: build manuale); i quattro contatori restano NON citati finché non c'è il
+    run della CI** — stessa disciplina del debito «conteggio pagine» del b22.
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
