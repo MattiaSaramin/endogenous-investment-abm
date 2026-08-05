@@ -1734,14 +1734,15 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   - **`scripts/check_phrasings.py` (§11).** Perimetro **stampato**; divieti IT/EN H1/H2;
     esenzioni **dichiarate e stampate** (record congelati per file: `run_brief17.py` **non
     toccato** + il detector stesso; citazioni: virgolette/guillemet — anche cross-riga — o
-    marcatore di negazione; shorthand licenziato: voce b21). `--selftest` **11/11 PASS**:
-    «H1 esce più forte» iniettata **FALLISCE netto**, la stessa **dentro una citazione del
+    marcatore di negazione; shorthand licenziato: voce b21). `--selftest` **13/13 PASS**
+    (incl. passo 0: formulazione spezzata su due righe → FLAG, e cross-paragrafo → nessun
+    falso positivo): «H1 esce più forte» iniettata **FALLISCE netto**, la stessa **dentro una citazione del
     divieto** è **ESENTATA**; exit ≠ 0 su violazione. Esito sul repo dopo le correzioni:
     **0 violazioni**, con esenzioni stampate (frozen, citazione, licenziato).
   - **Invariante nuovo in §9:** un criterio di accettazione **testuale** che non dichiara il
     proprio perimetro misura meno di quel che dichiara; nomina i percorsi, e il detector li
     stampa.
-  - **Detector + CI:** `check_phrasings` **0 violazioni** + `--selftest` (11/11); `verify_paper`
+  - **Detector + CI:** `check_phrasings` **0 violazioni** + `--selftest` (13/13); `verify_paper`
     **60 claim / 0 FAIL** (1 AMBIGUOUS) + `--selftest`; `verify_model` **19 MATCH** +
     `--selftest`; `coherence` **0 DIVERGENT** + `DOCUMENT UNTRACKED` + `--selftest`;
     `check_anglicization` **0**; `pytest` **569**. **Nessuna CI attesa:** `git diff -- paper/`
@@ -2114,8 +2115,8 @@ negoziabili.
   DIVERGENT mentre due enunciati ritirati vivevano fuori da `paper/`. **Perimetro stampato**
   (`paper/`, `METHODOLOGY.md`, `README.md`, `docs/`, `parameter_notes.md`, `scripts/`), non
   assunto: i brief di lavoro alla radice del repo sono **fuori** per costruzione, ed è il
-  motivo per cui il perimetro si stampa. Divieti IT ed EN, ancorati al soggetto H1/H2 sulla
-  riga: «H2 cade/tiene/è rovesciata», «H2 falls/holds/is overturned», «H1 (esce) più forte»,
+  motivo per cui il perimetro si stampa. Divieti IT ed EN, ancorati al soggetto H1/H2 entro
+  una finestra di prossimità nel paragrafo dewrappato: «H2 cade/tiene/è rovesciata», «H2 falls/holds/is overturned», «H1 (esce) più forte»,
   «H1 comes out stronger», e la confusione condizionale/marginale «H1 sopravvive al canale…».
   **Esenzioni dichiarate e stampate:** record congelati per file (`run_brief17.py`, la regola
   del gate pre-registrata; il detector stesso); citazioni del divieto (soggetto entro
@@ -2123,9 +2124,11 @@ negoziabili.
   «Mai»/«vietato»/«forbidden»/«never»); shorthand licenziato (la voce b21 di §8, per
   sottostringa stabile, con la sua licenza). `--selftest`: «H1 esce più forte» iniettata
   **FALLISCE netto**, la stessa **entro una citazione del divieto** è **ESENTATA** (i due casi
-  distinti); exit ≠ 0 su violazione. Da eseguire come gli altri, in ogni brief. **Limite
-  dichiarato:** co-occorrenza sulla **stessa riga** (soggetto e predicato spezzati su due righe
-  non si vedono — il blockquote del punto 9 pre-b28-bis, corretto a mano in questo brief).
+  distinti); exit ≠ 0 su violazione. Da eseguire come gli altri, in ogni brief. **Matching**
+  (b28-bis passo 0): per **paragrafo dewrappato** (delimitato da riga vuota e da inizio-lista),
+  soggetto e predicato entro una **finestra di prossimità** — cattura le formulazioni **spezzate
+  su due righe** (il blockquote del punto 9 pre-b28-bis è la classe che questo chiude), senza
+  unire blocchi diversi (nessun falso positivo cross-paragrafo).
 - `scripts/sweep_rounding.py` — **brief 19**, firma del doppio arrotondamento su tutto il paper,
   **registry-free**; risultato negativo (nessuna discrepanza nuova). Regex `(?<!-)-?\d+\.\d+`
   (brief 20: un `-` dopo `-` è un trattino di range, non un segno). Due punti ciechi dichiarati

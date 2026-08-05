@@ -26,14 +26,17 @@ phrasing hides:
   margin VANISHES, it does not invert).  The H1 ban is registered symmetrically next to
   the H2 ban in METHODOLOGY.md (b28-bis).
 
-HOW IT MATCHES.  Per line, a hit needs BOTH the subject (``H1``/``H2`` as a word) AND
-a matching predicate on the SAME line.  A single word is never enough: ``ipotesi
-ROVESCIATA`` (a hypothesis reversed by measurement, no H1/H2) and the many innocent
-``piu forte`` (``the strongest possible reconnection``) must NOT be flagged, and are
-not.  Same-line co-occurrence is a declared LIMITATION: a subject and predicate split
-across two lines are not caught (the pre-b28-bis roadmap blockquote at METHODOLOGY.md
-had ``H2`` on one line and ``rovesciata`` on the next -- it was corrected by hand in
-this brief, not left to the detector).
+HOW IT MATCHES.  A hit needs BOTH the subject (``H1``/``H2`` as a word) AND a matching
+predicate WITHIN A PROXIMITY WINDOW of each other in the same paragraph.  A single word
+is never enough: ``ipotesi ROVESCIATA`` (a hypothesis reversed by measurement, no
+H1/H2) and the many innocent ``piu forte`` (``the strongest possible reconnection``)
+must NOT be flagged, and are not.  Each paragraph is DEWRAPPED (its lines joined with a
+space) before searching, so a formulation split across two wrapped lines IS caught --
+the pre-b28-bis roadmap blockquote at METHODOLOGY.md had ``H2`` on one line and
+``rovesciata`` on the next, and that is exactly the class this closes (Step 0 of the
+merge brief).  Paragraphs are delimited by blank lines AND by list-item starts, so text
+from different blocks is never joined; the proximity window (MAX_GAP chars) keeps a
+distant, unrelated co-occurrence inside one long bullet from matching.
 
 EXEMPTIONS -- the part that decides whether the tool is usable.  A grep without them
 produces, on this repo's documents, a MAJORITY of false positives (the ban itself, its
@@ -115,7 +118,8 @@ def _rel(path: str) -> str:
 
 # --------------------------------------------------------------------------- #
 # Forbidden formulations: (id, subject-regex, predicate-regex, human label).
-# A LINE is a hit when subject AND predicate both match on it.  All case-insensitive.
+# A PARAGRAPH is a hit when subject and predicate both match within MAX_GAP chars of
+# each other in its dewrapped text (see scan_lines).  All case-insensitive.
 # --------------------------------------------------------------------------- #
 BANNED = [
     # -- H2, Italian --
@@ -216,49 +220,128 @@ def _license_for(source: str, line: str):
     return None
 
 
+# Subject and predicate may sit on ADJACENT wrapped lines of the same paragraph
+# (the b28-bis motivating case: the blockquote at METHODOLOGY.md:1722 had <<H2>> on
+# one line and <<rovesciata>> on the next, so the same-line scan would have missed the
+# very defect the brief was written for).  We therefore DEWRAP each paragraph (join
+# its lines with a space) before searching -- the technique the b27-bis em-dash pass
+# used -- delimiting paragraphs by blank lines AND by list-item starts, so wrapping is
+# repaired WITHIN a logical block but text from different blocks is never joined (no
+# cross-block false positives).  A PROXIMITY window then bounds how far apart the
+# subject and predicate may be, so a giant bullet that merely mentions <<H2>> early and
+# an unrelated <<cade>> 300 chars later is not a hit.
+MAX_GAP = 90  # chars between subject and predicate: > a wrapped line, << a paragraph
+
+# A markdown list item starts a new logical block even without a blank line before it.
+_LIST_ITEM = re.compile(r"^\s*(?:[-*+]\s|\d+\.\s)")
+
+
+def _split_paragraphs(numbered):
+    """``numbered``: list of (lineno, text).  Yield paragraphs (lists of the same),
+    split on blank lines AND on list-item starts (each bullet is its own block)."""
+    para = []
+    for lineno, text in numbered:
+        if text.strip() == "":
+            if para:
+                yield para
+                para = []
+            continue
+        if para and _LIST_ITEM.match(text):
+            yield para
+            para = []
+        para.append((lineno, text))
+    if para:
+        yield para
+
+
+def _dewrap(para):
+    """Join a paragraph's lines with single spaces; return (text, offsets) where
+    offsets = [(char_start, lineno), ...] maps a char offset back to its source line."""
+    parts, offsets, pos = [], [], 0
+    for i, (lineno, text) in enumerate(para):
+        if i:
+            parts.append(" ")
+            pos += 1
+        offsets.append((pos, lineno))
+        parts.append(text)
+        pos += len(text)
+    return "".join(parts), offsets
+
+
+def _lineno_at(offset, offsets):
+    ln = offsets[0][1]
+    for start, lineno in offsets:
+        if start <= offset:
+            ln = lineno
+        else:
+            break
+    return ln
+
+
+def _proximity_pairs(text, subj_re, pred_re, gap):
+    """All (subj_start, subj_end, pred_start, pred_end) pairs within ``gap`` chars
+    (either order), earliest subject first."""
+    subs = [m.span() for m in subj_re.finditer(text)]
+    preds = [m.span() for m in pred_re.finditer(text)] if subs else []
+    pairs = []
+    for ss, se in subs:
+        for ps, pe in preds:
+            if ps >= se:
+                dist = ps - se
+            elif ss >= pe:
+                dist = ss - pe
+            else:
+                dist = 0
+            if dist <= gap:
+                pairs.append((ss, se, ps, pe))
+    pairs.sort(key=lambda p: p[0])
+    return pairs
+
+
+def _classify(source, text, frozen_reason, spans, subj_start, pred_start):
+    """Status + reason for one (subject, predicate) pair in the dewrapped ``text``."""
+    if frozen_reason is not None:
+        return EXEMPT_FROZEN, frozen_reason
+    lic = _license_for(source, text)
+    if lic is not None:
+        return EXEMPT_LICENSE, lic
+    # A citation iff the operative word (the predicate) OR the subject sits inside a
+    # quotation.  Checking the predicate matters when the paragraph also carries an
+    # unquoted H1/H2 (e.g. "H1 no -- «H1 piu forte»"): the banned word is the mention.
+    if _pos_quoted(text, pred_start, spans) or _pos_quoted(text, subj_start, spans):
+        return EXEMPT_QUOTE, "formulazione entro virgolette/guillemet (citazione, non asserzione)"
+    if NEGATION_MARKERS.search(text):
+        return EXEMPT_NEGATION, "riga con marcatore di negazione/divieto"
+    return FLAGGED, ""
+
+
 def scan_lines(lines, source: str):
     """Classify every subject+predicate co-occurrence in ``lines``.
 
-    Returns a list of hit dicts: {source, line, id, label, match, status, reason}.
-    Exemptions are attached (with reason) rather than dropped, so the output is
-    auditable.
+    Works per paragraph (dewrapped, so a formulation wrapped across adjacent lines is
+    caught) with a proximity bound.  Returns hit dicts: {source, line, id, label,
+    match, status, reason}; exemptions are attached (with reason), not dropped.  When a
+    paragraph holds several pairs of one id, a genuine violation is surfaced even if a
+    citation of the same phrase sits elsewhere in the block (a real FLAGGED wins).
     """
     hits = []
     frozen_reason = FROZEN_FILES.get(source)
-    for lineno, raw in enumerate(lines, 1):
-        line = raw.rstrip("\n")
-        spans = None  # computed lazily, once per line that has a hit
+    numbered = [(i, raw.rstrip("\n")) for i, raw in enumerate(lines, 1)]
+    for para in _split_paragraphs(numbered):
+        text, offsets = _dewrap(para)
+        spans = _quote_spans(text)
         for bid, subj_re, pred_re, label in _BANNED_RES:
-            msubj = subj_re.search(line)
-            if not msubj:
+            pairs = _proximity_pairs(text, subj_re, pred_re, MAX_GAP)
+            if not pairs:
                 continue
-            mpred = pred_re.search(line)
-            if not mpred:
-                continue
-            snippet = line[min(msubj.start(), mpred.start()):
-                           max(msubj.end(), mpred.end())].strip()
-            if frozen_reason is not None:
-                status, reason = EXEMPT_FROZEN, frozen_reason
-            else:
-                lic = _license_for(source, line)
-                if lic is not None:
-                    status, reason = EXEMPT_LICENSE, lic
-                else:
-                    if spans is None:
-                        spans = _quote_spans(line)
-                    # A citation iff the operative word (the predicate) OR the subject
-                    # sits inside a quotation.  Checking the predicate matters when the
-                    # line also carries an unquoted H1/H2 earlier (e.g. "H1 no -- «H1
-                    # piu forte»"): the banned word is what is being mentioned.
-                    if (_pos_quoted(line, mpred.start(), spans)
-                            or _pos_quoted(line, msubj.start(), spans)):
-                        status, reason = EXEMPT_QUOTE, "formulazione entro virgolette/guillemet (citazione, non asserzione)"
-                    elif NEGATION_MARKERS.search(line):
-                        status, reason = EXEMPT_NEGATION, "riga con marcatore di negazione/divieto"
-                    else:
-                        status, reason = FLAGGED, ""
-            hits.append({"source": source, "line": lineno, "id": bid, "label": label,
-                         "match": snippet, "status": status, "reason": reason})
+            classified = [(p, _classify(source, text, frozen_reason, spans, p[0], p[2]))
+                          for p in pairs]
+            flagged = [c for c in classified if c[1][0] == FLAGGED]
+            (ss, se, ps, pe), (status, reason) = flagged[0] if flagged else classified[0]
+            snippet = text[min(ss, ps):max(se, pe)].strip()[:120]
+            hits.append({"source": source, "line": _lineno_at(ss, offsets), "id": bid,
+                         "label": label, "match": snippet, "status": status,
+                         "reason": reason})
     return hits
 
 
@@ -307,7 +390,9 @@ def run() -> int:
     print("Frozen files (whole-file exemption):")
     for f, reason in FROZEN_FILES.items():
         print(f"  {f}\n      {reason}")
-    print("Quotation treated as citation (subject inside a mention):")
+    print(f"Matching: per paragraph, DEWRAPPED (blank lines + list-item starts split "
+          f"blocks), subject and predicate within {MAX_GAP} chars.")
+    print("Quotation treated as citation (subject or predicate inside a mention):")
     print("  «...» (guillemets, incl. cross-line via prefix balance), "
           "\"...\" (ASCII), ``...'' (LaTeX)")
     print(f"Negation/ban markers (line-level citation): {NEGATION_MARKERS.pattern}")
@@ -323,72 +408,56 @@ def run() -> int:
 
 
 def selftest() -> int:
-    """Known-bad + known-good injection (detector discipline, brief 28-bis)."""
+    """Known-bad + known-good injection (detector discipline, brief 28-bis).
+
+    Each case is scanned as its OWN document, so paragraphs never bleed together.
+    """
     print("check_phrasings.py --selftest -- injected known-bad/known-good\n")
 
-    # Pass A: the core lines, scanned AS IF they were METHODOLOGY.md (so the
-    # licensed-shorthand registry, which is keyed to that file, is in play).
-    lines = [
-        # [1] bare IT H1 violation                                   -> FLAGGED
-        "Risultato del brief: H1 esce più forte, e basta.",
-        # [2] bare IT H2 violation                                   -> FLAGGED
-        r"In sintesi: H2 rovesciata via Pigou.",
-        # [3] bare EN violation                                      -> FLAGGED
-        r"The upshot is that H1 comes out stronger than before.",
-        # [4] SAME H1 phrase inside a citation of the ban (guillemet + Mai) -> EXEMPT
-        "Mai scrivere «H1 esce più forte»: è un capo del bracket.",
-        # [5] ASCII-quoted ban citation with 'never'                 -> EXEMPT
-        r'The report never writes "H2 falls" or "H2 holds".',
-        # [6] the licensed shorthand line (matches the registry substring) -> EXEMPT
-        "- H2, forma a due tempi (b17): il MECCANISMO è UCCISO e la CONCLUSIONE è ROVESCIATA -- due",
-        # [7] innocent 'piu forte' with NO H1                        -> not a hit
-        "E il ricongiungimento più forte possibile con Teglio.",
-        # [8] 'ipotesi rovesciata' with NO H1/H2                     -> not a hit
-        "Punto 10-bis: ipotesi ROVESCIATA -- a beta<0.1 zero punti wage-led.",
-        # [9] neutral EN 'holds' with no H2                          -> not a hit
-        r"The committee holds a meeting; H3 is irrelevant.",
-        # [10] ban citation by NEGATION MARKER, not quoted (<<vietato>>) -> EXEMPT
-        "Vietato asserire che H1 esce più forte senza qualificarlo.",
-    ]
-    hits = scan_lines(lines, "METHODOLOGY.md")
-    by_line = {}
-    for h in hits:
-        by_line.setdefault(h["line"], []).append(h)
+    def st(lines, source="test.md"):
+        return {h["status"] for h in scan_lines(lines, source)}
 
-    def status_on(n):
-        return {h["status"] for h in by_line.get(n, [])}
-
-    # Pass B: a real violation inside the frozen file -> EXEMPT (frozen record).
-    frozen_hits = scan_lines(
-        [r"    * ... -> H1 comes out STRONGER: it survives the respecification"],
-        "scripts/run_brief17.py")
-    frozen_ok = bool(frozen_hits) and all(h["status"] == EXEMPT_FROZEN
-                                          for h in frozen_hits)
+    def exempt_only(s):
+        return bool(s) and FLAGGED not in s and s <= set(_EXEMPT)
 
     checks = [
+        # -- known-BAD: must FLAG --
         ("[1] bare IT <<H1 esce piu forte>> is FLAGGED",
-         status_on(1) == {FLAGGED}),
+         st(["Risultato del brief: H1 esce più forte, e basta."]) == {FLAGGED}),
         ("[2] bare IT <<H2 rovesciata>> is FLAGGED",
-         FLAGGED in status_on(2)),
+         FLAGGED in st(["In sintesi: H2 rovesciata via Pigou."])),
         ("[3] bare EN <<H1 comes out stronger>> is FLAGGED",
-         status_on(3) == {FLAGGED}),
-        ("[4] SAME phrase inside a ban citation is EXEMPT (not flagged)",
-         bool(status_on(4)) and FLAGGED not in status_on(4)
-         and status_on(4) <= set(_EXEMPT)),
+         st(["The upshot is that H1 comes out stronger than before."]) == {FLAGGED}),
+        # -- known-GOOD: citations of the ban, must be EXEMPT --
+        ("[4] SAME phrase inside a guillemet ban citation is EXEMPT",
+         exempt_only(st(["Mai scrivere «H1 esce più forte»: è un capo del bracket."]))),
         ("[5] ASCII-quoted <<H2 falls/holds>> citation is EXEMPT",
-         bool(status_on(5)) and FLAGGED not in status_on(5)),
+         exempt_only(st([r'The report never writes "H2 falls" or "H2 holds".']))),
         ("[6] licensed shorthand is EXEMPT (licensed)",
-         EXEMPT_LICENSE in status_on(6) and FLAGGED not in status_on(6)),
-        ("[7] innocent 'piu forte' without H1 is NOT a hit",
-         status_on(7) == set()),
-        ("[8] 'ipotesi rovesciata' without H1/H2 is NOT a hit",
-         status_on(8) == set()),
-        ("[9] neutral 'holds' without H2 is NOT a hit",
-         status_on(9) == set()),
+         EXEMPT_LICENSE in st(
+             ["- H2, forma a due tempi (b17): il MECCANISMO è UCCISO e la "
+              "CONCLUSIONE è ROVESCIATA -- due"], "METHODOLOGY.md")),
         ("[10] ban citation by negation marker (unquoted) is EXEMPT",
-         EXEMPT_NEGATION in status_on(10) and FLAGGED not in status_on(10)),
-        ("[B] a violation inside run_brief17.py is EXEMPT (frozen record)",
-         frozen_ok),
+         EXEMPT_NEGATION in st(
+             ["Vietato asserire che H1 esce più forte senza qualificarlo."])),
+        ("[11] a violation inside run_brief17.py is EXEMPT (frozen record)",
+         st(["    * ... -> H1 comes out STRONGER: it survives the respecification"],
+            "scripts/run_brief17.py") == {EXEMPT_FROZEN}),
+        # -- look-alikes: must NOT be hits --
+        ("[7] innocent 'piu forte' without H1 is NOT a hit",
+         st(["E il ricongiungimento più forte possibile con Teglio."]) == set()),
+        ("[8] 'ipotesi rovesciata' without H1/H2 is NOT a hit",
+         st(["Punto 10-bis: ipotesi ROVESCIATA -- a beta<0.1 zero wage-led."]) == set()),
+        ("[9] neutral 'holds' without H2 is NOT a hit",
+         st(["The committee holds a meeting; H3 is irrelevant."]) == set()),
+        # -- Step 0: cross-line matching, and its cross-paragraph guard --
+        ("[12] forbidden phrase WRAPPED across two lines is FLAGGED",
+         st(["Il probe uccide il meccanismo di H2, e la sua",
+             "conclusione è rovesciata via Pigou."]) == {FLAGGED}),
+        ("[13] subject and predicate in DIFFERENT paragraphs are NOT joined",
+         st(["Un paragrafo che nomina soltanto H2.",
+             "",
+             "Un altro in cui qualcosa è rovesciata."]) == set()),
     ]
     ok = True
     for label, passed in checks:
