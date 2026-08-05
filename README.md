@@ -20,7 +20,7 @@ sixteen-parameter global sensitivity analysis. It is an exploratory
 computational laboratory for *qualitative* macroeconomics, not a calibrated
 forecast.
 
-The full write-up is in [`paper/`](paper/), while the paper can be found [`here`](PaperV1.pdf)
+The full write-up is in [`paper/`](paper/), while the paper can be found by clicking [`here`](PaperV1.pdf) or in the main branch of the repo.
 
 ## Install
 
