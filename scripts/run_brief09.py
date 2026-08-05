@@ -583,10 +583,42 @@ def _write(df, out, name):
     return df
 
 
+def figures(out):
+    """Redraw the brief-09 figures FROM THE COMMITTED CSVs, running no simulation.
+
+    Every other ``--phase`` rebuilds the grid, which would re-touch the CSVs (and, given the
+    documented ULP environment drift, move their last digits).  This path exists so a figure
+    can be regenerated with the model results held fixed: it reads ``results/ces_b09_*.csv``,
+    calls only the ``_plot_*`` functions, and writes NO ``.csv``.  The collapse map is the
+    primary target and is REQUIRED - a missing CSV is a hard error (nonzero exit), so a stale
+    checkout cannot silently produce a half-drawn figure; the other three are redrawn when
+    present so the figure set stays consistent, and skipped (declared) otherwise.
+    """
+    plan = [
+        # csv name,                     png name,                    plotter,             required
+        ("ces_b09_collapse_map.csv",    "ces_b09_collapse_map.png",  _plot_collapse_map,  True),
+        ("ces_b09_dose_response.csv",   "ces_b09_dose_response.png", _plot_dose_response, False),
+        ("ces_b09_sigma_star.csv",      "ces_b09_sigma_star_rr.png", _plot_sigma_star,    False),
+        ("ces_b09_trace.csv",           "ces_b09_trace.png",         _plot_trace,         False),
+    ]
+    print(f"Phase figures - redraw from committed CSVs in {out} (no simulation, no CSV written):")
+    for csv_name, png_name, plotter, required in plan:
+        path = os.path.join(out, csv_name)
+        if not os.path.exists(path):
+            if required:
+                print(f"  ERROR: {csv_name} not found in {out} - cannot draw the collapse map.")
+                return 1
+            print(f"  {csv_name} not found - skipping {png_name} (declared)")
+            continue
+        p = plotter(pd.read_csv(path), os.path.join(out, png_name))
+        print(f"  wrote {os.path.basename(p)}  (from {csv_name}, no simulation)")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default="results", help="output directory (default: results)")
-    ap.add_argument("--phase", choices=["1", "2", "all"], default="all")
+    ap.add_argument("--phase", choices=["1", "2", "figures", "all"], default="all")
     ap.add_argument("--workers", type=int, default=None,
                     help="process-pool size (default: all cores; 1 = serial)")
     ap.add_argument("--smoke", action="store_true",
@@ -598,6 +630,10 @@ def main():
         out = os.path.join(out, "smoke")
     os.makedirs(out, exist_ok=True)
     W = args.workers
+
+    if args.phase == "figures":
+        # Presentation-only path: redraw from the committed CSVs, never simulate (brief 29).
+        sys.exit(figures(out))
 
     if args.smoke:
         # End-to-end shape/plumbing check only - NOT a scientific result. Reduced grid and
