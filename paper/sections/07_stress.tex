@@ -338,18 +338,27 @@ firms do not stay identical, because consumption links are random. The
 capital share of the largest three firms starts at $0.30$ and settles at
 $0.35$--$0.38$. The defensible statement is that the firm side is
 quasi-representative in its aggregates, not in its cross-section.
-\Cref{fig:heterogeneity} shows the cliff and the cascade together.
+\Cref{fig:heterogeneity} shows the cliff and \cref{fig:heterogeneity-domino}
+the domino behind it.
 
 \begin{figure}[htbp]
 \centering
-\begin{subfigure}{0.49\textwidth}
-  \includegraphics[width=\linewidth]{ces_b10_aggregates_spread.png}
-  \caption{The cliff.}
-\end{subfigure}\hfill
-\begin{subfigure}{0.49\textwidth}
-  \includegraphics[width=\linewidth]{ces_b10_domino_trace.png}
-  \caption{The domino.}
-\end{subfigure}
-\caption{Firm heterogeneity: aggregates are stable until they are not.}
+\includegraphics[width=\textwidth]{ces_b10_aggregates_spread.png}
+\caption{Firm heterogeneity: aggregates are stable until they are not.
+Steady-state unemployment, output, capital and dead firms against the
+productivity spread, with inter-seed bands, one line per scenario. Below the
+viability threshold the aggregates lie inside the homogeneous ($\text{spread}=0$)
+inter-seed band; one grid step above it every firm is dead.}
 \label{fig:heterogeneity}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{ces_b10_domino_trace.png}
+\caption{The domino behind the cliff (headline scenario $c_0=1.0$, $\sigma=0.5$,
+$\eta=0.10$; productivity spread $0.20$; seed $0$). Left: the weakest firm
+decapitalises first, then the strongest. Right: unemployment climbs as firms die,
+through the demand externality---laid-off workers lose their income---and the
+spending shares left pointing at the dead firm.}
+\label{fig:heterogeneity-domino}
 \end{figure}
