@@ -1805,7 +1805,18 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     dell'annotazione; l'**overlap è risolto** e ogni etichetta è a sé, leggibile a zoom modesto.
     La CI del paper (0 error LaTeX / overfull / undefined) **non è verificabile in locale**
     (nessun motore, build solo in CI, §3): da confermare sul PDF di CI dopo l'eventuale push.
-  - **STOP pre-push su `main`**: nessun push senza conferma esplicita di Mattia.
+  - **Push FATTO su conferma esplicita di Mattia** (`origin/main`): i 6 commit rebasati puliti
+    sopra 3 commit remoti (README + `Add files via upload`), file disgiunti, zero conflitti.
+  - **CORREZIONE post-push (segnalata da Mattia): il paper embedda `paper/figures/`, NON
+    `results/`.** `paper/preamble.tex` ha `\graphicspath{{figures/}{results/}{./}}` → LaTeX
+    risolve `paper/figures/` per PRIMO. Ogni figura del paper è una **copia** di `results/`
+    tenuta lì (tutte le altre b09/b13 erano già SAME). Il brief aveva rigenerato **solo**
+    `results/`, lasciando le due copie in `paper/figures/` **stale** (le vecchie, 69 395 B /
+    55 351 B): il PDF e la vista locale mostravano ancora la figura vecchia. **Sincronizzate**
+    entrambe (`paper/figures/ces_b09_collapse_map.png` = 78 670 B, `…ces_b13_morris_mu_sigma.png`
+    = 68 343 B, ora SAME di `results/`). **Regola per i prossimi brief-figura: una figura del
+    paper si aggiorna in DUE posti** — `results/` (dal driver) **e** la copia in `paper/figures/`
+    — perché il `graphicspath` preferisce `figures/`.
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
