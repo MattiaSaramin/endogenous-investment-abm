@@ -554,6 +554,74 @@ def analyse_byproducts(tag="sobol"):
     return out
 
 
+def _annotate_morris_panel(ax, blk, fontsize=7.5, label_frac=0.05,
+                           cluster_min=3, near_frac=0.06, right_frac=0.75):
+    """Deterministic, dependency-free labelling of one Morris ``(mu*, sigma)`` panel.
+
+    Points that SHARE a coordinate are grouped before annotation (brief 29): SALib places
+    every parameter with no measured effect at exactly ``(mu*, sigma) = (0, 0)`` and can land
+    two real parameters on the same point, so a per-point label stacks several strings on top
+    of each other and no per-point offset can separate them.  One label per group instead —
+    the joined names for a small group, a COUNT (with the names moved to the LaTeX caption of
+    fig:sa) for a large cluster — makes the coincidence visible rather than hidden.  The count
+    is read at runtime, never written by hand.
+
+    Overlap between DISTINCT groups is then resolved by a fixed rule, not a random jitter
+    (``adjustText`` is deliberately not a dependency): groups are ordered by ``mu*`` and, when
+    a group falls within ``near_frac`` of the axis range of an already-drawn group on BOTH
+    axes, its label alternates down/up and right/left.  Groups near the right edge are
+    right-anchored with a negative x offset so the label cannot spill outside the axes.
+
+    A singleton whose ``mu*`` is at or below ``label_frac`` of the panel maximum is left
+    unlabelled — the declared labelling threshold, kept because grouping does not thin the
+    ``slope_raw`` panel (its points are all distinct) and labelling its nine near-origin
+    singletons would re-clutter the corner.  The threshold is DECLARED in the fig:sa caption.
+
+    Returns one dict per drawn label ``{"label", "names", "mu_star"}`` for the run report.
+    """
+    xs = blk["mu_star"].to_numpy(dtype=float)
+    ys = blk["sigma"].to_numpy(dtype=float)
+    xr = float(xs.max() - xs.min()) or 1.0
+    yr = float(ys.max() - ys.min()) or 1.0
+    xmin, xmax = float(xs.min()), float(xs.max())
+    thresh = label_frac * xmax
+
+    groups = {}
+    for name, mx, sg in zip(blk["parameter"], xs, ys):
+        groups.setdefault((round(float(mx), 6), round(float(sg), 6)), []).append(str(name))
+    items = [(mx, sg, sorted(names)) for (mx, sg), names in groups.items()]
+    items.sort(key=lambda t: (-t[0], t[1]))          # mu* descending, deterministic
+
+    placed, drawn, toggle = [], [], 0
+    for mx, sg, names in items:
+        n = len(names)
+        if n >= cluster_min:
+            val = "0" if round(mx, 6) == 0.0 else f"{mx:.3g}"
+            label = f"{n} parameters at $\\mu^*={val}$"
+        elif n > 1:
+            label = ", ".join(names)
+        else:
+            if mx <= thresh:                          # singleton below the declared threshold
+                continue
+            label = names[0]
+
+        near = any(abs(mx - px) < near_frac * xr and abs(sg - py) < near_frac * yr
+                   for px, py in placed)
+        if mx >= xmin + right_frac * xr:
+            xytext, ha = (-4, 4), "right"             # right edge: keep the label inside
+        elif near:
+            # Start DOWN so a near group splits from the non-near default (which is UP).
+            xytext, ha = ((4, -10), "right") if toggle % 2 == 0 else ((4, 4), "left")
+            toggle += 1
+        else:
+            xytext, ha = (4, 4), "left"
+        ax.annotate(label, (mx, sg), fontsize=fontsize, xytext=xytext,
+                    textcoords="offset points", ha=ha)
+        placed.append((mx, sg))
+        drawn.append({"label": label, "names": names, "mu_star": mx})
+    return drawn
+
+
 def make_figures(tag="sobol"):
     """Three figures: Morris mu*-sigma, S1/ST bars with CI, viability vs the top driver."""
     import matplotlib
@@ -564,16 +632,21 @@ def make_figures(tag="sobol"):
     mpath = os.path.join(RESULTS, "ces_b13_morris.csv")
     if os.path.exists(mpath):
         m = pd.read_csv(mpath)
-        fig, axes = plt.subplots(1, m["qoi"].nunique(), figsize=(11, 4.6), squeeze=False)
+        fig, axes = plt.subplots(1, m["qoi"].nunique(), figsize=(11, 5.2), squeeze=False)
         for ax, (q, blk) in zip(axes[0], m.groupby("qoi")):
             ax.scatter(blk["mu_star"], blk["sigma"], s=26)
-            for _, r in blk.iterrows():
-                if r["mu_star"] > 0.05 * blk["mu_star"].max():
-                    ax.annotate(r["parameter"], (r["mu_star"], r["sigma"]),
-                                fontsize=7, xytext=(3, 3), textcoords="offset points")
+            drawn = _annotate_morris_panel(ax, blk)
             ax.set_xlabel(r"$\mu^*$ (influence)")
             ax.set_ylabel(r"$\sigma$ (non-linearity / interaction)")
             ax.set_title(f"Morris screening — {q}", fontsize=10)
+            clusters = [d for d in drawn if len(d["names"]) >= 3]
+            msg = (f"  Morris[{q}]: {len(drawn)} labels of {blk['parameter'].nunique()} "
+                   f"parameters")
+            if clusters:
+                c = clusters[0]
+                msg += (f"; cluster of {len(c['names'])} at mu*={c['mu_star']:.3g}: "
+                        f"{', '.join(c['names'])}")
+            print(msg)
         fig.suptitle("Level 1: which parameters matter at all", fontsize=11)
         fig.tight_layout()
         p = os.path.join(RESULTS, "ces_b13_morris_mu_sigma.png")
