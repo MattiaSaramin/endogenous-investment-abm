@@ -20,10 +20,7 @@ sixteen-parameter global sensitivity analysis. It is an exploratory
 computational laboratory for *qualitative* macroeconomics, not a calibrated
 forecast.
 
-The full write-up is in [`paper/`](paper/). There is no local TeX engine, so the
-compiled PDF is built **only in CI**: download it as the `paper-pdf` artifact of
-the latest [**Build paper**](https://github.com/MattiaSaramin/endogenous-investment-abm/actions/workflows/paper.yml)
-run.
+The full write-up is in [`paper/`](paper/), while the paper can be found [`here`](PaperV1.pdf)
 
 ## Install
 
