@@ -1818,6 +1818,88 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     paper si aggiorna in DUE posti** — `results/` (dal driver) **e** la copia in `paper/figures/`
     — perché il `graphicspath` preferisce `figures/`.
 
+- **Brief 30 — SCALA di stampa delle figure (solo PRESENTAZIONE, come il b29; nessun `src/`
+  semantico, nessun run del modello, nessun numero mosso; 569 test invariati). Commit locali
+  su `main`, STOP pre-push.** Il b29 riparò il *contenuto* di due figure; questo ripara la
+  *scala*, difetto distinto: in `PaperV1.pdf` (post-b29, HEAD `8affccc`) sette figure su nove
+  erano generate a 11–18 in di larghezza e stampate a 3–6, con `r = larghezza_stampata/figsize
+  ∈ [0.17, 0.47]` e font a **2.7–3.3 pt** su pagina. Fig. 4 (`ces_b07_sigma_star_eta`, figsize
+  7.5, r=0.67) era l'unica ben costruita — **controllo positivo** dentro lo stesso paper. Fix
+  nel **generatore**, mai ritoccando il PNG; le figure si rigenerano **dai CSV già committati**.
+  - **`for_paper: bool = False` su ogni plotter toccato (invariante di annidamento esatto).**
+    `for_paper=False` = comportamento di oggi, **VERIFICATO pixel-identico** al PNG committato
+    (`PIL`→`numpy`, `max|Δ|=0` su tutte e 8 le figure + `ces_b13_sobol_byproducts` non toccata;
+    confronto contro i blob di HEAD). `for_paper=True` = figura del paper: `figsize ≈ larghezza
+    di stampa`, **r sale a [0.76, 0.84]**, font espliciti <9 → 9, `suptitle` di laboratorio
+    soppressi. La leva è il `figsize` di generazione, non la scatola LaTeX (allargare da solo
+    moltiplica r e basta).
+  - **Disposizione, non solo larghezza** (il parametro libero): `ces_b10_aggregates_spread`
+    1×4 → **2×2** (7.4,5.6); `ces_b14_sobol_indices` 1×3 → **3×1** (6.6,8.2, 0.82\tw) — a tre
+    pannelli affiancati le etichette lunghe (`benefit_replacement_rate`) toccavano le barre,
+    impilati hanno larghezza piena. Le altre invariate di layout, solo `figsize`/`fontsize`.
+  - **Task 0 prima dell'estetica** (come b29/b21): `run_brief10.py` non aveva percorso di sola
+    figura (`main()` monolitico rifà 5 CSV) → **`--phase figures`** modellata su
+    `run_brief09.figures` (legge i CSV, chiama solo i plotter, **non scrive `.csv`**, esce ≠0 se
+    un CSV richiesto manca). `git status results/*.csv` **vuoto** dopo `--phase figures`.
+  - **DEBITO CHIUSO — sincronizzazione `paper/figures/` UNIFORMATA (chiude la classe di drift del
+    b29 post-push).** Il b29 dovette sincronizzare a mano (`8affccc`) perché b09/b10/b13
+    rigeneravano solo `results/`. Ora, **come il b14**, i tre driver fanno `shutil.copyfile` verso
+    `paper/figures/` dopo ogni figura che **entra nel paper** (b09 `sigma_star_rr`/`trace`, b13
+    `byproducts`: non nel paper, non copiate). Invariante b22-bis: uno snapshot tracciato segue la
+    sua sorgente.
+  - **`ces_sign_frontier` (Fig 3): stesso difetto del b29, figura che il b29 non guardava.**
+    Griglia σ **non uniforme** (10 nodi) da `ces_derivatives.csv`, **9 celle su 40 non viable**,
+    tick di default su σ mai simulati. Ma assi tenuti **METRICI** (al contrario del b09): il
+    `contour(levels=[0.0])` fra due nodi **è il contenuto** (è la frontiera del segno) e in
+    spazio-indice sarebbe privo di senso. Quindi tick **solo sui nodi misurati** + un marcatore su
+    ogni cella misurata (31/40). Caption `fig:frontier` riscritta (griglia non uniforme, 9 celle
+    vuote, contorno interpolato, chiave colore). **Unica figura il cui PNG committato NON si
+    riproduce** (≈30% di pixel diversi): è un vecchio artifact brief-04 da **notebook**, mai
+    rigenerato, precedente all'attuale matplotlib → `for_paper=False` verificato contro una
+    **baseline current-code** catturata prima del refactoring, non contro il PNG stale.
+  - **Percorsi di sola figura, tutti senza simulazione:** `run_brief09 --phase figures`,
+    `run_brief10 --phase figures`, `run_brief13 --phase report`, `run_brief14 --phase figures`,
+    nuovo `scripts/make_fig_sign_frontier.py` (legge `ces_derivatives.csv`,
+    `plot_sign_frontier(None, deriv, for_paper=True)`, copia in `paper/figures/`) — dà a Fig 3 un
+    **generatore committato** (regola b20: ogni figura del paper ne ha uno).
+  - **BLOCCO DICHIARATO — Fig. 2 (`retention_sweep`) fuori scope, DEBITO NUOVO.** `retention_sweep.png`
+    **non ha generatore committato**: `grep -rn savefig src/ scripts/` non lo produce, l'unica
+    sorgente è la **cella 6 del notebook** `01_Endogenous_Investment.ipynb`, che **riesegue il
+    modello** in un loop su 7 ρ e disegna inline a `figsize=(15,4)`. Ridisegnarla richiederebbe un
+    run → **fuori da un brief in cui nessun numero si muove**. È la §5 («ogni artifact committato
+    ha un generatore committato») applicata alle **figure**, e qui **non è soddisfatta** — debito
+    distinto dal «debito notebook» (là è il consolidamento del notebook; qui una figura stampata
+    la cui unica sorgente riesegue il modello, senza artifact intermedio committato). La caption
+    già dichiara «Illustrative three-seed run» → debito di **riproducibilità**, non di correttezza.
+    Chiusura proposta (brief futuro): far scrivere alla cella un CSV committabile ed estrarre
+    `make_fig_retention_sweep.py`. `model_flow` (Fig 1) e `ces_b07_sigma_star_eta` (Fig 4) fuori
+    scope per costruzione.
+  - **Deviazioni dichiarate (con l'aritmetica, non nascoste).** (a) `ces_b13_morris_mu_sigma` a
+    **(7.6,3.8)** e non (7.4,3.6) del piano: a 3.6×7.4 due coppie di etichette a font 9 si
+    sovrapponevano (`(wealth_effect,c0)`, `(beta,eta)`); allargato a 7.6 (< cap 7.7 in, r=0.81) →
+    **0 overlap**, font **≥ 8** (risolto per figsize, mai abbassando sotto 8, §2). (b)
+    `make_fig_sign_frontier.py` spostato dal commit 1 al **commit 2**: dipende da `for_paper=True`
+    e il suo PNG committato è stale, incompatibile con un commit pixel-identico. (c) Titoli
+    accorciati per `for_paper` su Fig 3 (sx) e domino (dx): a larghezza ridotta traboccavano /
+    collidevano, il testo tolto entra in caption. `_annotate_morris_panel` / `_fit_morris_labels`
+    (costanti in frazione d'asse) **non toccati** — cambiarli avrebbe rotto il `for_paper=False`.
+  - **Paper toccato IN BLOCCO, una sezione per commit** (invariante b22-ter): **3 figure diventano
+    6** (`fig:heterogeneity`+`-domino`, `fig:government`+`-collapse`, `fig:sa`+`fig:sa-sobol`;
+    label esistenti CONSERVATE sulla prima); Fig 8 (`fig:sa-b14`, label conservata) a `0.82\tw`;
+    caption ridivise senza perdere frasi; prosa «together» / «side by side» / «right panel»
+    corretta; riferimenti (`fig:sa`→`fig:sa-sobol` dove il referente è il pannello Sobol)
+    verificati. La provenienza dei `suptitle` soppressi (scenario/spread/seed del domino) spostata
+    in caption, dove è citabile.
+  - **Invarianti verificati.** `git status results/` **solo `.png`**, **nessun `.csv`** (il modello
+    è fermo); `ces_b13_environment.json` (scritto da `--phase report` prima del dispatch)
+    **byte-identico** in questo run — può muoversi, dichiarato. `pytest` **569**; `verify_paper`
+    **59 OK / 0 FAIL / 0 MISMATCH** (1 AMBIGUOUS **preesistente** su `tab:sobol` riga 99,
+    confermato identico su HEAD); `coherence` **0 DIVERGENT** (+ `RESULTS.md` untracked noto).
+    **Nessuna dipendenza nuova** (niente `adjustText`). Tabella `r` ricalcolata a posteriori sui
+    PNG effettivi (r ∈ [0.76, 0.84], font 9 pt → 6.9–7.6 pt su pagina). Leggibilità confermata su
+    **proof a dimensione di stampa** (non committati); CI del paper (0 error LaTeX / overfull /
+    undefined) da confermare sul PDF di CI dopo l'eventuale push.
+
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
 **Successivi:** ~~8) produttività eterogenea tra imprese~~ — **CHIUSO dal brief 10:
@@ -2125,7 +2207,9 @@ negoziabili.
   raggruppati per σ (`run_grid_panels` prende una sola lista `sigmas`). Byte-check spread=0
   vs `ces_b05`/`ces_b07`/`ces_b09` (artifact-su-disco, 3/3 dev=0.0); soglie di viability a
   convenzione dichiarata (`THRESHOLD_FRAC`=0.5) e trace del domino con K dell'impresa più
-  debole e più forte; rigenera `results/ces_b10_*.csv` + 2 figure
+  debole e più forte; rigenera `results/ces_b10_*.csv` + 2 figure. **`--phase figures`**
+  (brief 30) ridisegna le 2 figure dai CSV committati **senza** rieseguire il probe (non
+  scrive `.csv`) e sincronizza `paper/figures/`
 - `scripts/compute_anchoring_ratios.py` — **brief 11**, l'unico codice nuovo del brief
   e **non un driver di simulazione**: legge i panel già committati
   (`ces_b05_stage_a_panel.csv` → cella anchor, `ces_b07_stage_a_panel.csv` → cella
@@ -2212,8 +2296,15 @@ negoziabili.
   off≡on (`P≡1` per costruzione) ed emette una riga sola. Stampa su stdout, blocco inline nel `.tex`
   col marcatore `do not hand-edit` sulla riga `\midrule`. **Seconda tabella del paper con generatore
   committato** (dopo `tab:sobol`)
+- `scripts/make_fig_sign_frontier.py` — **brief 30**, ricostruisce `fig:frontier` (Fig 3) da
+  `results/ces_derivatives.csv` **senza simulazione** (`plot_sign_frontier(None, deriv,
+  for_paper=True)`: assi metrici, tick solo sui nodi misurati, marcatore su ogni cella misurata),
+  scrive `results/ces_sign_frontier.png` e copia in `paper/figures/`. **Primo generatore committato
+  di questa figura** (prima solo da notebook)
 - `notebooks/01_Endogenous_Investment.ipynb` — sweep ρ a σ=1 (wage-led) + sweep σ
-  con sign frontier; figure `retention_sweep.png`, `ces_sign_frontier.png`
+  con sign frontier; figura `retention_sweep.png` (**debito b30: unica sorgente, riesegue il
+  modello, nessun generatore committato**). `ces_sign_frontier.png` ora ha il generatore
+  committato `make_fig_sign_frontier.py` (brief 30)
 - `results/` — output misurati committati. `ces_b21_*.csv` (brief 21: `stage_a_panel`,
   `byte_check`, `sigma_star_eta`, `collapse_c0_2`, `h1_rho_star`, `pigou_c0_1`) +
   `ces_b21_environment.json` + 2 figure → rigenerati da `run_brief21.py` (`--phase report` non
