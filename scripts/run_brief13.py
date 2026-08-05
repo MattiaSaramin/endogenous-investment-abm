@@ -577,7 +577,9 @@ def _annotate_morris_panel(ax, blk, fontsize=7.5, label_frac=0.05,
     ``slope_raw`` panel (its points are all distinct) and labelling its nine near-origin
     singletons would re-clutter the corner.  The threshold is DECLARED in the fig:sa caption.
 
-    Returns one dict per drawn label ``{"label", "names", "mu_star"}`` for the run report.
+    Returns ``(drawn, anns)``: one dict per drawn label ``{"label", "names", "mu_star"}`` for
+    the run report, and the ``Annotation`` objects so :func:`_fit_morris_labels` can measure
+    their rendered bboxes and pull any that spill outside the axes back inside.
     """
     xs = blk["mu_star"].to_numpy(dtype=float)
     ys = blk["sigma"].to_numpy(dtype=float)
@@ -592,7 +594,7 @@ def _annotate_morris_panel(ax, blk, fontsize=7.5, label_frac=0.05,
     items = [(mx, sg, sorted(names)) for (mx, sg), names in groups.items()]
     items.sort(key=lambda t: (-t[0], t[1]))          # mu* descending, deterministic
 
-    placed, drawn, toggle = [], [], 0
+    placed, drawn, anns, toggle = [], [], [], 0
     for mx, sg, names in items:
         n = len(names)
         if n >= cluster_min:
@@ -615,11 +617,93 @@ def _annotate_morris_panel(ax, blk, fontsize=7.5, label_frac=0.05,
             toggle += 1
         else:
             xytext, ha = (4, 4), "left"
-        ax.annotate(label, (mx, sg), fontsize=fontsize, xytext=xytext,
-                    textcoords="offset points", ha=ha)
+        anns.append(ax.annotate(label, (mx, sg), fontsize=fontsize, xytext=xytext,
+                                textcoords="offset points", ha=ha))
         placed.append((mx, sg))
         drawn.append({"label": label, "names": names, "mu_star": mx})
-    return drawn
+    return drawn, anns
+
+
+#: Vertical offsets (in points) tried, in order, when a spilling Morris label is re-anchored
+#: to grow rightward.  DOWN first, deepening, then UP: down keeps the alternation direction
+#: the anti-overlap rule chose, and the measured case (``benefit_replacement_rate`` wedged
+#: between ``eta`` just left and ``beta`` just below) only clears once the label drops below
+#: ``beta`` (``-18``); every UP offset there collides with ``capitalist_mpc``.
+_FIT_DY_CANDIDATES = (-10, -18, -26, -34, 12, 20, 28, 36)
+
+
+def _fit_morris_labels(fig, panel_anns, tol=0.5):
+    """Pull any Morris label that spills past its axes back inside, measured after layout.
+
+    The offset rule in :func:`_annotate_morris_panel` can right-anchor a long label at a
+    low-``mu*`` point — ``benefit_replacement_rate`` on ``slope_raw`` is the measured case,
+    right-anchored by the anti-overlap toggle and then extending ~70 px left of the left
+    spine.  An offset alone cannot see this; only a rendered bbox can.  So after
+    ``fig.canvas.draw()`` this switches any label whose left edge falls outside the left spine
+    to ``ha="left"`` (grow INTO the axes) and searches :data:`_FIT_DY_CANDIDATES` for the first
+    vertical offset that is both inside the axes and clear of every other label in the panel —
+    because a rightward-growing label can collide with a neighbour the right-anchored version
+    cleared.  If none is fully clear it keeps the in-bounds offset with the fewest overlaps.
+    Deterministic, no new dependency.  Returns ``(n_corrected, outside, overlaps)`` and prints
+    them so the run reports zero labels outside the axes AND zero label overlaps.
+    """
+    from collections import defaultdict
+
+    def bb(a):
+        return a.get_window_extent(renderer=fig.canvas.get_renderer())
+
+    def inside(a, ax):
+        A, ab = bb(a), ax.get_window_extent()
+        return (A.x0 >= ab.x0 - tol and A.x1 <= ab.x1 + tol
+                and A.y0 >= ab.y0 - tol and A.y1 <= ab.y1 + tol)
+
+    def n_hits(a, siblings):
+        A = bb(a)
+        return sum(b is not a and not (A.x1 <= (B := bb(b)).x0 or B.x1 <= A.x0
+                                       or A.y1 <= B.y0 or B.y1 <= A.y0)
+                   for b in siblings)
+
+    fig.canvas.draw()
+    by_ax = defaultdict(list)
+    for ax, a in panel_anns:
+        by_ax[ax].append(a)
+
+    corrected = 0
+    for ax, ann in panel_anns:
+        if bb(ann).x0 >= ax.get_window_extent().x0:
+            continue                                  # not spilling past the left spine
+        ann.set_ha("left")                            # grow rightward, into the axes
+        best = None
+        for dy in _FIT_DY_CANDIDATES:
+            ann.xyann = (4, dy)
+            fig.canvas.draw()
+            if not inside(ann, ax):
+                continue
+            nov = n_hits(ann, by_ax[ax])
+            if nov == 0:
+                best = (dy, 0)
+                break                                 # first fully-clear slot wins
+            if best is None or nov < best[1]:
+                best = (dy, nov)                      # remember least-bad in-bounds option
+        if best is not None:
+            ann.xyann = (4, best[0])
+        corrected += 1
+    fig.canvas.draw()
+
+    outside = [a.get_text() for ax, a in panel_anns
+               if bb(a).x0 < ax.get_window_extent().x0 - tol
+               or bb(a).x1 > ax.get_window_extent().x1 + tol]
+    overlaps = []
+    for sibs in by_ax.values():
+        for i in range(len(sibs)):
+            for j in range(i + 1, len(sibs)):
+                A, B = bb(sibs[i]), bb(sibs[j])
+                if not (A.x1 <= B.x0 or B.x1 <= A.x0 or A.y1 <= B.y0 or B.y1 <= A.y0):
+                    overlaps.append((sibs[i].get_text(), sibs[j].get_text()))
+    print(f"  Morris label bounds: {corrected} spill(s) corrected; "
+          f"{len(outside)} outside axes; {len(overlaps)} label overlaps"
+          + (f" {overlaps}" if overlaps else ""))
+    return corrected, outside, overlaps
 
 
 def make_figures(tag="sobol"):
@@ -633,9 +717,11 @@ def make_figures(tag="sobol"):
     if os.path.exists(mpath):
         m = pd.read_csv(mpath)
         fig, axes = plt.subplots(1, m["qoi"].nunique(), figsize=(11, 5.2), squeeze=False)
+        panel_anns = []
         for ax, (q, blk) in zip(axes[0], m.groupby("qoi")):
             ax.scatter(blk["mu_star"], blk["sigma"], s=26)
-            drawn = _annotate_morris_panel(ax, blk)
+            drawn, anns = _annotate_morris_panel(ax, blk)
+            panel_anns += [(ax, a) for a in anns]
             ax.set_xlabel(r"$\mu^*$ (influence)")
             ax.set_ylabel(r"$\sigma$ (non-linearity / interaction)")
             ax.set_title(f"Morris screening — {q}", fontsize=10)
@@ -649,6 +735,9 @@ def make_figures(tag="sobol"):
             print(msg)
         fig.suptitle("Level 1: which parameters matter at all", fontsize=11)
         fig.tight_layout()
+        # tight_layout fixes the axes boxes; only now are rendered bboxes meaningful, so the
+        # spill correction runs here, after layout and before saving.
+        _fit_morris_labels(fig, panel_anns)
         p = os.path.join(RESULTS, "ces_b13_morris_mu_sigma.png")
         fig.savefig(p, dpi=140); plt.close(fig); made.append(p)
 
