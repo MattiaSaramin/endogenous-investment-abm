@@ -1078,6 +1078,19 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     **upper bound** sul pass-through, non un verdetto. (Nota: la voce b21 sopra usa
     «rovesciata» come shorthand di processo per l'estremo ON — **nel paper vive solo
     il bracket**.)
+  - **Enunciato a due tempi di H1 — DIVIETO REGISTRATO (b28-bis, simmetrico al divieto
+    H2 sopra).** Per H2 il divieto era scritto; per H1 **no**, ed è per questo che
+    «H1 più forte» è sopravvissuto nel punto 10-bis della roadmap fino al b28-bis: una
+    regola non scritta non è una regola. **Vietato:** «H1 esce più forte» / «H1 più forte»;
+    **vietato:** «H1 sopravvive alla respecifica del canale che porta il 64% della varianza»
+    (confonde l'indice **condizionale** col **marginale** del b13/b14).
+    **Forma obbligatoria — la conclusione a due tempi:** (a) H1 è **robusto alla
+    specifica del segnale** dell'acceleratore (il meccanismo del b17 è falsificato: la
+    `sd` di `util_effect` è piatta su [0.25,1.0], zero solo a λ_u=0); (b) H1 è
+    **load-bearing sulla forza** dell'acceleratore — il margine è risolto solo per
+    β≥0.5, col default 0.5 **sul bordo**, e a λ_u=0 **svanisce, non si inverte**. Citare
+    **entrambi i tempi**: il primo da solo sovravende, il secondo da solo svende.
+    Record in §8 (b17/b28).
   - **`tab:prices` da `scripts/make_tab_prices.py` committato — SECONDA tabella del
     paper con generatore**, dopo `tab:sobol` (§5). σ\*(η) a c0=1.0, off (numerario
     fisso) vs on (`P=w_t/w̄`): on 0.648→0.716→0.806→0.871, off 0.648→0.680→0.726→0.711
@@ -1632,6 +1645,8 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
   Primo brief di **contenuto** dopo molti di prosa/strumenti. **Merge fatto:**
   `b27-verify` → `main` (fast-forward, gate confermato da Mattia); `b28-b17` aperto da
   `main`. Il push di `main` per il lavoro b28 resta decisione esplicita di Mattia.
+    **[Aggiornato dal b28-bis: fatto — `b28-b17` è ora su `main` (`0fecf8a`), che coincide
+    con `origin/main`.]**
   - **Fase 0 — GATE (sola lettura, commit a sé).** Piano prodotto e **confermato**
     (`docs/b28_fase0_gate.md`): §9 **già** porta la versione forte su β (i quartili +
     «the headline depends on the one parameter with the weakest empirical claim»), cosa
@@ -1686,8 +1701,53 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
     compila con `tab:b17` e i nuovi `\cref`). **green-vs-tip:** `9f784c8` porta il paper al
     suo stato finale ed è la SHA verde; i commit successivi (Voce B, questo record) toccano
     solo `scripts/`/`docs/`/`METHODOLOGY.md`, e `paper.yml` è path-filtered a `paper/**`,
-    quindi non fanno partire una build. **STOP: il merge di `b28-b17` su `main` resta
-    decisione esplicita di Mattia.**
+    quindi non fanno partire una build. ~~**STOP: il merge di `b28-b17` su `main` resta
+    decisione esplicita di Mattia.**~~ **[Aggiornato dal b28-bis: merge FATTO — `b28-b17` →
+    `main` (fast-forward, HEAD `0fecf8a` ≡ `origin/main`, `git rev-list --count main...origin/main`
+    = 0 0); CI del paper verde su `9f784c8`. Restano a Mattia i push futuri.]**
+
+- **Brief 28-bis — le formulazioni vietate fuori dal paper, e il detector che mancava
+  (nessun `src/`, nessun `paper/`; 569 test invariati). Commit locale, STOP pre-push su
+  `main`.** Il criterio «formulazioni vietate evitate» del b28 era stato verificato **solo su
+  `paper/`**: corretto nel perimetro, falso fuori. `coherence.py` dava 0 DIVERGENT perché
+  confronta numeri, non formulazioni.
+  - **Causa strutturale sanata (§8, accanto al divieto H2).** Il divieto H2 era scritto; per
+    H1 **no** — ecco perché «H1 più forte» è sopravvissuto nel punto 10-bis. Registrato il
+    **divieto H1 simmetrico**, con la **conclusione a due tempi** come forma obbligatoria
+    (a: robusto al segnale; b: load-bearing sulla forza — β≥0.5, default sul bordo, a λ_u=0
+    svanisce non inverte). Senza la regola scritta, la correzione di 1702 era un episodio.
+  - **Tre correzioni testuali.** (1) punto 10-bis della roadmap:
+    «H1 più forte» → conclusione a due tempi (rimando a §8). (2) punto 9 della roadmap:
+    «H2 rovesciata via Pigou» → **esito condizionale alla convenzione di prezzo (bracket)**,
+    e stesso trattamento al blockquote «Punto 9 riscritto» che il punto 9 richiama con «vedi
+    sotto». (3) riga stale sul merge (intro **e** STOP finale del record b28): `b28-b17` è su
+    `main` (`0fecf8a` ≡ `origin/main`), CI paper verde su `9f784c8`. Le righe analoghe dei
+    brief 27-* restano come record storico del loro gate (accurate quando scritte).
+  - **Occorrenze contese classificate una per una** (contro la licenza di §8, la nota al
+    divieto b22). **Voce b21 di §8, «la CONCLUSIONE è ROVESCIATA» = LICENZIATA:** è «la voce
+    b21 sopra» che la nota licenzia (shorthand di processo per l'estremo ON; nel paper vive
+    solo il bracket). Lasciata **byte-intatta** e registrata come esenzione nel detector, per
+    **sottostringa stabile**, non per numero di riga. **Blockquote del punto 9, «la sua
+    conclusione è rovesciata via Pigou» = VIOLAZIONE:** è roadmap (stato corrente), non
+    coperta dalla nota b22 (che scope-a la sola voce b21), ed è il «vedi sotto» del punto 9
+    corretto — riportata al bracket.
+  - **`scripts/check_phrasings.py` (§11).** Perimetro **stampato**; divieti IT/EN H1/H2;
+    esenzioni **dichiarate e stampate** (record congelati per file: `run_brief17.py` **non
+    toccato** + il detector stesso; citazioni: virgolette/guillemet — anche cross-riga — o
+    marcatore di negazione; shorthand licenziato: voce b21). `--selftest` **11/11 PASS**:
+    «H1 esce più forte» iniettata **FALLISCE netto**, la stessa **dentro una citazione del
+    divieto** è **ESENTATA**; exit ≠ 0 su violazione. Esito sul repo dopo le correzioni:
+    **0 violazioni**, con esenzioni stampate (frozen, citazione, licenziato).
+  - **Invariante nuovo in §9:** un criterio di accettazione **testuale** che non dichiara il
+    proprio perimetro misura meno di quel che dichiara; nomina i percorsi, e il detector li
+    stampa.
+  - **Detector + CI:** `check_phrasings` **0 violazioni** + `--selftest` (11/11); `verify_paper`
+    **60 claim / 0 FAIL** (1 AMBIGUOUS) + `--selftest`; `verify_model` **19 MATCH** +
+    `--selftest`; `coherence` **0 DIVERGENT** + `DOCUMENT UNTRACKED` + `--selftest`;
+    `check_anglicization` **0**; `pytest` **569**. **Nessuna CI attesa:** `git diff -- paper/`
+    **vuoto**, `paper.yml` è path-filtered a `paper/**` → nessuna run parte (è uno stato, non
+    un fallimento). `scripts/run_brief17.py` **non toccato** (diff vuoto). Commit locale,
+    **STOP pre-push su `main`**.
 
 **Attivo:** nessun task di implementazione in corso. Prossimo blocco sotto.
 
@@ -1695,11 +1755,15 @@ lavoro. Ora possono scendere verso l'empirico (λ → 0.05, Slacalek 2009).
 decisione presa, lato imprese dichiarato quasi-rappresentativo con evidenza misurata,
 feature non implementata, riallocazione = future work (punto 12)**; **9) prezzi endogeni
 (parte salario FATTA col brief 07; il PREZZO PROBATO col brief 21 — `P=w_t/w_bar`, probe non
-feature, H2 rovesciata via Pigou — vedi sotto)**; **10) aspettative
+feature, **esito condizionale alla convenzione di prezzo** (bracket §8/§10; nessun capo
+ancorato, il probe all'estremo massimamente stabilizzante) — vedi sotto)**; **10) aspettative
 adattive — parte DOMANDA FATTA col brief 08** (σ\* λ_e-invariante; ipotesi di
 stabilizzazione c0=2.0 non confermata); **10-bis) aspettativa sull'INVESTIMENTO — FATTA
 col brief 17** (acceleratore su `u^e`; ipotesi §4 **falsificata**: λ_u inerte entro le bande su
-[0.25,1.0], meccanismo falsificato — `u` persistente; **H1 più forte**; solo λ_u=0 muove ρ\*).
+[0.25,1.0], meccanismo falsificato — `u` persistente; **conclusione a due tempi** (record
+b17/b28, §8): (a) H1 **robusto alla specifica del segnale** dell'acceleratore, (b) H1
+**load-bearing sulla forza** dell'acceleratore — margine risolto solo per β≥0.5 (default 0.5 sul
+bordo), a λ_u=0 il margine **svanisce, non si inverte**; solo λ_u=0 muove ρ\*).
 **Resta il punto 10-ter** (smoothing di `profit_last_period`, dichiarato non fatto);
 12) entrata/uscita/fallimento imprese; 13) cambiamento tecnologico (crescita di
 A); 14) banche e credito (estende la matrice SFC: depositi, prestiti);
@@ -1718,9 +1782,11 @@ pubblico e tassazione progressiva (future work dichiarato in `brief_09_governmen
 > `parameter_notes.md`). **Il PREZZO è ora PROBATO (brief 21, punto 9-bis):** normal-cost
 > `P=w_t/w_bar` (markup e produttività costanti, `mu` cancella, zero parametri liberi nuovi),
 > **probe non feature** (`enable_prices` default False, fuori dalla SA). Esito: col salario reale
-> costante per costruzione il meccanismo di H2 (oscillazione che erode capitale) è **ucciso** e la
-> sua conclusione è **rovesciata** via il canale Pigou (bilanci reali) — prima ipotesi di
-> stabilizzazione confermata dopo quattro falsificazioni. Fuori scope dichiarato: la variante a
+> costante per costruzione il meccanismo di H2 (oscillazione che erode capitale) è **ucciso**;
+> l'autocorrezione della disoccupazione è **condizionale alla convenzione sul pass-through**
+> (bracket §8/§10) — assente a pass-through zero (numerario ≡ 1), presente via Pigou all'estremo
+> massimamente stabilizzante del probe, **nessuno dei due capi ancorato**. È la prima ipotesi di
+> stabilizzazione con un capo confermato (l'estremo ON) dopo quattro falsificazioni. Fuori scope dichiarato: la variante a
 > costo unitario endogeno (§1.2, che pinna la quota salari) e la spirale prezzi-salari. Nota: già
 > senza prezzi endogeni il **markup implicito** (`prodotto medio / w_t`) è un **esito**. Per il
 > blocco prezzi come *feature* (non probe) serviranno dati sui markup (De Loecker, Eeckhout &
@@ -1877,6 +1943,15 @@ negoziabili.
   debito, non ancora saldata. Il `--selftest` di un detector prosa-sensibile deve
   **distinguere** i due casi (ancora al simbolo che sopravvive vs ancora alla prosa
   che si rompe), altrimenti non misura nulla.
+- **Un criterio di accettazione che non dichiara il proprio perimetro misura meno di
+  quello che dichiara** (b28-bis). Ogni criterio di verifica **testuale** nomina i
+  percorsi su cui vale, e il detector li **stampa**. Reperto: il criterio «formulazioni
+  vietate evitate» del b28 fu verificato **solo su `paper/`** — corretto nel suo perimetro
+  e falso fuori, ed è così che «H2 rovesciata via Pigou» (roadmap §8, punto 9) e
+  «H1 più forte» (punto 10-bis) sono sopravvissuti in `METHODOLOGY.md`, mentre
+  `coherence.py` dava 0 DIVERGENT (confronta i **numeri** fra documenti, non le
+  **formulazioni**). Lo strumento che chiude questa classe è `scripts/check_phrasings.py`
+  (§11): perimetro stampato, esenzioni dichiarate e stampate.
 
 ---
 
@@ -2033,6 +2108,24 @@ negoziabili.
   `RESULTS.md` untracked → `DOCUMENT UNTRACKED` (check su tracciamento git, non su esistenza — b27).
   `sobol_sigma_ST_viable` resta AMBIGUOUS **per costruzione** (S1 e ST viability leggono entrambi
   0.008 sulla stessa riga di `tab:sobol`)
+- `scripts/check_phrasings.py` — **b28-bis**, detector delle **formulazioni vietate** H1/H2
+  (accanto a `scripts/check_anglicization.py`, i britannicismi per radicale). Confronta le
+  **formulazioni**, non i numeri — ciò che `coherence.py` non fa, ed è per questo che restò 0
+  DIVERGENT mentre due enunciati ritirati vivevano fuori da `paper/`. **Perimetro stampato**
+  (`paper/`, `METHODOLOGY.md`, `README.md`, `docs/`, `parameter_notes.md`, `scripts/`), non
+  assunto: i brief di lavoro alla radice del repo sono **fuori** per costruzione, ed è il
+  motivo per cui il perimetro si stampa. Divieti IT ed EN, ancorati al soggetto H1/H2 sulla
+  riga: «H2 cade/tiene/è rovesciata», «H2 falls/holds/is overturned», «H1 (esce) più forte»,
+  «H1 comes out stronger», e la confusione condizionale/marginale «H1 sopravvive al canale…».
+  **Esenzioni dichiarate e stampate:** record congelati per file (`run_brief17.py`, la regola
+  del gate pre-registrata; il detector stesso); citazioni del divieto (soggetto entro
+  virgolette/guillemet — anche cross-riga — o riga con marcatore di negazione
+  «Mai»/«vietato»/«forbidden»/«never»); shorthand licenziato (la voce b21 di §8, per
+  sottostringa stabile, con la sua licenza). `--selftest`: «H1 esce più forte» iniettata
+  **FALLISCE netto**, la stessa **entro una citazione del divieto** è **ESENTATA** (i due casi
+  distinti); exit ≠ 0 su violazione. Da eseguire come gli altri, in ogni brief. **Limite
+  dichiarato:** co-occorrenza sulla **stessa riga** (soggetto e predicato spezzati su due righe
+  non si vedono — il blockquote del punto 9 pre-b28-bis, corretto a mano in questo brief).
 - `scripts/sweep_rounding.py` — **brief 19**, firma del doppio arrotondamento su tutto il paper,
   **registry-free**; risultato negativo (nessuna discrepanza nuova). Regex `(?<!-)-?\d+\.\d+`
   (brief 20: un `-` dopo `-` è un trattino di range, non un segno). Due punti ciechi dichiarati
