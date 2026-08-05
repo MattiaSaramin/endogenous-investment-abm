@@ -522,27 +522,52 @@ def _plot_sigma_star(star, path):
 
 
 def _plot_collapse_map(cmap, path):
-    """Small-multiples heatmap of frac_seeds_U1 over (sigma, rho), one panel per (eta, rr)."""
+    """Small-multiples heatmap of frac_seeds_U1 over (sigma, rho), one panel per (eta, rr).
+
+    CATEGORICAL axes (brief 29): one cell per SIMULATED node, all cells equal width, ticks
+    only ON the measured nodes.  The sigma grid is non-uniform (0.05, 0.30, 0.40, ..., 1.25,
+    1.50), so a value axis (the previous ``pcolormesh(..., shading="nearest")``) sized each
+    cell by the midpoints between unequal nodes and let matplotlib's default gridlines fall on
+    0.00, 0.25 and 0.75 - values that were NEVER simulated - inviting the reader to attribute a
+    colour to a sigma the grid does not contain.  ``imshow`` on integer indices removes that:
+    the axis is a node index, the tick labels carry the actual node values, every cell is the
+    same size, and the caption of fig:government declares the non-uniform grid.  vmin/vmax,
+    the magma cmap and the shared colorbar are unchanged.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     etas = sorted(cmap["eta"].unique())
     rrs = sorted(cmap["rr"].unique())
+    sigmas = sorted(cmap["sigma"].unique())   # 11 measured nodes, non-uniform spacing
+    rhos = sorted(cmap["rho"].unique())        # 7 measured nodes
+    # constrained_layout keeps the rotated rho labels of the top row clear of the bottom
+    # row's titles - the value-axis version had horizontal labels and did not need it.
     fig, axes = plt.subplots(len(etas), len(rrs), figsize=(3.2 * len(rrs), 3.0 * len(etas)),
-                             squeeze=False)
+                             squeeze=False, constrained_layout=True)
     for i, eta in enumerate(etas):
         for j, rr in enumerate(rrs):
             ax = axes[i][j]
             block = cmap[(cmap["eta"] == eta) & (cmap["rr"] == rr)]
-            piv = block.pivot(index="sigma", columns="rho", values="frac_seeds_U1")
-            im = ax.pcolormesh(piv.columns, piv.index, piv.to_numpy(),
-                               cmap="magma", vmin=0.0, vmax=1.0, shading="nearest")
-            ax.set_title(f"eta={eta}, rr={rr}", fontsize=9)
+            # Reindex onto the full node grid so every panel shares the same categorical axes
+            # and a missing cell would show as blank rather than shift the indexing.
+            piv = (block.pivot(index="sigma", columns="rho", values="frac_seeds_U1")
+                        .reindex(index=sigmas, columns=rhos))
+            im = ax.imshow(piv.to_numpy(), cmap="magma", vmin=0.0, vmax=1.0,
+                           aspect="auto", origin="lower", interpolation="nearest")
+            ax.set_xticks(range(len(rhos)))
+            # rho labels rotated 45 deg to fit at print width without dropping any node.
+            ax.set_xticklabels([f"{r:.2f}" for r in rhos], rotation=45, ha="right", fontsize=7)
+            # All eleven sigma nodes are kept as ticks on EVERY panel: the sigma=0.05 and
+            # sigma=0.30 rows carry the low-sigma collapse finding, so they are never decimated.
+            ax.set_yticks(range(len(sigmas)))
+            ax.set_yticklabels([f"{s:.2f}" for s in sigmas], fontsize=7)
+            ax.set_title(rf"$\eta={eta:g}$, $rr={rr:g}$", fontsize=9)
             if j == 0:
-                ax.set_ylabel("sigma")
+                ax.set_ylabel(r"$\sigma$")
             if i == len(etas) - 1:
-                ax.set_xlabel("rho")
+                ax.set_xlabel(r"$\rho$")
     fig.colorbar(im, ax=axes, label="frac of seeds fully collapsed (U=1)", shrink=0.8)
     fig.suptitle("E3 collapse map (c0 = 2.0): does the demand floor shrink it?", weight="bold")
     fig.savefig(path, dpi=150)
