@@ -63,8 +63,8 @@ def flow(ax, p0, p1, label, rad=0.0, color=ARROW, ls="solid", lw=1.6,
 
 
 def main():
-    fig, ax = plt.subplots(figsize=(8.2, 5.6))
-    ax.set_xlim(0, 100)
+    fig, ax = plt.subplots(figsize=(9.2, 5.6))
+    ax.set_xlim(-2, 110)
     ax.set_ylim(0, 100)
     ax.axis("off")
 
@@ -77,8 +77,8 @@ def main():
         "WORKER\nHOUSEHOLDS\n$0.9N$, supply labour\nhigh MPC", C_WORK, fs=9.5)
     box(ax, (84, 30), 28, 15,
         "CAPITALIST\nHOUSEHOLDS\n$0.1N$, own firms\nlow MPC", C_CAP, fs=9.5)
-    box(ax, (50, 7), 52, 8,
-        "GOVERNMENT (optional):   flat tax on income   $\\rightarrow$   "
+    box(ax, (50, 8), 46, 9,
+        "GOVERNMENT (optional):\nflat tax on all income   $\\rightarrow$   "
         "unemployment benefit",
         C_GOV, ec=GOV_EDGE, ls=(0, (4, 3)), fs=8.5, tc="#555555")
 
@@ -90,23 +90,33 @@ def main():
          color=GOV_EDGE, lxy=(66.5, 78), fs=8.5, lc="#555555")
 
     # --- wages / consumption (firms <-> workers) -------------------------
+    # Wages leave the firms and enter the workers; consumption is the reverse
+    # flow that re-enters the firms.  Each label sits on the outer side of its
+    # OWN curve (wages to the right, consumption to the left) so the pairing of
+    # label to direction is unambiguous.
     flow(ax, (38, 56), (23, 37.5), "Wages  $\\bar w\\,L$", rad=-0.16,
-         lxy=(24, 49), la="center", fs=9)
+         lxy=(35, 47), la="center", fs=9)
     flow(ax, (12, 37.5), (33, 56), "Consumption", rad=-0.16,
-         lxy=(5.5, 49), la="center", fs=9)
+         lxy=(14, 51), la="center", fs=9)
 
     # --- dividends / consumption (firms <-> capitalists) -----------------
     flow(ax, (62, 56), (77, 37.5), "Dividends\n$(1-\\rho)\\,\\pi$", rad=0.16,
-         lxy=(78, 49), la="center", fs=9)
+         lxy=(58, 47), la="center", fs=9)
     flow(ax, (88, 37.5), (67, 56),
          "Consumption\n(low MPC:\ndemand leaks)", rad=0.16, color=LEAK,
-         lw=1.9, lxy=(95, 49), la="center", fs=8.5, lc=LEAK)
+         lw=1.9, lxy=(98, 49), la="center", fs=8.5, lc=LEAK)
 
     # --- government flows (optional, dashed, kept local at the base) ------
-    flow(ax, (74, 22.5), (60, 11), "Tax  $\\tau$", rad=0.0,
-         ls=(0, (4, 3)), color=GOV_EDGE, lxy=(72.5, 15), fs=8.5, lc="#555555")
-    flow(ax, (40, 11), (26, 22.5), "Benefit", rad=0.0,
-         ls=(0, (4, 3)), color=GOV_EDGE, lxy=(27.5, 15), fs=8.5, lc="#555555")
+    # The flat tax falls on ALL income, so BOTH households pay in -- see
+    # src/model.py government(): base = sum over households of
+    # max(0, next_income).  Workers also receive the benefit; capitalists only
+    # pay.  Two "Tax" arrows (one per household) + one "Benefit" arrow.
+    flow(ax, (80, 22.5), (61, 12.5), "Tax  $\\tau$", rad=0.0,
+         ls=(0, (4, 3)), color=GOV_EDGE, lxy=(74, 16.5), fs=8.5, lc="#555555")
+    flow(ax, (22, 22.5), (39, 12.5), "Tax  $\\tau$", rad=0.0,
+         ls=(0, (4, 3)), color=GOV_EDGE, lxy=(35, 15.5), fs=8.5, lc="#555555")
+    flow(ax, (31, 12.5), (12, 22.5), "Benefit", rad=0.0,
+         ls=(0, (4, 3)), color=GOV_EDGE, lxy=(16, 16.5), fs=8.5, lc="#555555")
 
     # --- wage-curve note --------------------------------------------------
     ax.text(2, 96,
